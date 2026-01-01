@@ -14,8 +14,8 @@ export class BattleBGM {
         this.startTime = 0;        
         this.activeSources = [];   
         
+        this.setBGM = './resource/endtime.mid';
         this.seFiles = {
-            'BGM': './resource/endymion.mid',
             'slash': './resource/slash.mp3',
             'magic': './resource/magic.mp3',
             'fire': './resource/fire.mp3',
@@ -42,7 +42,7 @@ export class BattleBGM {
         const sePromises = Object.entries(this.seFiles).map(([key, url]) => this.loadSE(key, url));
 
         // 2. MIDIの読み込み
-        const midiPromise = this.loadMidiFromUrl('endymion.mid');
+        const midiPromise = this.loadMidiFromUrl(this.setBGM);
 
         // 全部終わるのを待つ
         await Promise.all([...sePromises, midiPromise]);
