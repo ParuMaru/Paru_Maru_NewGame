@@ -1,0 +1,497 @@
+/* =========================================
+   基本レイアウト・全体設定
+   ========================================= */
+body { 
+    background-color: #2c3e50; 
+    color: white; 
+    font-family: "MS Gothic", sans-serif; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    margin: 0; 
+    padding: 0;
+    box-sizing: border-box;
+    height: 100vh;
+    overflow: hidden; /* 画面の揺れ演出などでスクロールバーが出ないように固定 */
+    justify-content: center; 
+}
+
+/* モバイル端末などの動的ビューポート高さ（dvh）に対応 */
+@supports (height: 100dvh) {
+    body {
+        height: 100dvh;
+    }
+}
+
+/* --- スタート画面（オーバーレイ） --- */
+#start-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+}
+
+/* スタートボタンの装飾 */
+#start-button {
+    padding: 20px 50px;
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    background: #e74c3c;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 5px 0 #c0392b;
+}
+
+/* 各エリア（キャンバス、ログ、ステータス、コマンド）の共通幅設定 */
+#canvas-area, #log, #status-area, #command-area {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* =========================================
+   バトル画面（キャンバスエリア）
+   ========================================= */
+#canvas-area {
+    position: relative;
+    height: 35vh; 
+    min-height: 300px;
+    background-image: url("./resource/bg.png");
+    background-size: cover;
+    background-position: center;
+    border-bottom: 4px solid #444;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; 
+    align-items: center;
+    overflow: hidden; 
+    padding: 10px 0;
+}
+
+/* 敵キャラクターを表示する横並びのコンテナ */
+.enemy-sprite-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; 
+    gap: 20px;
+    width: 100%;
+    height: 200px;
+}
+
+/* 敵1体分の構成（名前、HPバー、画像） */
+.enemy-unit {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+}
+
+/* 敵専用のHPバー外枠 */
+.enemy-hp-container {
+    width: 80px;
+    height: 8px;
+    background: #444;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    overflow: hidden;
+}
+
+/* 敵の残りHPを示す赤いバー */
+.enemy-hp-bar {
+    width: 100%;
+    height: 100%;
+    background: #ff4757;
+    transition: width 0.3s ease;
+}
+
+/* 敵の名前ラベル */
+.enemy-label {
+    font-size: 12px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px #000;
+    margin-bottom: 2px;
+}
+
+/* 敵の立ち絵画像（浮遊アニメーション付） */
+.enemy-img {
+    width: 120px;
+    height: auto;
+    animation: slimeFloating 3s ease-in-out infinite;
+    cursor: pointer;
+}
+
+/* スライムがゆらゆら揺れるアニメーション */
+@keyframes slimeFloating {
+    0%, 100% { transform: translateY(0) scale(1, 1); }
+    50% { transform: translateY(-10px) scale(1.05, 0.95); }
+}
+
+/* =========================================
+   メッセージログ・ステータス表示
+   ========================================= */
+
+/* ログエリア：下から上に新しいメッセージが出る設定 */
+#log { 
+    height: 15vh; 
+    min-height: 80px;
+    background: #1a252f; 
+    margin: 5px 0; 
+    padding: 8px; 
+    overflow-y: auto; 
+    border: 1px solid #34495e; 
+    font-size: 13px; 
+
+}
+
+/* 味方のステータスエリア全体 */
+#status-area {
+    height: 15vh;
+    max-height: 120px;
+    display: flex; 
+    flex-direction: row;
+    justify-content: space-around; 
+    background: #2c3e50; 
+    padding: 10px 5px; 
+    border: 1px solid #ecf0f1; 
+    gap: 4px;
+    align-items: center;
+}
+
+/* 各キャラクターのステータスカード */
+.member-card { 
+    flex: 1; 
+    min-width: 0; 
+    text-align: center; 
+    border: 1px solid #34495e; 
+    padding: 5px 2px; 
+    border-radius: 5px; 
+    position: relative;
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.status-container {
+    position: absolute;
+    /* カードの頭の上に配置 */
+    top: -22px; 
+    right: 10px; /* 右端から少し余裕を持たせる */
+    
+    /* 横並びにする設定 */
+    display: flex;
+    flex-direction: row;       /* 横に並べる */
+    justify-content: flex-end; /* 右寄せ */
+    align-items: flex-end;     /* 下揃え */
+    
+    gap: 3px; /* タブ同士の隙間 */
+    z-index: 10;
+}
+
+/* タブ型のデザイン */
+.status-badge {
+    /* 四角形で、上だけ角丸にする */
+    border-radius: 6px 6px 0 0; 
+    
+    /* 大きさ設定 */
+    height: 22px;
+    padding: 0 8px; /* 横幅は文字数に応じて伸びる */
+    min-width: 24px;
+    
+    /* 文字と配置 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    
+    /* 影をつけて立体感を出す */
+    box-shadow: 1px -1px 2px rgba(0,0,0,0.3);
+    border-top: 1px solid rgba(255,255,255,0.3);
+    border-left: 1px solid rgba(255,255,255,0.3);
+    border-right: 1px solid rgba(255,255,255,0.3);
+}
+
+/* 数字の調整 */
+.badge-num {
+    margin-left: 4px; /* アイコンとの隙間 */
+    font-size: 11px;
+}
+
+/* スマホ対策 */
+@media (max-width: 600px) {
+    .status-container {
+        top: -20px;
+    }
+    .status-badge {
+        height: 20px;
+        font-size: 11px;
+        padding: 0 6px;
+    }
+}
+/* 色の設定はそのままでOK */
+.badge-cover { background-color: #3498db; }
+.badge-regen { background-color: #8e44ad; }
+.badge-buff  { background-color: #e74c3c; }
+
+/* 味方のHP/MPバー（背景と各色のバー） */
+.mini-hp-bar-bg, .mini-mp-bar-bg { width: 90%; height: 8px; background: #7f8c8d; margin: 3px auto; }
+.mini-hp-bar { width: 100%; height: 100%; background: #2ecc71; transition: width 0.3s; }
+.mini-mp-bar { width: 100%; height: 100%; background: #2e95cc; transition: width 0.3s; }
+
+/* リザルト画面（基本は非表示） */
+#result-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* 背景を暗く */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 200; /* 最前面 */
+    color: white;
+}
+
+#result-title {
+    font-size: 48px;
+    margin-bottom: 20px;
+    text-shadow: 0 0 10px gold; /* 金色に光らせる */
+    font-family: 'Press Start 2P', cursive; /* ドット絵フォントがあれば */
+}
+
+/* 敗北時のタイトル色 */
+.defeat-title {
+    color: #e74c3c !important;
+    text-shadow: 0 0 10px red !important;
+}
+
+/* 勝利時のタイトル色 */
+.victory-title {
+    color: #f1c40f !important;
+    text-shadow: 0 0 10px orange !important;
+}
+
+
+/* =========================================
+   操作UI（コマンドボタン）
+   ========================================= */
+
+/* ボタンの配置設定（PCなら4列、スマホなら2列） */
+.btn-group { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr;
+    gap: 8px; 
+}
+@media (min-width: 480px) {
+    .btn-group { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* コマンドボタンの基本装飾 */
+button { 
+    width: 100%; 
+    height: 40px; 
+    cursor: pointer; 
+    border: none; 
+    background-color: #34495e; 
+    color: white; 
+    font-weight: bold; 
+    border-radius: 5px; 
+    font-size: 0.9rem;
+}
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* =========================================
+   バトル演出・特殊エフェクト
+   ========================================= */
+
+/* 斬撃（スラッシュ）エフェクトの線 */
+.slash-line {
+    position: absolute;
+    top: 50%; left: 50%; width: 150px; height: 4px;
+    background: linear-gradient(90deg, transparent, #fff 50%, transparent);
+    box-shadow: 0 0 10px #ff4757;
+    z-index: 1000;
+    transform: translate(-50%, -50%) rotate(-45deg);
+    animation: enemySlash 0.15s ease-out forwards;
+}
+
+@keyframes enemySlash {
+    0% { transform: translate(-50%, -50%) rotate(-45deg) scaleX(0); opacity: 0; }
+    50% { transform: translate(-50%, -50%) rotate(-45deg) scaleX(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50%) rotate(-45deg) scaleX(1); opacity: 0; }
+}
+
+/* 魔法発動時の魔法陣エフェクト */
+.magic-circle {
+    position: absolute; top: 50%; left: 50%; width: 50px; height: 50px;
+    border: 5px solid #70abdb; border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: magicAnim 0.5s ease-out forwards;
+}
+@keyframes magicAnim {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+}
+
+/* ダメージ数値のポップアップ */
+.damage-popup {
+    position: absolute; top: 50%; left: 50%; font-size: 28px; font-weight: bold;
+    text-shadow: 2px 2px 0 #000; z-index: 100;
+    animation: damageUp 0.8s ease-out forwards;
+}
+@keyframes damageUp {
+    0% { transform: translate(-50%, -20%) scale(0.5); opacity: 0; }
+    20% { transform: translate(-50%, -80%) scale(1.2); opacity: 1; }
+    100% { transform: translate(-50%, -150%) scale(1); opacity: 0; }
+}
+
+/* 現在ターンの味方を光らせて浮かせる */
+.active-member { 
+    transform: translateY(-15px) !important; 
+    border-color: #f1c40f !important; 
+    box-shadow: 0 0 10px #f1c40f; 
+}
+
+/* 画面全体のフラッシュ */
+.screen-flash { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; pointer-events: none; }
+
+/* 状態バッジ（ATK UPなど） */
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-right: 4px;
+    display: inline-block;
+}
+
+/* 回復時の緑色発光演出 */
+.heal-light {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(46, 204, 113, 0.3);
+    border-radius: 5px;
+    animation: healFlash 0.6s ease-out forwards;
+}
+@keyframes healFlash {
+    0% { opacity: 0; } 50% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* --- キングスライム分裂用演出 --- */
+@keyframes shake-split {
+    0% { transform: translate(0, 0) scale(1.2); filter: brightness(1); }
+    25% { transform: translate(-10px, 0) scale(1.3); filter: brightness(1.5); }
+    50% { transform: translate(10px, 0) scale(1.4); filter: brightness(2); }
+    75% { transform: translate(-10px, 0) scale(1.5); filter: brightness(2.5); }
+    100% { transform: translate(0, 0) scale(1.6); filter: brightness(3); opacity: 0; }
+}
+.splitting { animation: shake-split 0.8s ease-in-out forwards; }
+
+@keyframes split-left {
+    0% { transform: scale(1.6) translateX(0); opacity: 0; }
+    100% { transform: scale(1.0) translateX(-60px); opacity: 1; }
+}
+@keyframes split-right {
+    0% { transform: scale(1.6) translateX(0); opacity: 0; }
+    100% { transform: scale(1.0) translateX(60px); opacity: 1; }
+}
+.appear-left { animation: split-left 0.5s ease-out forwards; }
+.appear-right { animation: split-right 0.5s ease-out forwards; }
+
+/* キングスライム専用：ボスの巨大感を出す設定 */
+.king-size .enemy-img {
+    width: 200px; 
+    filter: drop-shadow(0 0 15px rgba(241, 196, 15, 0.5));
+}
+.king-size .enemy-hp-container { width: 180px; }
+.king-size .enemy-label { font-size: 20px; color: #f1c40f; }
+
+/* 画面全体の振動（強攻撃など） */
+.screen-shake { animation: shake-action 0.1s infinite; }
+@keyframes shake-action {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(8px, 8px); }
+    50% { transform: translate(-8px, -8px); }
+    75% { transform: translate(8px, -8px); }
+    100% { transform: translate(0, 0); }
+}
+
+/* =========================================
+   魔法スキル固有の演出（メテオ・ファイア）
+   ========================================= */
+
+/* メテオの隕石オブジェクト */
+.meteor-rock {
+    position: fixed;
+    top: 0;
+    left: 50%;
+    width: 80px;
+    height: 80px;
+    background: radial-gradient(circle, #ff4500, #3a1c02 70%);
+    border-radius: 50%;
+    box-shadow: 0 0 30px #ff4500;
+    z-index: 1000;
+    pointer-events: none;
+    transform: translate(-50%, -100px); 
+    transition: transform 0.4s ease-in, opacity 0.2s;
+}
+
+/* メテオ着弾時の爆発 */
+.meteor-explosion {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 150px; height: 150px;
+    background: radial-gradient(circle, #fff 10%, #ff4500 50%, transparent 70%);
+    transform: translate(-50%, -50%) scale(0);
+    border-radius: 50%;
+    z-index: 1001;
+    animation: explosion-anim 0.4s ease-out forwards;
+}
+
+@keyframes explosion-anim {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+    100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+}
+
+/* ファイアの火球 */
+.fireball {
+    position: fixed;
+    width: 40px; height: 40px;
+    background: radial-gradient(circle, #fff 0%, #ff4500 50%, #ff8c00 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 20px #ff4500, 0 0 10px #ff8c00;
+    z-index: 1000;
+    pointer-events: none;
+    transition: transform 0.3s ease-in, opacity 0.1s;
+}
+
+/* 着弾地点の燃え上がる火柱 */
+.fire-burn {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    width: 100px; height: 150px;
+    background: radial-gradient(ellipse at bottom, #fff 0%, #ff4500 40%, #ff8c00 70%, transparent 90%);
+    filter: blur(2px);
+    transform: translate(-50%, 0) scale(0);
+    z-index: 1001;
+    mix-blend-mode: screen; 
+    animation: fire-pillar-anim 0.6s ease-out forwards;
+}
+
+@keyframes fire-pillar-anim {
+    0% { transform: translate(-50%, 20px) scale(0.2, 2); opacity: 0; }
+    30% { transform: translate(-50%, -40px) scale(1.5, 1.2); opacity: 1; }
+    100% { transform: translate(-50%, -100px) scale(0.8, 1.5); opacity: 0; }
+}

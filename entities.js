@@ -1,0 +1,156 @@
+/**
+ * 全てのキャラクター（味方・敵）の基底クラス
+ */
+export class Entity {
+    /**
+     * @param {string} name - 名前
+     * @param {number} hp - 最大HP
+     * @param {number} mp - 最大MP
+     * @param {number} atk - 物理攻撃力
+     * @param {number} def - 物理防御力
+     * @param {number} matk - 魔法攻撃力
+     * @param {number} mdef - 魔法防御力
+     * @param {number} spd - 素早さ
+     * @param {number} rec - 回復力
+     */
+    constructor(name, hp, mp, atk, def, matk, mdef, spd, rec) {
+        this.name = name;
+        this.max_hp = hp;
+        this.max_mp = mp;
+        this._hp = hp;
+        this._mp = mp;
+        
+        this.atk = atk;   // 物理攻撃の基準値
+        this.def = def;   // 物理防御
+        this.matk = matk; // 魔法攻撃の基準値
+        this.mdef = mdef; // 魔法防御
+        this.spd = spd;   // 素早さ
+        this.rec = rec;   // 回復力
+
+        // --- 状態フラグ ---
+        this.is_covering = false; // かばう状態
+        this.buffs = {
+            atk: 0,   // 鼓舞（物理攻撃バフ）
+            regen: 0  // いのり（継続回復ターン数）
+        };
+        this.is_dead = false;
+        this.skills = []; // skills.js の ID文字列を格納
+    }
+
+    // --- 状態取得 (ゲッター) ---
+    get hp() { return this._hp; }
+    get mp() { return this._mp; }
+
+    /**
+     * HPを増減させる一元管理メソッド
+     * @param {number} amount - 正の値で回復、負の値でダメージ
+     */
+    add_hp(amount) {
+        // 死亡している場合は、正の回復（add_hpによるもの）を受け付けない
+        if (this.is_dead && amount > 0) return;
+
+        this._hp = Math.max(0, Math.min(this.max_hp, this._hp + amount));
+        
+        // 判定は厳密に行う
+        if (this._hp <= 0) {
+            this._hp = 0;
+            this.is_dead = true;
+        } else {
+            this.is_dead = false;
+        }
+    }
+
+    /**
+     * MPを増減させる一元管理メソッド
+     * @param {number} amount - 正の値で回復、負の値で消費
+     */
+    add_mp(amount) {
+        if (this.is_dead) return;
+        this._mp = Math.max(0, Math.min(this.max_mp, this._mp + amount));
+    }
+
+    /**
+     * 蘇生：死亡状態を強制解除してHPを戻す
+     * ※命の代償やフェニックスの尾で使用
+     */
+    revive(hp_amount) {
+        this._hp = Math.max(0, Math.min(this.max_hp, hp_amount));
+        if (this._hp > 0) {
+            this.is_dead = false;
+        }
+    }
+
+    is_alive() {
+        return !this.is_dead;
+    }
+
+    /**
+     * 自分自身の画像とステータスを含んだ「動的なコンテナ」を生成する
+     */
+    render(index) {
+        const hpRatio = (this._hp / this.max_hp) * 100;
+        
+        // 敵の種類（キング等）に応じたクラスを動的に付与
+        const extraClass = this.isKing ? 'king-size' : '';
+        
+        // コンテナ（div.enemy-unit）ごと文字列で作成
+        return `
+            <div class="enemy-unit ${extraClass}" id="enemy-unit-${index}">
+                <div class="enemy-label">${this.name}</div>
+                <div class="enemy-hp-container">
+                    <div class="enemy-hp-bar" style="width:${hpRatio}%"></div>
+                </div>
+                <img src="${this.image}" id="enemy-sprite-${index}" class="enemy-img">
+            </div>
+        `;
+    }
+}
+
+/**
+ * 勇者（Hero）
+ */
+export class Hero extends Entity {
+    constructor() {
+        // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
+        super("勇者", 240, 80, 50, 40, 20, 30, 15, 30);
+        this.job = "hero";
+        this.skills = ["cover", "encourage"]; 
+    }
+}
+
+/**
+ * 魔法使い（Wizard）
+ */
+export class Wizard extends Entity {
+    constructor() {
+        super("魔法使い", 180, 150, 20, 20, 70, 50, 12, 40);
+        this.job = "wizard";
+        this.skills = ["fire", "fira", "meteor", "meditation"];
+    }
+}
+
+/**
+ * 癒し手（Healer）
+ */
+export class Healer extends Entity {
+    constructor() {
+        super("癒し手", 200, 150, 25, 25, 30, 60, 10, 80);
+        this.job = "healer";
+        this.skills = ["heal", "medica", "prayer", "raise"];
+    }
+}
+
+/**
+ * スライム（Enemy）
+ */
+export class Slime extends Entity {
+    constructor(isKing = true) {
+        if (isKing) {
+            super("キングスライム", 1200, 100, 60, 45, 40, 40, 8, 50);
+        } else {
+            super("スライム", 350, 50, 35, 30, 25, 25, 10, 30);
+        }
+        this.isKing = isKing;
+        this.image = isKing ? "resource/slime.png" : "resource/splited_slime.png";
+    }
+}
