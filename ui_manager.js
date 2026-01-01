@@ -6,10 +6,11 @@ export class UIManager {
         this.logElement = document.getElementById('log');
         this.commandContainer = document.getElementById('command-container');
         this.turnLabel = document.getElementById('turn-label');
-        this.currentActor = null; // 戻るボタン用に保持
+        this.enemyContainer = document.getElementById('enemy-target');
+        this.currentActor = null; 
     }
 
-    // ログ出力（V0.13互換）
+    // ログ出力
     addLog(message, color = "white") {
         const div = document.createElement('div');
         div.style.color = color;
@@ -17,47 +18,35 @@ export class UIManager {
         this.logElement.appendChild(div);
         this.logElement.scrollTop = this.logElement.scrollHeight;
     }
-    
 
-    /**
-     * メインコマンドメニューの表示
-     */
     showCommands(actor, onSelect) {
         this.currentActor = actor;
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = `▼ ${actor.name} の行動選択`; // ラベルも以前の形式に
+        this.turnLabel.innerText = `▼ ${actor.name} の行動選択`; 
 
-        // 1. 攻撃ボタン (赤系: #c0392b)
         this._createButton("攻撃", "#c0392b", () => onSelect({ type: 'attack' }));
 
         actor.skills.forEach(id => {
             const skill = SkillData[id];
             if (!skill) return;
 
-            // 2. 職業に応じたメインボタンの色
             let btnColor = skill.color;
-            if (actor.job === "wizard") btnColor = "#2980b9"; // 魔法使いの魔法 (青)
-            if (actor.job === "healer") btnColor = "#27ae60"; // 癒し手の魔法 (緑)
+            if (actor.job === "wizard") btnColor = "#2980b9"; 
+            if (actor.job === "healer") btnColor = "#27ae60"; 
 
             if (skill.menu === "main") {
-                // 瞑想(紫: #9b59b6), いのり(紫: #8e44ad)
                 const mainColor = skill.id === "meditation" ? "#9b59b6" : "#8e44ad";
                 this._createButton(skill.name, mainColor, () => onSelect({ type: 'skill', detail: skill }));
             } else if (skill.menu === "magic" && !this._hasButton("魔法")) {
                 this._createButton("魔法", btnColor, () => this.showSubMenu("magic", onSelect));
             } else if (skill.menu === "skill" && !this._hasButton("スキル")) {
-                // 勇者の鼓舞(金: #f1c40f), かばう(水色: #3498db)
                 this._createButton("スキル", "#f1c40f", () => this.showSubMenu("skill", onSelect));
             }
-    });
+        });
 
-        // 3. どうぐボタン (オレンジ系: #d35400)
         this._createButton("どうぐ", "#d35400", () => this.showItemMenu(onSelect));
     }
 
-    /**
-     * 魔法・スキルの中身を表示
-     */
     showSubMenu(menuType, onSelect) {
         this.commandContainer.innerHTML = "";
         const label = menuType === "magic" ? "魔法" : "スキル";
@@ -79,9 +68,6 @@ export class UIManager {
         this._createButton("戻る", "#222", () => this.showCommands(this.currentActor, onSelect));
     }
 
-    /**
-     * アイテムメニューを表示
-     */
     showItemMenu(onSelect) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = "アイテムを選択";
@@ -99,22 +85,15 @@ export class UIManager {
         this._createButton("戻る", "#222", () => this.showCommands(this.currentActor, onSelect));
     }
     
-    /**
-     * ターゲット選択メニューを表示
-     * @param {Array} targets - 選択可能な対象リスト（enemies または party）
-     * @param {Function} onSelect - 対象決定時のコールバック
-     * @param {Function} onBack - 戻るボタンのコールバック
-     */
     showTargetMenu(targets, onSelect, onBack) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = "対象を選択してください";
 
         targets.forEach((target, i) => {
-            // 生きている対象のみボタンを表示
             if (target.is_alive()) {
                 this._createButton(
                     target.name,
-                    target.job ? "#2ecc71" : "#c0392b", // 味方は緑、敵は赤
+                    target.job ? "#2ecc71" : "#c0392b", 
                     () => onSelect(target)
                 );
             }
@@ -123,7 +102,6 @@ export class UIManager {
         this._createButton("戻る", "#222", onBack);
     }
 
-    // 内部用：ボタン生成
     _createButton(text, color, action, enabled = true) {
         const btn = document.createElement('button');
         btn.innerText = text;
@@ -135,26 +113,71 @@ export class UIManager {
         this.commandContainer.appendChild(btn);
     }
 
-    // 内部用：重複チェック
     _hasButton(text) {
         return Array.from(this.commandContainer.children).some(btn => btn.innerText === text);
     }
 
+    /**
+     * 敵のグラフィックを完全に作り直す（初期化や分裂時用）
+     */
     refreshEnemyGraphics(enemies) {
-        const stage = document.getElementById('enemy-target');
-        if (!stage) return;
+        this.enemyContainer.innerHTML = ''; 
 
-        // 一旦ステージを空にして、現在の敵リストに合わせてコンテナを再構築する
-        stage.innerHTML = enemies
-            .map((enemy, i) => {
-                if (enemy.is_alive()) {
-                    return enemy.render(i); // 生きている敵のコンテナを生成
-                } else {
-                    // 死亡時はエフェクト用に透明な場所だけ確保するか、あるいは完全に消す
-                    return `<div id="enemy-sprite-${i}" style="display:none;"></div>`;
+        enemies.forEach((enemy, index) => {
+            if (!enemy.is_alive()) return; 
+
+            const unitDiv = document.createElement('div');
+            unitDiv.className = 'enemy-unit';
+            unitDiv.id = `enemy-sprite-${index}`; 
+
+            if (enemy.isKing) {
+                unitDiv.classList.add('king-size');
+            }
+
+            const nameDiv = document.createElement('div');
+            nameDiv.className = 'enemy-label';
+            nameDiv.innerText = enemy.name;
+
+            const hpBox = document.createElement('div');
+            hpBox.className = 'enemy-hp-container';
+            
+            const hpBar = document.createElement('div');
+            hpBar.className = 'enemy-hp-bar';
+            const hpPercent = (enemy.hp / enemy.max_hp) * 100;
+            hpBar.style.width = `${hpPercent}%`;
+
+            hpBox.appendChild(hpBar);
+
+            const img = document.createElement('img');
+            img.src = enemy.img || './resource/slime.png'; 
+            img.className = 'enemy-img';
+            
+            unitDiv.appendChild(nameDiv);
+            unitDiv.appendChild(hpBox);
+            unitDiv.appendChild(img);
+
+            this.enemyContainer.appendChild(unitDiv);
+        });
+    }
+
+    /**
+     * 敵のHPバーの長さだけを更新する（エフェクトを消さないため）
+     */
+    updateEnemyHP(enemies) {
+        enemies.forEach((enemy, index) => {
+            // 既存の要素を探す
+            const hpBar = document.querySelector(`#enemy-sprite-${index} .enemy-hp-bar`);
+            if (hpBar) {
+                // HP更新
+                const hpPercent = Math.max(0, (enemy.hp / enemy.max_hp) * 100);
+                hpBar.style.width = `${hpPercent}%`;
+                
+                // もし死んでいたら、フェードアウト等の処理はEffectManagerに任せるが
+                // ここで少し透明度を下げておくなどの処理を入れても良い
+                if (!enemy.is_alive()) {
+                    // ActionExecutorのenemyDeathで処理されるのでここでは何もしなくてOK
                 }
-            })
-            .join('');
+            }
+        });
     }
 }
-    

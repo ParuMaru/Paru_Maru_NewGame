@@ -221,7 +221,7 @@ export class EffectManager {
 
             const fire = document.createElement('div');
             fire.className = 'fire-burn';
-            target.parentElement.appendChild(fire);
+            target.appendChild(fire);
 
             this.flash("rgba(255, 69, 0, 0.4)");
 
@@ -249,7 +249,7 @@ export class EffectManager {
                     const fire = document.createElement('div');
                     fire.className = 'fire-burn';
                     fire.style.marginLeft = `${(j - 1) * 15}px`;
-                    target.parentElement.appendChild(fire);
+                    target.appendChild(fire);
 
                     setTimeout(() => {
                         if (fire.parentNode) fire.parentNode.removeChild(fire);

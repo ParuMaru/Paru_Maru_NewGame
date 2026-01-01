@@ -7,7 +7,7 @@ export class BattleBGM {
         this.ctx = null;           // AudioContext
         this.isPlaying = false;    // BGM再生中フラグ
         this.allNotes = [];        // MIDIから解析した音符データ
-        this.fixedBpm = 220;       // 再生速度
+        this.fixedBpm = 180;       // 再生速度
         this.totalDuration = 0;    // 曲の総再生時間
         this.schedulerTimer = null; 
         this.nextNoteIndex = 0;    

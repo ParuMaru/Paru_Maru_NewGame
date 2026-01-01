@@ -1,5 +1,6 @@
 // main.js
 import { BattleManager } from './battle_manager.js';
+import { DebugManager } from './debug_manager.js';
 
 // ページ読み込み完了時のエントリーポイント
 window.onload = () => {
@@ -8,8 +9,14 @@ window.onload = () => {
     const startBtn = document.getElementById('start-button');
     const overlay = document.getElementById('start-overlay');
 
-    startBtn.addEventListener("click", () => {
-        game.init(); // battle_manager.js の init() を呼ぶ
-        overlay.style.display = 'none';
-    }, { once: true });
+    if (startBtn) {
+        startBtn.addEventListener("click", () => {
+            game.init(); // battle_manager.js の init() を呼ぶ
+            overlay.style.display = 'none';
+
+            //デバッグ用
+            new DebugManager(game);
+            
+        }, { once: true });
+    }
 };
