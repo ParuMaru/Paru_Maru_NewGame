@@ -28,43 +28,102 @@ export class ActionExecutor {
         }
     }
 
+    /**
+     * ダメージ計算ロジック（entities.jsの仕様に準拠）
+     * @returns {object} { damage: 数値, isCritical: bool }
+     */
+    _calculateDamage(actor, target, skill = null) {
+        let damage = 0;
+        let isCritical = false;
+
+        // --- 魔法攻撃の場合 ---
+        if (skill && skill.type === 'magic') {
+            // スキルごとの倍率設定（main.js/entities.js準拠）
+            let multiplier = 1.5;
+            if (skill.id === 'fira') multiplier = 1.1;   // 全体は少し控えめ
+            if (skill.id === 'fire') multiplier = 1.5;
+            if (skill.id === 'meteor') multiplier = 2.5; // メテオは強力
+
+            // 計算式: 魔力 * 倍率 + 乱数(0~20)
+            damage = Math.floor(actor.matk * multiplier + (Math.random() * 20));
+
+            // バフ補正（攻撃UP中は魔法も強くなる仕様）
+            if (actor.buff_turns > 0) {
+                damage = Math.floor(damage * 1.25);
+            }
+
+            // 魔法防御 (MDEF / 3) で軽減
+            damage = Math.max(1, damage - Math.floor(target.mdef / 3));
+        } 
+        // --- 物理攻撃の場合 ---
+        else {
+            // スキル倍率（物理スキルの場合）
+            let multiplier = skill ? skill.power : 1.0; 
+
+            // 計算式: 攻撃力 * 倍率 * 乱数(0.9 ~ 1.1)
+            let base = actor.atk * multiplier;
+            damage = Math.floor(base * (0.9 + Math.random() * 0.2));
+
+            // バフ補正
+            if (actor.buff_turns > 0) {
+                damage = Math.floor(damage * 1.25);
+            }
+
+            // クリティカル判定 (20%の確率で1.5倍)
+            if (Math.random() < 0.2) {
+                damage = Math.floor(damage * 1.5);
+                isCritical = true;
+            }
+
+            // 物理防御 (DEF / 2) で軽減
+            damage = Math.max(1, damage - Math.floor(target.def / 2));
+        }
+
+        return { damage, isCritical };
+    }
+
     /** 通常攻撃 */
     async _executeAttack(actor, target) {
-        this.ui.addLog(`${actor.name}の攻撃！`);
-        this.music.playAttack();
+        this.ui.addLog(`${actor.name}の攻撃！`, "#ecf0f1", true);
+        
+        // 職業で演出分岐
+        const isMagicUser = (actor.job === 'wizard' || actor.job === 'healer');
+        if (isMagicUser) this.music.playMagic();
+        else this.music.playAttack();
         
         const targets = Array.isArray(target) ? target : [target];
 
         targets.forEach(originalTarget => {
             if (!originalTarget.is_alive()) return;
 
+            // かばう判定
             const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
-            
             const targetId = this._getTargetId(finalTarget);
+            
+            // エフェクト分岐
+            if (isMagicUser) this.effects.magicExplosion(targetId);
+            else this.effects.slashEffect(targetId);
 
-            // エフェクト
-            this.effects.slashEffect(targetId);
+            // ★ダメージ計算
+            let { damage, isCritical } = this._calculateDamage(actor, finalTarget, null);
 
-            let damage = Math.max(1, actor.atk - Math.floor(finalTarget.def / 2));
+            // かばう軽減
             if (isCovered) damage = Math.floor(damage * 0.8); 
 
-            if (Math.random() < GameConfig.CRITICAL_RATE) {
-                damage = Math.floor(damage * GameConfig.CRITICAL_DAMAGE);
-                this.ui.addLog("クリティカルヒット！", "#ff4500");
-            }
-
             finalTarget.add_hp(-damage);
-            this.effects.damagePopup(damage, targetId);
             
+            // ダメージポップアップ
+            const color = isMagicUser ? "#a29bfe" : "#ff4757";
+            this.effects.damagePopup(damage, targetId, color);
+            
+            if (isCritical) this.ui.addLog("クリティカルヒット！", "#f1c40f", true);
             this.ui.addLog(`> ${finalTarget.name}に ${damage} のダメージ！`);
-
-            // 敵死亡時
+            
             if (!finalTarget.is_alive() && !finalTarget.job) {
                 this.effects.enemyDeath(targetId);
             }
         });
 
-        // ★修正：作り直し(refresh)ではなく、HP更新(update)だけ行う
         this.ui.updateEnemyHP(this.enemies);
         this.music.playDamage();
     }
@@ -72,7 +131,8 @@ export class ActionExecutor {
     /** スキル実行 */
     async _executeSkill(actor, target, skill) {
         const targets = Array.isArray(target) ? target : [target];
-        this.ui.addLog(`${actor.name}は ${skill.name} を使った！`);
+        const logColor = skill.type === 'magic' ? "#9b59b6" : "#e67e22";
+        this.ui.addLog(`${actor.name}は ${skill.name} を使った！`, logColor, true);
         
         if (skill.type !== 'res') {
             actor.add_mp(-skill.cost);
@@ -81,30 +141,29 @@ export class ActionExecutor {
         switch (skill.type) {
             case 'physical': 
                 this.music.playAttack();
-                
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
-
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
-                    
                     const targetId = this._getTargetId(finalTarget);
+                    
                     this.effects.slashEffect(targetId);
 
-                    let damage = Math.floor(actor.atk * skill.power);
-                    damage = Math.max(1, damage - Math.floor(finalTarget.def / 2));
-                    if (isCovered) damage = Math.floor(damage * 0.8); 
+                    // ★ダメージ計算
+                    let { damage, isCritical } = this._calculateDamage(actor, finalTarget, skill);
+                    if (isCovered) damage = Math.floor(damage * 0.8);
 
                     finalTarget.add_hp(-damage);
                     this.effects.damagePopup(damage, targetId);
+                    
+                    if (isCritical) this.ui.addLog("クリティカルヒット！", "#f1c40f", true);
                     this.ui.addLog(`> ${finalTarget.name}に ${damage} のダメージ！`);
                 });
-
-                // ★修正
                 this.ui.updateEnemyHP(this.enemies);
                 this.music.playDamage();
                 break;
                 
             case 'magic':
+                // 魔法ごとの演出
                 if (skill.id === 'fire') {
                     this.music.playMagicFire();
                     targets.forEach(t => this.effects.fireEffect(this._getTargetId(t)));
@@ -124,12 +183,14 @@ export class ActionExecutor {
                 
                 targets.forEach(t => {
                     if (t.is_alive()) {
-                        const m_damage = Math.floor(actor.matk * skill.power);
-                        t.add_hp(-m_damage);
+                        // ★ダメージ計算
+                        let { damage } = this._calculateDamage(actor, t, skill);
+                        
+                        t.add_hp(-damage);
                         
                         const targetId = this._getTargetId(t);
-                        this.effects.damagePopup(m_damage, targetId, "#a29bfe");
-                        this.ui.addLog(`> ${t.name}に ${m_damage} のダメージ！`);
+                        this.effects.damagePopup(damage, targetId, "#a29bfe");
+                        this.ui.addLog(`> ${t.name}に ${damage} のダメージ！`);
                         
                         if (!t.is_alive() && !t.job) {
                             this.effects.enemyDeath(targetId);
@@ -137,7 +198,6 @@ export class ActionExecutor {
                     }
                 });
                 
-                // ★修正
                 this.ui.updateEnemyHP(this.enemies);
                 this.music.playDamage();
                 break;
@@ -146,7 +206,17 @@ export class ActionExecutor {
                 this.music.playHeal();
                 targets.forEach(t => {
                     if (t.is_alive()) {
-                        const healVal = Math.floor(actor.rec * skill.power);
+                        // ★回復計算（entities.js参考）
+                        // 回復力 * スキル倍率 * 乱数(0.9~1.1)
+                        let multiplier = (skill.id === "medica") ? 0.9 : 1.0; 
+                        let variance = 0.9 + Math.random() * 0.2;
+                        let healVal = Math.floor(actor.rec * multiplier * variance);
+
+                        // 10%の確率で回復量1.5倍
+                        if (Math.random() < 0.1) {
+                            healVal = Math.floor(healVal * 1.5);
+                        }
+                        
                         t.add_hp(healVal);
                         
                         const targetId = this._getTargetId(t);
@@ -156,10 +226,10 @@ export class ActionExecutor {
                         this.ui.addLog(`> ${t.name}のHPが ${healVal} 回復した！`);
                     }
                 });
-                // 味方のHP更新はBattleManagerがやるので、ここでは何もしなくてOK
                 break;
 
             case 'res': 
+                // 蘇生処理（ここはロジックそのまま）
                 if (actor.mp >= skill.cost) {
                     actor.add_mp(-skill.cost);
                     const targetId = this._getTargetId(target);
@@ -169,7 +239,7 @@ export class ActionExecutor {
                     this.ui.addLog(`> ${target.name}が蘇生した！`, "#f1c40f");
                     this.music.playHeal();
                 } else {
-                    this.ui.addLog("MPが足りない！癒し手は自らの命を捧げた！", "#ff0000");
+                    this.ui.addLog("MPが足りない！癒し手は自らの命を捧げた！", "#ff0000", true);
                     actor.add_hp(-999999); 
                     
                     const targetId = this._getTargetId(target);
@@ -177,29 +247,31 @@ export class ActionExecutor {
 
                     target.revive(target.max_hp);
                     target.add_mp(target.max_mp);
-                    this.ui.addLog(`${target.name}が完全な状態で蘇生した！`, "#ffff00");
+                    this.ui.addLog(`${target.name}が完全な状態で蘇生した！`, "#ffff00", true);
                     this.music.playHeal(); 
                 }
                 break;
 
             case 'mp_recovery':
                 this.music.playMeditation();
-                actor.add_mp(skill.value);
+                // MP回復も少し揺らぐ
+                const mpRec = Math.floor(skill.value * (0.9 + Math.random() * 0.2));
+                actor.add_mp(mpRec);
                 const tId = this._getTargetId(actor);
                 this.effects.healEffect(tId);
-                this.effects.damagePopup(`+${skill.value}MP`, tId, "#3498db");
-                this.ui.addLog(`${actor.name}のMPが ${skill.value} 回復した！`);
+                this.effects.damagePopup(`+${mpRec}MP`, tId, "#3498db");
+                this.ui.addLog(`${actor.name}のMPが ${mpRec} 回復した！`);
                 break;
                 
             case 'buff':
                 if (skill.id === 'cover') {
                     this.music.playCover();
-                    this.ui.addLog(`${actor.name}は身構えた！`, "#3498db");
+                    this.ui.addLog(`${actor.name}は身構えた！`, "#3498db", true);
                     this.ui.addLog(` > 仲間への攻撃を身代わりする！`);
                     actor.is_covering = true; 
                 } else if(skill.id === 'encourage') {
                     this.music.playKobu();
-                    this.ui.addLog(`${actor.name}の ${skill.name}！`);
+                    this.ui.addLog(`${actor.name}の ${skill.name}！`, "#f1c40f", true);
                     targets.forEach(t => {
                         if (t.is_alive()) {
                             t.buff_turns = 3; 
@@ -212,7 +284,7 @@ export class ActionExecutor {
 
             case 'regen': 
                 this.music.playHeal();
-                this.ui.addLog(`${actor.name}は天に祈りを捧げた！`);
+                this.ui.addLog(`${actor.name}は天に祈りを捧げた！`, "#8e44ad", true);
                 this.ui.addLog(` > 味方全員に祝福が宿る！`, "#8e44ad");
                 targets.forEach(t => {
                     if (t.is_alive()) {
@@ -241,7 +313,7 @@ export class ActionExecutor {
     }
     
     async _executeItem(actor, target, item) {
-        this.ui.addLog(`${actor.name}は ${item.name} を使った！`);
+        this.ui.addLog(`${actor.name}は ${item.name} を使った！`, "#e67e22", true);
         item.count--;
         
         const targetId = this._getTargetId(target);
@@ -266,6 +338,5 @@ export class ActionExecutor {
             this.ui.addLog(` > ${target.name}のMPが ${item.value} 回復した`);
             this.effects.damagePopup(`+${item.value}MP`, targetId, "#3498db");
         }
-        // アイテムは味方に使うことが多いので、敵グラフィック更新は不要（もしくはupdateEnemyHPを使う）
     }
 }

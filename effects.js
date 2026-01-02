@@ -133,14 +133,24 @@ export class EffectManager {
         const target = document.getElementById(targetId);
         if (!target) return;
         
-        // 徐々に白く光り、上に浮き上がりながら透明になる
-        target.style.transition = "all 2.0s ease-out";
-        target.style.filter = "brightness(5) contrast(1.2) blur(2px)";
+        // もうクリックできないようにする
+        target.style.pointerEvents = "none";
+
+        // アニメーション設定（2.0秒だと長すぎるので 0.8秒に短縮）
+        target.style.transition = "all 0.8s ease-out";
+        target.style.filter = "brightness(5) contrast(1.2) blur(4px)";
         target.style.opacity = "0";
         target.style.transform = "scale(1.2) translateY(-20px)";
         
-        // 撃破の瞬間に画面を白くフラッシュ
+        // 撃破フラッシュ
         this.flash("rgba(255, 255, 255, 0.5)");
+
+        // ★追加：アニメーションが終わったら、要素自体を画面から消す（お片付け）
+        setTimeout(() => {
+            if (target.parentNode) {
+                target.parentNode.removeChild(target);
+            }
+        }, 800); // transitionの時間(0.8s)に合わせる
     }
 
     /**

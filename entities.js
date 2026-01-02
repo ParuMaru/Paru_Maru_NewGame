@@ -12,8 +12,9 @@ export class Entity {
      * @param {number} mdef - 魔法防御力
      * @param {number} spd - 素早さ
      * @param {number} rec - 回復力
+     * @param {string} img - 画像パス
      */
-    constructor(name, hp, mp, atk, def, matk, mdef, spd, rec) {
+    constructor(name, hp, mp, atk, def, matk, mdef, spd, rec, img) {
         this.name = name;
         this.max_hp = hp;
         this.max_mp = mp;
@@ -26,6 +27,8 @@ export class Entity {
         this.mdef = mdef; // 魔法防御
         this.spd = spd;   // 素早さ
         this.rec = rec;   // 回復力
+        
+        this.img = img;   //画像パス用
 
         // --- 状態フラグ ---
         this.is_covering = false; // かばう状態
@@ -112,7 +115,7 @@ export class Entity {
 export class Hero extends Entity {
     constructor() {
         // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
-        super("勇者", 240, 80, 50, 40, 20, 30, 15, 30);
+        super("勇者", 240, 80, 50, 40, 20, 30, 25, 30);
         this.job = "hero";
         this.skills = ["cover", "encourage"]; 
     }
@@ -144,13 +147,28 @@ export class Healer extends Entity {
  * スライム（Enemy）
  */
 export class Slime extends Entity {
-    constructor(isKing = true) {
+    /**
+     * コンストラクタを柔軟にする
+     * @param {boolean} isKing - 王様かどうか
+     * @param {string} name - 名前（省略可）
+     */
+    constructor(isKing = false, name = 'スライム') {
+        console.log(`スライム生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
-            super("キングスライム", 1200, 100, 60, 45, 40, 40, 8, 50);
+            // キングスライムの設定
+            super(name, 1000, 0, 70, 40, 40, 35, 20, 40, './resource/slime.png');
+            this.isKing = true;
         } else {
-            super("スライム", 350, 50, 35, 30, 25, 25, 10, 30);
+            // 通常スライムの設定
+            super(name, 300, 0, 45, 25, 30, 20, 40, 20, './resource/splited_slime.png');
+            this.isKing = false;
         }
-        this.isKing = isKing;
-        this.image = isKing ? "resource/slime.png" : "resource/splited_slime.png";
+    }
+}
+
+// 初期配置用に KingSlime クラスも用意しておくと便利
+export class KingSlime extends Slime {
+    constructor() {
+        super(true, "キングスライム");
     }
 }

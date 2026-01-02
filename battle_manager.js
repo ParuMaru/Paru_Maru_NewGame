@@ -41,6 +41,10 @@ export class BattleManager {
 
         const actor = this.state.getCurrentActor();
         
+        //現在の行動者が味方なら光らせる、敵なら光を消す
+        const partyIndex = this.state.party.indexOf(actor);
+        this.ui.highlightActiveMember(partyIndex);
+        
         //いのり
         if (actor.is_alive() && actor.regen_turns > 0) {
             // 最大HPの n% 回復
@@ -95,15 +99,51 @@ export class BattleManager {
     async checkSplitting() {
         for (let i = 0; i < this.state.enemies.length; i++) {
             const enemy = this.state.enemies[i];
+            
+            // HPが半分以下になったら分裂
             if (enemy.isKing && enemy.hp <= (enemy.max_hp / 2) && enemy.is_alive()) {
-                this.ui.addLog(`${enemy.name}が三体に分裂した！`, "#ff00ff");
-                this.bgm.playMagicMeteor(); // 演出用SE
-
-                // キングを消して通常スライム3体を追加
-                this.state.enemies.splice(i, 1, new Slime(false,'スライムA'), new Slime(false,'スライムB'), new Slime(false,'スライムC'));
                 
-                // 敵のグラフィックを再生成させる（UIManagerに依頼）
+                // 1. 予兆：ログを出してSEを鳴らす
+                this.ui.addLog(`${enemy.name}の体が震えだした...！`, "#ff00ff");
+                this.bgm.playMagicMeteor(); // 重厚な音（代用）
+
+                // 2. アニメーション：キングスライムを震わせて点滅させる
+                const kingSprite = document.getElementById(`enemy-sprite-${i}`);
+                if (kingSprite) {
+                    const img = kingSprite.querySelector('img');
+                    if (img) {
+                        // styles.css に定義済みの .splitting (shake-split) を付与
+                        img.classList.add('splitting'); 
+                    }
+                }
+
+                // 3. 溜め時間
+                await new Promise(r => setTimeout(r, 1200));
+
+                // 4. 分裂実行！
+                this.ui.addLog(`${enemy.name}は三体に分裂した！`, "#ff00ff");
+                
+                // データ上で入れ替え
+                this.state.enemies.splice(i, 1, 
+                    new Slime(false,'スライムA'), 
+                    new Slime(false,'スライムB'), 
+                    new Slime(false,'スライムC')
+                );
+                
+                // 画面を更新（これで3体が表示される）
                 this.ui.refreshEnemyGraphics(this.state.enemies);
+
+                // 5. 登場演出：3体が左右に広がるアニメーションを付与
+                // （refreshEnemyGraphics直後なのでDOMが存在する）
+                const spriteA = document.getElementById(`enemy-sprite-${i}`);     // 真ん中（A）
+                const spriteB = document.getElementById(`enemy-sprite-${i+1}`);   // 右（B）
+                const spriteC = document.getElementById(`enemy-sprite-${i+2}`);   // 左（C）
+
+                // CSSクラスで現れる動きをつける
+                if (spriteA) spriteA.classList.add('appear-right');
+                if (spriteC) spriteC.classList.add('appear-left');
+                
+                // 少し待ってプレイヤーに認識させる
                 await new Promise(r => setTimeout(r, 1000));
             }
         }
@@ -313,8 +353,7 @@ export class BattleManager {
                 this.cleanup();
 
                 // 新しいバトルを開始（ページリロードに近い挙動）
-                // 簡易的にリロードするのが一番バグが少ないですが、
-                // JSだけでリセットするなら new BattleManager() し直します
+
                 location.reload(); 
             };
         }, 1000); // 1秒余韻を持たせる

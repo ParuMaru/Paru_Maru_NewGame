@@ -148,7 +148,7 @@ export class BattleBGM {
 
     playBGM() {
         this.initContext();
-        this.stop(); 
+        this.stopBGM(); 
         this.isPlaying = true;
         this.nextNoteIndex = 0;
         this.startTime = this.ctx.currentTime + 0.2;
@@ -174,7 +174,7 @@ export class BattleBGM {
         this.schedulerTimer = setTimeout(() => this.schedule(), 200);
     }
 
-    stop() {
+    stopBGM() {
         this.isPlaying = false;
         if (this.schedulerTimer) clearTimeout(this.schedulerTimer);
         if (this.victoryLoopTimer) {
@@ -186,7 +186,7 @@ export class BattleBGM {
     }
 
     playVictoryFanfare() {
-        this.stop(); 
+        this.stopBGM(); 
         this.initContext();
         this.isPlaying = false;
 

@@ -11,10 +11,16 @@ export class UIManager {
     }
 
     // ログ出力
-    addLog(message, color = "white") {
+    addLog(message, color = "white",isBold = false) {
         const div = document.createElement('div');
         div.style.color = color;
         div.innerHTML = message;
+        
+        if (isBold) {
+            div.style.fontWeight = "bold";
+            div.style.fontSize = "15px"; // 太字のときは少し大きく
+        }
+        
         this.logElement.appendChild(div);
         this.logElement.scrollTop = this.logElement.scrollHeight;
     }
@@ -179,5 +185,28 @@ export class UIManager {
                 }
             }
         });
+    }
+    
+    /**
+     * 現在の行動者を強調表示する
+     * @param {number} actorIndex - 行動者のパーティ内インデックス（0~2）
+     * 敵のターンの場合は -1 などを渡して解除する
+     */
+    highlightActiveMember(actorIndex) {
+        // 全員のハイライトを一旦消す
+        for (let i = 0; i < 3; i++) { // パーティは最大3人と仮定
+            const card = document.getElementById(`card-${i}`);
+            if (card) {
+                card.classList.remove('active-member');
+            }
+        }
+
+        // 指定されたインデックスのキャラだけ光らせる
+        if (actorIndex >= 0) {
+            const activeCard = document.getElementById(`card-${actorIndex}`);
+            if (activeCard) {
+                activeCard.classList.add('active-member');
+            }
+        }
     }
 }
