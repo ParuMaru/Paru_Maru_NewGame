@@ -7,23 +7,37 @@ export class EnemyAI {
      * @param {Array} party - 生存している味方パーティ
      */
     think(enemy, party) {
-        // ターゲットがいなければ何もしない（エラー回避）
+        // ターゲットがいなければ何もしない
         if (!party || party.length === 0) {
             return { type: 'wait', target: null };
         }
 
         // --- キングスライムの行動パターン ---
         if (enemy.isKing) {
-            // 3割の確率で「のしかかり」を使用
-            // ※HPが減って分裂した後は通常スライムになるので使わなくなる
+            // 3割の確率で全体攻撃「のしかかり」
             if (Math.random() < 0.3) {
-                // skills.jsから読み込む
                 const skill = SkillData.body_slam;
+                if (skill) {
+                    return {
+                        type: 'skill',
+                        target: party, 
+                        detail: skill
+                    };
+                }
+            }
+        } 
+        // --- 通常スライムの行動パターン ---
+        else {
+            // 3割の確率で強攻撃「消化液」を使用
+            if (Math.random() < 0.3) {
+                const skill = SkillData.acid;
+                // ランダムに誰かを狙う
+                const target = party[Math.floor(Math.random() * party.length)];
                 
                 if (skill) {
                     return {
                         type: 'skill',
-                        target: party, // 全体攻撃なのでパーティ全員をターゲットに
+                        target: target,
                         detail: skill
                     };
                 }
@@ -31,7 +45,7 @@ export class EnemyAI {
         }
 
         // --- 通常攻撃（デフォルト） ---
-        // ランダムに一人を狙う
+        // 上記の条件に当てはまらなかったら、ランダムに殴る
         const target = party[Math.floor(Math.random() * party.length)];
         return {
             type: 'attack',

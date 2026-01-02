@@ -4,34 +4,31 @@
 export class EffectManager {
 
     /**
-     * 斬撃エフェクト：赤い斜めの閃光を表示
-     * @param {string} targetId - エフェクトを表示する対象の要素ID
+     * 斬撃エフェクト（勇者・敵用）
      */
     slashEffect(targetId) {
-        let target = document.getElementById(targetId);
+        const target = document.getElementById(targetId);
         if (!target) return;
 
-        // ターゲットが画像(img)の場合は、レイアウト崩れを防ぐため親コンテナ(div)を対象にする
-        if (target.tagName === 'IMG') {
-            target = target.parentElement;
-        }
-            
-        target.style.position = 'relative'; 
-        target.style.overflow = 'visible';
-            
-        // 斬撃用のdiv要素（CSS: .slash-line）を生成して追加
+        // 斬撃の線を出す（これはそのまま）
         const slash = document.createElement('div');
         slash.className = 'slash-line';
-        slash.style.zIndex = "200";
         target.appendChild(slash);
 
-        // アニメーションが終わる0.15秒後に要素を削除
-        setTimeout(() => {
-            slash.remove();
-        }, 150);
 
-        // 斬撃の衝撃を表現するためにターゲットを揺らす
-        this.shake(targetId);
+        const img = target.querySelector('img'); 
+        const shakeTarget = img ? img : target; // 画像があれば画像、なければ枠
+
+        // 3. 振動クラスを付与
+        shakeTarget.classList.add('damage-shake');
+
+        // 4. アニメーション終了後にお片付け
+        setTimeout(() => {
+            if (target.contains(slash)) {
+                target.removeChild(slash);
+            }
+            shakeTarget.classList.remove('damage-shake');
+        }, 200); // 0.2秒後に消す
     }
     
     /**

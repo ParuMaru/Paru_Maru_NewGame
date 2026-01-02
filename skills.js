@@ -17,5 +17,6 @@ export const SkillData = {
 
     //　スライム
     body_slam: {id: "body_slam", name: "のしかかり",power: 1.2, type: "physical", target: "all"},
-
+    acid:      {id: "acid",      name: "消化液",     power: 1.7, type: "physical", target: "single", color: "#2ecc71"},
 };
+

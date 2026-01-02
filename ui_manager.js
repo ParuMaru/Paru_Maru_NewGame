@@ -18,11 +18,11 @@ export class UIManager {
         
         if (isBold) {
             div.style.fontWeight = "bold";
-            div.style.fontSize = "15px"; // 太字のときは少し大きく
+            div.style.fontSize = "15px"; 
         }
         
-        this.logElement.appendChild(div);
-        this.logElement.scrollTop = this.logElement.scrollHeight;
+        this.logElement.prepend(div); // 最新を上に
+        this.logElement.scrollTop = 0;
     }
 
     showCommands(actor, onSelect) {
@@ -61,10 +61,19 @@ export class UIManager {
         this.currentActor.skills.forEach(id => {
             const skill = SkillData[id];
             if (skill && skill.menu === menuType) {
-                const canUse = this.currentActor.mp >= skill.cost;
+                const canUse = (this.currentActor.mp >= skill.cost) || (skill.id === 'raise');
+                
+                let btnText = `${skill.name} (${skill.cost})`;
+                let btnColor = skill.color;
+                
+                if (skill.id === 'raise' && this.currentActor.mp < skill.cost) {
+                    btnText = "命の代償";
+                    btnColor = "#e74c3c"; 
+                }
+                
                 this._createButton(
-                    `${skill.name} (${skill.cost})`,
-                    skill.color,
+                    btnText,
+                    btnColor,
                     () => onSelect({ type: 'skill', detail: skill }),
                     canUse
                 );
@@ -91,21 +100,70 @@ export class UIManager {
         this._createButton("戻る", "#222", () => this.showCommands(this.currentActor, onSelect));
     }
     
+    /**
+     * ターゲット選択メニュー
+     * 敵も味方もクリックで選べるように改良
+     */
     showTargetMenu(targets, onSelect, onBack) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = "対象を選択してください";
 
-        targets.forEach((target, i) => {
-            if (target.is_alive()) {
-                this._createButton(
-                    target.name,
-                    target.job ? "#2ecc71" : "#c0392b", 
-                    () => onSelect(target)
-                );
+        // --- クリック選択機能 ---
+
+        // 1. まず変数を定義する（ここが重要！）
+        const enemyUnits = document.querySelectorAll('.enemy-unit');
+        const memberCards = document.querySelectorAll('.member-card');
+
+        // 2. お掃除関数を定義
+        const cleanupClickEvents = () => {
+            enemyUnits.forEach(u => {
+                u.classList.remove('target-candidate');
+                u.onclick = null;
+            });
+            memberCards.forEach(c => {
+                c.classList.remove('target-candidate');
+                c.onclick = null;
+            });
+        };
+
+        // 3. コールバックのラップ
+        const wrappedOnSelect = (target) => {
+            cleanupClickEvents();
+            onSelect(target);
+        };
+        const wrappedOnBack = () => {
+            cleanupClickEvents();
+            onBack();
+        };
+
+        // 4. クリックイベントの付与
+        // 敵キャラ
+        enemyUnits.forEach(unit => {
+            if (unit._enemyRef && targets.includes(unit._enemyRef)) {
+                unit.classList.add('target-candidate');
+                unit.onclick = () => wrappedOnSelect(unit._enemyRef);
             }
         });
 
-        this._createButton("戻る", "#222", onBack);
+        // 味方キャラ
+        memberCards.forEach(card => {
+            if (card._memberRef && targets.includes(card._memberRef)) {
+                card.classList.add('target-candidate');
+                card.onclick = () => wrappedOnSelect(card._memberRef);
+            }
+        });
+
+        // --- ボタン生成（従来の方法） ---
+        
+        targets.forEach((target, i) => {
+            this._createButton(
+                target.name,
+                target.job ? "#2ecc71" : "#c0392b", 
+                () => wrappedOnSelect(target)
+            );
+        });
+
+        this._createButton("戻る", "#222", wrappedOnBack);
     }
 
     _createButton(text, color, action, enabled = true) {
@@ -123,11 +181,16 @@ export class UIManager {
         return Array.from(this.commandContainer.children).some(btn => btn.innerText === text);
     }
 
-    /**
-     * 敵のグラフィックを完全に作り直す（初期化や分裂時用）
-     */
     refreshEnemyGraphics(enemies) {
         this.enemyContainer.innerHTML = ''; 
+
+        Object.assign(this.enemyContainer.style, {
+            display: 'grid',
+            gridTemplateColumns: `repeat(${enemies.length}, 1fr)`, 
+            width: '100%',
+            justifyItems: 'center', 
+            alignItems: 'end'       
+        });
 
         enemies.forEach((enemy, index) => {
             if (!enemy.is_alive()) return; 
@@ -135,6 +198,12 @@ export class UIManager {
             const unitDiv = document.createElement('div');
             unitDiv.className = 'enemy-unit';
             unitDiv.id = `enemy-sprite-${index}`; 
+            
+            // DOM要素に敵データを埋め込む（クリック選択用）
+            unitDiv._enemyRef = enemy;
+
+            unitDiv.style.gridColumn = index + 1;
+            unitDiv.style.gridRow = 1; 
 
             if (enemy.isKing) {
                 unitDiv.classList.add('king-size');
@@ -166,42 +235,23 @@ export class UIManager {
         });
     }
 
-    /**
-     * 敵のHPバーの長さだけを更新する（エフェクトを消さないため）
-     */
     updateEnemyHP(enemies) {
         enemies.forEach((enemy, index) => {
-            // 既存の要素を探す
             const hpBar = document.querySelector(`#enemy-sprite-${index} .enemy-hp-bar`);
             if (hpBar) {
-                // HP更新
                 const hpPercent = Math.max(0, (enemy.hp / enemy.max_hp) * 100);
                 hpBar.style.width = `${hpPercent}%`;
-                
-                // もし死んでいたら、フェードアウト等の処理はEffectManagerに任せるが
-                // ここで少し透明度を下げておくなどの処理を入れても良い
-                if (!enemy.is_alive()) {
-                    // ActionExecutorのenemyDeathで処理されるのでここでは何もしなくてOK
-                }
             }
         });
     }
     
-    /**
-     * 現在の行動者を強調表示する
-     * @param {number} actorIndex - 行動者のパーティ内インデックス（0~2）
-     * 敵のターンの場合は -1 などを渡して解除する
-     */
     highlightActiveMember(actorIndex) {
-        // 全員のハイライトを一旦消す
-        for (let i = 0; i < 3; i++) { // パーティは最大3人と仮定
+        for (let i = 0; i < 3; i++) { 
             const card = document.getElementById(`card-${i}`);
             if (card) {
                 card.classList.remove('active-member');
             }
         }
-
-        // 指定されたインデックスのキャラだけ光らせる
         if (actorIndex >= 0) {
             const activeCard = document.getElementById(`card-${actorIndex}`);
             if (activeCard) {

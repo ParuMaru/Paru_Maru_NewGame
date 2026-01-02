@@ -24,7 +24,10 @@ export class BattleBGM {
             'meditation': './resource/meditation.mp3',
             'kobu': './resource/kobu.mp3',
             'cover': './resource/cover.mp3',
-            'damage': './resource/damage.mp3'
+            'splited': './resource/splited.mp3',
+            'bukubuku': './resource/bukubuku.mp3',
+            'damage': './resource/damage.mp3',
+            'poison': './resource/poison.mp3'
         };
         
         this.victoryLoopTimer = null;
@@ -250,7 +253,7 @@ export class BattleBGM {
     }
 
     /**
-     * ★追加：URLからMIDIファイルを読み込んで解析する
+     * URLからMIDIファイルを読み込んで解析する
      */
     async loadMidiFromUrl(url) {
         try {
@@ -264,7 +267,7 @@ export class BattleBGM {
     }
 
     /**
-     * ★変更：loadMidiFromFileのロジックをバッファ処理用に分離
+     * loadMidiFromFileのロジックをバッファ処理用に分離
      */
     parseMidiBuffer(buffer) {
         const data = new DataView(buffer);
@@ -337,7 +340,10 @@ export class BattleBGM {
     playMeditation(){ this.playSE('meditation'); }
     playKobu(){ this.playSE('kobu'); }
     playCover(){ this.playSE('cover'); }
-
+    playSplited(){this.playSE('splited');}
+    playBukubuku(){this.playSE('bukubuku');}
+    playPoison(){this.playSE('poison');}
+    
     playDamage() {
         if (!this.ctx) this.initContext();
         const now = this.ctx.currentTime;

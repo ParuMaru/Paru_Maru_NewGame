@@ -100,51 +100,14 @@ export class BattleManager {
         for (let i = 0; i < this.state.enemies.length; i++) {
             const enemy = this.state.enemies[i];
             
-            // HPが半分以下になったら分裂
+            // 条件：王様 かつ HP半分以下 かつ 生存
             if (enemy.isKing && enemy.hp <= (enemy.max_hp / 2) && enemy.is_alive()) {
                 
-                // 1. 予兆：ログを出してSEを鳴らす
-                this.ui.addLog(`${enemy.name}の体が震えだした...！`, "#ff00ff");
-                this.bgm.playMagicMeteor(); // 重厚な音（代用）
-
-                // 2. アニメーション：キングスライムを震わせて点滅させる
-                const kingSprite = document.getElementById(`enemy-sprite-${i}`);
-                if (kingSprite) {
-                    const img = kingSprite.querySelector('img');
-                    if (img) {
-                        // styles.css に定義済みの .splitting (shake-split) を付与
-                        img.classList.add('splitting'); 
-                    }
-                }
-
-                // 3. 溜め時間
-                await new Promise(r => setTimeout(r, 1200));
-
-                // 4. 分裂実行！
-                this.ui.addLog(`${enemy.name}は三体に分裂した！`, "#ff00ff");
+                // ★すべて Executor に丸投げ！
+                await this.executor.executeSplit(i);
                 
-                // データ上で入れ替え
-                this.state.enemies.splice(i, 1, 
-                    new Slime(false,'スライムA'), 
-                    new Slime(false,'スライムB'), 
-                    new Slime(false,'スライムC')
-                );
-                
-                // 画面を更新（これで3体が表示される）
-                this.ui.refreshEnemyGraphics(this.state.enemies);
-
-                // 5. 登場演出：3体が左右に広がるアニメーションを付与
-                // （refreshEnemyGraphics直後なのでDOMが存在する）
-                const spriteA = document.getElementById(`enemy-sprite-${i}`);     // 真ん中（A）
-                const spriteB = document.getElementById(`enemy-sprite-${i+1}`);   // 右（B）
-                const spriteC = document.getElementById(`enemy-sprite-${i+2}`);   // 左（C）
-
-                // CSSクラスで現れる動きをつける
-                if (spriteA) spriteA.classList.add('appear-right');
-                if (spriteC) spriteC.classList.add('appear-left');
-                
-                // 少し待ってプレイヤーに認識させる
-                await new Promise(r => setTimeout(r, 1000));
+                // 敵の数やメンバーが変わったので、行動順だけ再計算しておく
+                this.state.calculateTurnOrder();
             }
         }
     }
@@ -269,6 +232,9 @@ export class BattleManager {
             document.getElementById(`p${i}-mp-bar`).style.width = `${(p.mp / p.max_mp) * 100}%`;
             
             const card = document.getElementById(`card-${i}`);
+            // クリック選択用に、カードに「データ本体」への参照を埋め込んでおく
+            if (card) card._memberRef = p;
+            
             card.style.opacity = p.is_alive() ? "1" : "0.5";
             card.style.position = "relative"; 
 
@@ -298,6 +264,7 @@ export class BattleManager {
 
     
     async _startExecute(actor, action) {
+        if (this.isProcessing) return;
         this.isProcessing = true;
         
         // ターゲットがまだ決まっていない場合（念のため）
@@ -315,7 +282,7 @@ export class BattleManager {
     }
     
     cleanup() {
-        if (this.bgm) this.bgm.stop(); // BGM停止
+        if (this.bgm) this.bgm.stopBGM(); // BGM停止
         this.isProcessing = false;
     }
 

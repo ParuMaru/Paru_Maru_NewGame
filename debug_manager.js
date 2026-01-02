@@ -8,10 +8,8 @@ export class DebugManager {
     }
 
     initUI() {
-        // ゲーム画面(canvas-area)の中に配置
         const gameContainer = document.getElementById('canvas-area') || document.body;
         
-        // 基準点設定
         if (getComputedStyle(gameContainer).position === 'static') {
             gameContainer.style.position = 'relative';
         }
@@ -29,7 +27,7 @@ export class DebugManager {
             color: '#f1c40f',
             borderRadius: '50%',
             cursor: 'pointer',
-            zIndex: '99999', // 最前面に
+            zIndex: '99999',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
@@ -76,7 +74,11 @@ export class DebugManager {
             fontSize: '12px',
             fontFamily: 'sans-serif',
             boxShadow: '0 4px 15px rgba(0,0,0,0.8)',
-            border: '1px solid #444'
+            border: '1px solid #444',
+            
+            // ★ここを修正！画面サイズに合わせて自動調整する設定
+            maxHeight: 'calc(100% - 90px)', 
+            overflowY: 'auto'
         });
         
         const title = document.createElement('div');
@@ -90,6 +92,8 @@ export class DebugManager {
         this.panel.appendChild(title);
 
         this.createBtn(this.panel, "❤️ 全回復", "#2ecc71", () => this.fullHeal());
+        this.createBtn(this.panel, "🩸 味方HP激減 (瀕死)", "#e74c3c", () => this.damageParty());
+        this.createBtn(this.panel, "📉 味方MP枯渇 (0)", "#3498db", () => this.emptyMP()); // ★追加
         this.createBtn(this.panel, "💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
         this.createBtn(this.panel, "🤏 敵HP半減 (分裂)", "#f39c12", () => this.halfEnemyHP());
         this.createBtn(this.panel, "☠️ 自爆 (敗北)", "#95a5a6", () => this.suicide());
@@ -112,7 +116,8 @@ export class DebugManager {
             textAlign: 'left',
             fontWeight: 'bold',
             transition: 'all 0.1s',
-            width: '100%'
+            width: '100%',
+            marginBottom: '4px'
         });
 
         btn.onclick = () => {
@@ -121,7 +126,7 @@ export class DebugManager {
             setTimeout(() => btn.style.transform = 'scale(1)', 100);
             
             onClick();
-            this.safeUpdateUI(); // ★ここを安全な更新メソッドに変更
+            this.safeUpdateUI(); 
         };
         
         btn.onmouseover = () => { btn.style.background = color; btn.style.color = '#fff'; };
@@ -130,22 +135,18 @@ export class DebugManager {
         parent.appendChild(btn);
     }
 
-    // ★安全な画面更新メソッド（新旧両対応）
     safeUpdateUI() {
-        // 新しい BattleManager (updateUIがある)
         if (typeof this.game.updateUI === 'function') {
             this.game.updateUI();
             if (this.game.ui && this.game.ui.updateEnemyHP) {
                 this.game.ui.updateEnemyHP(this.game.state.enemies);
             }
         } 
-        // 古い BattleManager (update_displayがある)
         else if (typeof this.game.update_display === 'function') {
             this.game.update_display();
         }
     }
 
-    // --- データの取得ヘルパー ---
     getParty() {
         return this.game.state ? this.game.state.party : this.game.party;
     }
@@ -158,7 +159,6 @@ export class DebugManager {
     fullHeal() {
         this.getParty().forEach(p => {
             if (p.is_alive()) {
-                // 新旧メソッド対応
                 if (p.set_hp) { p.set_hp(p.max_hp); p.set_mp(p.max_mp); }
                 else { p.add_hp(p.max_hp - p.hp); p.add_mp(p.max_mp - p.mp); }
             } else {
@@ -168,6 +168,30 @@ export class DebugManager {
             }
         });
         this.game.ui.addLog("[DEBUG] 全回復しました", "#2ecc71", true);
+    }
+
+    damageParty() {
+        this.getParty().forEach(p => {
+            if (p.is_alive()) {
+                const current = p.hp !== undefined ? p.hp : p.get_hp();
+                const damage = current - 1;
+                if (p.set_hp) p.set_hp(-damage);
+                else p.add_hp(-damage);
+            }
+        });
+        this.game.ui.addLog("[DEBUG] 味方が瀕死になった！", "#e74c3c", true);
+    }
+
+    // ★追加：MPを0にする
+    emptyMP() {
+        this.getParty().forEach(p => {
+            if (p.is_alive()) {
+                const current = p.mp !== undefined ? p.mp : p.get_mp();
+                if (p.set_mp) p.set_mp(-current);
+                else p.add_mp(-current);
+            }
+        });
+        this.game.ui.addLog("[DEBUG] MPが枯渇した！", "#3498db", true);
     }
 
     killEnemies() {

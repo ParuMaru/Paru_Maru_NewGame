@@ -80,11 +80,19 @@ export class Entity {
         this._hp = Math.max(0, Math.min(this.max_hp, hp_amount));
         if (this._hp > 0) {
             this.is_dead = false;
+            this.clear_all_buffs();
         }
     }
 
     is_alive() {
         return !this.is_dead;
+    }
+    
+    clear_all_buffs() {
+        this.buff_turns = 0;
+        this.regen_turns = 0;
+        this.is_covering = false;
+        // 他にもリセットしたいフラグがあればここに追加
     }
 
     /**
