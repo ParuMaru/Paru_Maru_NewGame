@@ -23,6 +23,39 @@ body {
     }
 }
 
+/* --- スマホ用サイズ調整機能 --- */
+
+/* スライダーエリア */
+#size-control {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    z-index: 99999;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 20px;
+    color: white;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+}
+
+#size-control input {
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+/* ゲーム画面全体を包むラッパー */
+#game-wrapper {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+    /* 拡大縮小の基準点を「上・中央」にする */
+    transform-origin: top center;
+    transition: transform 0.1s ease-out;
+}
+
+
 /* --- スタート画面（オーバーレイ） --- */
 #start-overlay {
     position: fixed;
@@ -504,13 +537,16 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* ターゲット候補になった時の強調表示 */
 .target-candidate {
     cursor: pointer; /* 指カーソルにする */
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.8)); /* 白く光らせる */
+    /* 修正: ぼかしを5px→3pxに、透明度を0.8→0.5に下げて控えめに */
+    filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)); 
     transition: all 0.2s;
 }
 
 /* ホバー時はさらに強く光る */
 .target-candidate:hover {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 10px gold); /* 金色に光る */
+    /* 修正: 拡大率を1.05→1.03に抑える */
+    transform: scale(1.03);
+    /* 修正: ぼかしを10px→6pxに下げ、色も少し落ち着かせる */
+    filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.7)); /* 透明度付きの金色 */
     z-index: 10;
 }
