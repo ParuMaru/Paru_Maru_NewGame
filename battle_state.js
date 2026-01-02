@@ -4,9 +4,9 @@ export class BattleState {
     constructor() {
         // 1. 味方の生成
         this.party = [
-            new Hero(),
-            new Wizard(),
-            new Healer()
+            new Hero("勇者ぱるむ"),
+            new Wizard("魔法使いはな"),
+            new Healer("癒し手なつ")
         ];
 
         // 2. 敵の生成（初期はキングスライム）

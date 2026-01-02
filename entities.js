@@ -113,9 +113,9 @@ export class Entity {
  * 勇者（Hero）
  */
 export class Hero extends Entity {
-    constructor() {
+    constructor(name = "勇者") {
         // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
-        super("勇者", 240, 80, 50, 40, 20, 30, 25, 30);
+        super(name, 240, 80, 50, 40, 20, 30, 25, 30);
         this.job = "hero";
         this.skills = ["cover", "encourage"]; 
     }
@@ -125,8 +125,8 @@ export class Hero extends Entity {
  * 魔法使い（Wizard）
  */
 export class Wizard extends Entity {
-    constructor() {
-        super("魔法使い", 180, 150, 20, 20, 70, 50, 12, 40);
+    constructor(name = "魔法使い") {
+        super(name, 180, 150, 20, 20, 70, 50, 12, 40);
         this.job = "wizard";
         this.skills = ["fire", "fira", "meteor", "meditation"];
     }
@@ -136,8 +136,8 @@ export class Wizard extends Entity {
  * 癒し手（Healer）
  */
 export class Healer extends Entity {
-    constructor() {
-        super("癒し手", 200, 150, 25, 25, 30, 60, 10, 80);
+    constructor(name = "癒し手") {
+        super(name, 200, 150, 25, 25, 30, 60, 10, 80);
         this.job = "healer";
         this.skills = ["heal", "medica", "prayer", "raise"];
     }

@@ -255,9 +255,16 @@ export class BattleManager {
 
     updateUI() {
         this.state.party.forEach((p, i) => {
-            // 基本ステータス更新
-            document.getElementById(`p${i}-hp-text`).innerText = `HP: ${p.hp}`;
-            document.getElementById(`p${i}-mp-text`).innerText = `MP: ${p.mp}`;
+            // ★追加：名前の表示も更新する
+            const nameLabel = document.getElementById(`p${i}-name`);
+            if (nameLabel) {
+                nameLabel.innerText = p.name;
+            }
+
+            // ステータス更新（最大値表示込み）
+            document.getElementById(`p${i}-hp-text`).innerText = `HP: ${p.hp} / ${p.max_hp}`;
+            document.getElementById(`p${i}-mp-text`).innerText = `MP: ${p.mp} / ${p.max_mp}`;
+            
             document.getElementById(`p${i}-hp-bar`).style.width = `${(p.hp / p.max_hp) * 100}%`;
             document.getElementById(`p${i}-mp-bar`).style.width = `${(p.mp / p.max_mp) * 100}%`;
             
@@ -265,35 +272,26 @@ export class BattleManager {
             card.style.opacity = p.is_alive() ? "1" : "0.5";
             card.style.position = "relative"; 
 
-            // --- ステータスバッジ処理（CSSクラス版） ---
-            
-            // コンテナ取得 or 作成
+            // --- ステータスバッジ処理 ---
             let badgeContainer = card.querySelector('.status-container');
             if (!badgeContainer) {
                 badgeContainer = document.createElement('div');
-                badgeContainer.className = 'status-container'; // CSSクラスを付与
+                badgeContainer.className = 'status-container';
                 card.appendChild(badgeContainer);
             }
 
-            // バッジの中身を作成（クラスを指定するだけ！）
             let badgesHTML = "";
             if (p.is_alive()) {
-                // かばう（ターン数概念がない場合はアイコンのみ）
                 if (p.is_covering) {
                     badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
                 }
-                
-                // リジェネ（✨残りターン）
                 if (p.regen_turns > 0) {
                     badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.regen_turns}</span></div>`;
                 }
-                
-                // 攻撃UP（⚔️残りターン）
                 if (p.buff_turns > 0) {
                     badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buff_turns}</span></div>`;
                 }
             }
-            
             badgeContainer.innerHTML = badgesHTML;
         });
     }

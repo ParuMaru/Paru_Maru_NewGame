@@ -3,154 +3,216 @@
 export class DebugManager {
     constructor(battleManager) {
         this.game = battleManager;
-        this.isVisible = false; // パネルの表示状態
+        this.isVisible = false; 
         this.initUI();
     }
 
     initUI() {
-        // 1. 開閉スイッチ（画面左下のアイコン）
+        // ゲーム画面(canvas-area)の中に配置
+        const gameContainer = document.getElementById('canvas-area') || document.body;
+        
+        // 基準点設定
+        if (getComputedStyle(gameContainer).position === 'static') {
+            gameContainer.style.position = 'relative';
+        }
+
+        // 1. 開閉スイッチ
         const toggleBtn = document.createElement('div');
         toggleBtn.innerText = '🛠️';
         Object.assign(toggleBtn.style, {
-            position: 'fixed',
-            bottom: '10px',
-            left: '10px',
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
             width: '40px',
             height: '40px',
-            background: '#333',
-            color: 'white',
+            background: 'rgba(0, 0, 0, 0.6)',
+            color: '#f1c40f',
             borderRadius: '50%',
             cursor: 'pointer',
-            zIndex: '100000',
+            zIndex: '99999', // 最前面に
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             fontSize: '20px',
-            boxShadow: '2px 2px 5px rgba(0,0,0,0.5)',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 2px 5px rgba(0,0,0,0.5)',
             userSelect: 'none',
-            transition: 'transform 0.2s'
+            transition: 'all 0.2s'
         });
 
-        // クリックでパネルの表示/非表示を切り替え
         toggleBtn.onclick = () => {
             this.isVisible = !this.isVisible;
             this.panel.style.display = this.isVisible ? 'flex' : 'none';
-            toggleBtn.style.transform = this.isVisible ? 'rotate(90deg)' : 'rotate(0deg)';
-            toggleBtn.style.background = this.isVisible ? '#f1c40f' : '#333';
-            toggleBtn.style.color = this.isVisible ? 'black' : 'white';
+            
+            if (this.isVisible) {
+                toggleBtn.style.background = '#f1c40f';
+                toggleBtn.style.color = '#333';
+                toggleBtn.style.transform = 'rotate(90deg)';
+                toggleBtn.innerText = '×';
+            } else {
+                toggleBtn.style.background = 'rgba(0, 0, 0, 0.6)';
+                toggleBtn.style.color = '#f1c40f';
+                toggleBtn.style.transform = 'rotate(0deg)';
+                toggleBtn.innerText = '🛠️';
+            }
         };
-        document.body.appendChild(toggleBtn);
+        gameContainer.appendChild(toggleBtn);
 
-        // 2. メインパネル（最初は非表示）
+        // 2. メインパネル
         this.panel = document.createElement('div');
         Object.assign(this.panel.style, {
-            position: 'fixed',
-            bottom: '60px', // ボタンの上に表示
-            left: '10px',
+            position: 'absolute',
+            top: '70px',
+            right: '20px',
+            width: '160px',
             background: 'rgba(0, 0, 0, 0.9)',
             padding: '10px',
             borderRadius: '8px',
             zIndex: '99999',
-            display: 'none', // ★デフォルトは隠す
+            display: 'none',
             flexDirection: 'column',
             gap: '8px',
             color: 'white',
             fontSize: '12px',
-            fontFamily: 'monospace',
-            boxShadow: '0 0 10px rgba(0,0,0,0.5)',
-            minWidth: '160px'
+            fontFamily: 'sans-serif',
+            boxShadow: '0 4px 15px rgba(0,0,0,0.8)',
+            border: '1px solid #444'
         });
         
         const title = document.createElement('div');
-        title.innerText = '- DEBUG MENU -';
+        title.innerText = 'DEBUG MENU';
         title.style.textAlign = 'center';
-        title.style.color = '#ccc';
+        title.style.color = '#7f8c8d';
+        title.style.fontWeight = 'bold';
+        title.style.borderBottom = '1px solid #555';
+        title.style.paddingBottom = '5px';
         title.style.marginBottom = '5px';
         this.panel.appendChild(title);
 
-        // ボタンの追加
-        this.createBtn(this.panel, "❤️ 味方全回復", () => this.fullHeal());
-        this.createBtn(this.panel, "💀 敵即死 (勝利)", () => this.killEnemies());
-        this.createBtn(this.panel, "🤏 敵HP半減 (分裂)", () => this.halfEnemyHP());
-        this.createBtn(this.panel, "☠️ 自爆 (敗北)", () => this.suicide());
-        this.createBtn(this.panel, "⏭️ ターン経過", () => this.skipTurn());
+        this.createBtn(this.panel, "❤️ 全回復", "#2ecc71", () => this.fullHeal());
+        this.createBtn(this.panel, "💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
+        this.createBtn(this.panel, "🤏 敵HP半減 (分裂)", "#f39c12", () => this.halfEnemyHP());
+        this.createBtn(this.panel, "☠️ 自爆 (敗北)", "#95a5a6", () => this.suicide());
+        this.createBtn(this.panel, "⏭️ ターン経過", "#34495e", () => this.skipTurn());
 
-        document.body.appendChild(this.panel);
+        gameContainer.appendChild(this.panel);
     }
 
-    createBtn(parent, text, onClick) {
+    createBtn(parent, text, color, onClick) {
         const btn = document.createElement('button');
         btn.innerText = text;
         Object.assign(btn.style, {
             cursor: 'pointer',
             fontSize: '11px',
-            padding: '6px 10px',
-            background: '#444',
-            color: 'white',
-            border: '1px solid #666',
+            padding: '8px',
+            background: 'transparent',
+            color: color,
+            border: `1px solid ${color}`,
             borderRadius: '4px',
-            textAlign: 'left'
+            textAlign: 'left',
+            fontWeight: 'bold',
+            transition: 'all 0.1s',
+            width: '100%'
         });
 
         btn.onclick = () => {
             console.log(`[DEBUG] Execute: ${text}`);
+            btn.style.transform = 'scale(0.95)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 100);
+            
             onClick();
-            this.game.updateUI();
-            if (this.game.ui.updateEnemyHP) {
-                this.game.ui.updateEnemyHP(this.game.state.enemies);
-            } else {
-                this.game.ui.refreshEnemyGraphics(this.game.state.enemies);
-            }
+            this.safeUpdateUI(); // ★ここを安全な更新メソッドに変更
         };
         
-        btn.onmouseover = () => btn.style.background = '#666';
-        btn.onmouseout = () => btn.style.background = '#444';
+        btn.onmouseover = () => { btn.style.background = color; btn.style.color = '#fff'; };
+        btn.onmouseout = () => { btn.style.background = 'transparent'; btn.style.color = color; };
 
         parent.appendChild(btn);
     }
 
-    // --- デバッグロジック (HP直接代入エラー修正済み) ---
+    // ★安全な画面更新メソッド（新旧両対応）
+    safeUpdateUI() {
+        // 新しい BattleManager (updateUIがある)
+        if (typeof this.game.updateUI === 'function') {
+            this.game.updateUI();
+            if (this.game.ui && this.game.ui.updateEnemyHP) {
+                this.game.ui.updateEnemyHP(this.game.state.enemies);
+            }
+        } 
+        // 古い BattleManager (update_displayがある)
+        else if (typeof this.game.update_display === 'function') {
+            this.game.update_display();
+        }
+    }
+
+    // --- データの取得ヘルパー ---
+    getParty() {
+        return this.game.state ? this.game.state.party : this.game.party;
+    }
+    getEnemies() {
+        return this.game.state ? this.game.state.enemies : this.game.enemies;
+    }
+
+    // --- ロジック ---
 
     fullHeal() {
-        this.game.state.party.forEach(p => {
-            if (!p.is_alive()) p.revive(p.max_hp);
-            else p.add_hp(p.max_hp - p.hp);
-            p.add_mp(p.max_mp - p.mp);
+        this.getParty().forEach(p => {
+            if (p.is_alive()) {
+                // 新旧メソッド対応
+                if (p.set_hp) { p.set_hp(p.max_hp); p.set_mp(p.max_mp); }
+                else { p.add_hp(p.max_hp - p.hp); p.add_mp(p.max_mp - p.mp); }
+            } else {
+                p.revive(p.max_hp);
+                if (p.set_mp) p.set_mp(p.max_mp);
+                else p.add_mp(p.max_mp - p.mp);
+            }
         });
-        this.game.ui.addLog("[DEBUG] 全回復", "#2ecc71");
+        this.game.ui.addLog("[DEBUG] 全回復しました", "#2ecc71", true);
     }
 
     killEnemies() {
-        this.game.state.enemies.forEach((e, i) => {
-            e.add_hp(-e.hp); // 現在HP分のダメージを与えて0にする
+        this.getEnemies().forEach((e, i) => {
+            if (e.set_hp) e.set_hp(-9999);
+            else e.add_hp(-e.hp);
+            
             if(this.game.effects && this.game.effects.enemyDeath) {
                 this.game.effects.enemyDeath(`enemy-sprite-${i}`);
             }
         });
-        this.game.ui.addLog("[DEBUG] 敵全滅", "#e74c3c");
+        this.game.ui.addLog("[DEBUG] 敵を全滅させました", "#e74c3c", true);
         setTimeout(() => this.skipTurn(), 500);
     }
 
     halfEnemyHP() {
-        this.game.state.enemies.forEach(e => {
+        this.getEnemies().forEach(e => {
             if (e.is_alive()) {
+                const current = e.hp !== undefined ? e.hp : e.get_hp();
                 const target = Math.floor(e.max_hp / 2);
-                e.add_hp(target - e.hp); // 差分でHP調整
+                if (current > target) {
+                    const dmg = current - target;
+                    if (e.set_hp) e.set_hp(-dmg);
+                    else e.add_hp(-dmg);
+                }
             }
         });
-        this.game.ui.addLog("[DEBUG] 敵HP半減", "#f1c40f");
+        this.game.ui.addLog("[DEBUG] 敵HPを半分にしました", "#f39c12", true);
         setTimeout(() => this.skipTurn(), 500);
     }
 
     suicide() {
-        this.game.state.party.forEach(p => p.add_hp(-p.hp));
-        this.game.ui.addLog("[DEBUG] 味方全滅", "#888");
+        this.getParty().forEach(p => {
+            if (p.set_hp) p.set_hp(-9999);
+            else p.add_hp(-p.hp);
+        });
+        this.game.ui.addLog("[DEBUG] 味方が全滅しました", "#95a5a6", true);
         setTimeout(() => this.skipTurn(), 500);
     }
     
     skipTurn() {
-        this.game.ui.addLog("[DEBUG] ターン強制経過", "#bdc3c7");
-        this.game.isProcessing = false;
-        this.game.nextTurn();
+        this.game.ui.addLog("[DEBUG] ターンを経過させます", "#bdc3c7");
+        if (this.game.isProcessing !== undefined) this.game.isProcessing = false;
+        
+        if (this.game.nextTurn) this.game.nextTurn();
+        else if (this.game.finish_turn) this.game.finish_turn();
     }
 }
