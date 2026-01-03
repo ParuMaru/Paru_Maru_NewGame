@@ -21,8 +21,105 @@ body {
     body { height: 100dvh; }
 }
 
-/* --- スマホ用サイズ調整機能 --- */
+/* =========================================
+   📱 スマホ・モバイル用レスポンシブ調整
+   ========================================= */
+@media (max-width: 600px) {
 
+    /* --- 1. タイトル画面の調整 --- */
+    #title-screen {
+        padding: 20px; /* 端っこに余裕を持たせる */
+    }
+
+    .title-logo {
+        font-size: 40px; /* 文字を小さく */
+        letter-spacing: 5px;
+        text-indent: 5px;
+        margin-right: -5px;
+    }
+
+    .title-sub {
+        font-size: 14px;
+        margin-bottom: 30px;
+    }
+
+    .start-btn {
+        width: 200px;  /* ボタン幅を縮小 */
+        height: 50px;
+        font-size: 18px;
+    }
+
+    /* --- 2. 報酬画面の調整 --- */
+    .reward-title {
+        font-size: 28px; /* タイトルを小さく */
+    }
+
+    .reward-card-container {
+        flex-direction: row; /* 横並び維持 */
+        align-items: stretch;
+        gap: 8px; /* 隙間を詰める */
+        width: 100%;
+        padding: 0 10px; /* 左右に少し余白 */
+    }
+
+    /* カードを画面幅に合わせて3等分する */
+    .reward-card {
+        width: 32%; /* 3枚並べるために幅を%指定に */
+        height: auto; /* 高さは中身に合わせる */
+        min-height: 140px;
+        padding: 8px;
+    }
+
+    .reward-icon {
+        font-size: 30px; /* アイコン縮小 */
+        margin-bottom: 5px;
+    }
+
+    .reward-name {
+        font-size: 11px; /* 名前を小さく */
+        margin-bottom: 5px;
+        line-height: 1.2;
+    }
+
+    .reward-desc {
+        font-size: 9px; /* 説明文を極小に */
+        line-height: 1.1;
+        display: -webkit-box;
+        -webkit-line-clamp: 3; /* 3行以上は省略（...）にする */
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    /* --- 3. マップ画面の微調整 --- */
+    .map-node {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+        border-width: 2px;
+    }
+    .node-boss {
+        width: 60px;
+        height: 60px;
+        font-size: 30px;
+    }
+    .map-floor {
+        gap: 20px; /* ノード間隔を詰める */
+    }
+    #log {
+        font-size: 11px;       /* PCは13pxなので、少し小さく */
+        line-height: 1.3;      /* 行間も少し詰める */
+        padding: 5px;          /* 余白も減らして有効活用 */
+        min-height: 100px;     /* スマホなら少し高さを確保してもいいかも */
+    }
+    #log div {
+        padding: 1px 0;
+        border-bottom-width: 1px;
+    }
+}
+
+
+
+/* --- スマホ用サイズ調整機能 --- */
 /* スライダーエリア */
 #size-control {
     position: fixed;
