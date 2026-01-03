@@ -19,17 +19,30 @@ export class BattleManager {
         this.bgm.initAndLoad(); 
     }
 
-    setupBattle(party, inventory, enemyType) {
+    /**
+     * GameManagerから呼ばれる戦闘開始メソッド
+     * @param {Array} party 
+     * @param {Object} inventory 
+     * @param {string} enemyType 
+     * @param {string} bgmType - ★追加: BGMの種類指定
+     */
+    setupBattle(party, inventory, enemyType, bgmType = null) {
         this.state.party = party;
         this.ui.setInventory(inventory);
         
+        // ... (敵の生成ロジックは変更なし) ...
         this.state.enemies = [];
-        if (enemyType === 'king') this.state.enemies.push(new KingSlime());
-        else if (enemyType === 'dragon') this.state.enemies.push(new IceDragon());
+        if (enemyType === 'king') {
+            this.state.enemies.push(new KingSlime());
+        } 
+        else if (enemyType === 'dragon') {
+            this.state.enemies.push(new IceDragon());
+        }
         else if (enemyType === 'goblin') {
             this.state.enemies.push(new Goblin("ゴブリンA"));
             this.state.enemies.push(new Goblin("ゴブリンB"));
-        } else {
+        }
+        else {
             if (Math.random() < 0.5) {
                 this.state.enemies.push(new Slime(false, "スライムA"));
                 this.state.enemies.push(new Slime(false, "スライムB"));
@@ -39,6 +52,7 @@ export class BattleManager {
             }
         }
 
+        // ... (Executor設定などは変更なし) ...
         this.executor.party = this.state.party;
         this.executor.enemies = this.state.enemies;
         this.executor.director.party = this.state.party;
@@ -48,8 +62,16 @@ export class BattleManager {
 
         this.ui.addLog("---------- BATTLE START ----------", "#ffff00");
         this.bgm.initContext();
-        if (enemyType === 'dragon' || enemyType === 'king') this.bgm.playBGM('boss');
-        else this.bgm.playBGM('normal');
+
+        // ★変更: 指定があればそれに従う、なければ敵タイプで推測
+        if (bgmType) {
+            this.bgm.playBGM(bgmType);
+        } else {
+            // 自動判定（念のため）
+            if (enemyType === 'dragon') this.bgm.playBGM('boss');
+            else if (enemyType === 'king') this.bgm.playBGM('elite');
+            else this.bgm.playBGM('normal');
+        }
         
         this.ui.refreshEnemyGraphics(this.state.enemies);
         this.updateUI(); 

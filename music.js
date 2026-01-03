@@ -5,21 +5,31 @@
 export class BattleBGM {
     constructor() {
         this.ctx = null;           // AudioContext
-        this.isPlaying = false;    // 通常BGM再生中フラグ
+        this.isPlaying = false;    // BGM再生中フラグ
         this.allNotes = [];        // 現在再生中の音符データ
         this.fixedBpm = 180;       // 現在の再生速度
         this.baseBpm = 180;        // 通常曲の基本BPM
         
+        this.totalDuration = 0;    
+        this.schedulerTimer = null; 
+        this.nextNoteIndex = 0;    
+        this.startTime = 0;        
+        this.activeSources = [];   
+        
+        // 楽曲データ保存用
         this.bgmData = {
             normal: [], 
-            boss: []    
+            elite:  [], 
+            boss:   []    
         };
         
+        // ファイルパス設定
         this.bgmFiles = {
             normal: './resource/endtime.mid', 
-            boss:   './resource/endymion.mid' 
+            elite:  './resource/endymion.mid', 
+            boss:   './resource/Laqryma.mid'   
         };
-        
+
         this.currentType = 'normal';
         
         this.seFiles = {
@@ -38,11 +48,7 @@ export class BattleBGM {
             'breath': './resource/breath.mp3'
         };
         
-        this.victoryLoopTimer = null;
-        this.schedulerTimer = null; 
-        this.nextNoteIndex = 0;    
-        this.startTime = 0;        
-        this.activeSources = [];   
+        this.victoryLoopTimer = null; // 勝利BGMループ用タイマー
         this.seBuffers = {};       
     }
 
@@ -60,13 +66,20 @@ export class BattleBGM {
             }
         });
 
+        // 各BGMの読み込み
         const bgmPromiseNormal = this.loadMidi(this.bgmFiles.normal, 'normal');
+        
+        const bgmPromiseElite = this.loadMidi(this.bgmFiles.elite, 'elite').catch(() => {
+            console.log("エリートBGMが見つかりません。通常曲を流用します。");
+            this.bgmData.elite = null;
+        });
+
         const bgmPromiseBoss = this.loadMidi(this.bgmFiles.boss, 'boss').catch(() => {
-            console.log("ボスBGMが見つかりません。通常BGMを流用します。");
+            console.log("ボスBGMが見つかりません。エリート曲を流用します。");
             this.bgmData.boss = null; 
         });
 
-        await Promise.all([...sePromises, bgmPromiseNormal, bgmPromiseBoss]);
+        await Promise.all([...sePromises, bgmPromiseNormal, bgmPromiseElite, bgmPromiseBoss]);
         console.log("全オーディオファイルのロード完了");
     }
 
@@ -74,13 +87,17 @@ export class BattleBGM {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`File not found: ${url}`);
         const arrayBuffer = await res.arrayBuffer();
-        const targetBpm = (type === 'boss') ? 220 : 180;
+        
+        // 読み込み時のBPM解析設定
+        let targetBpm = 180;
+        if (type === 'elite') targetBpm = 220; // エリートは220
+        if (type === 'boss')  targetBpm = 236; // ボスは236
+
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
     }
     
     playSE(name, volume = 0.5) {
         if (!this.ctx || !this.seBuffers[name]) return;
-
         const source = this.ctx.createBufferSource();
         source.buffer = this.seBuffers[name];
         const gainNode = this.ctx.createGain();
@@ -97,21 +114,38 @@ export class BattleBGM {
         if (this.ctx.state === 'suspended') this.ctx.resume();
     }
     
+    /**
+     * BGM再生
+     */
     playBGM(type = 'normal') {
-        this.stopBGM(); // ファンファーレループもここで止まります
+        this.stopBGM();
         this.currentType = type;
 
-        if (type === 'boss' && this.bgmData.boss && this.bgmData.boss.length > 0) {
-            this.allNotes = this.bgmData.boss;
-            this.fixedBpm = 220; 
-        } else {
-            this.allNotes = this.bgmData.normal;
-            if (type === 'boss' && !this.bgmData.boss) {
-                this.fixedBpm = this.baseBpm * 1.2; 
+        let notesToPlay = this.bgmData.normal;
+        let bpmToUse = this.baseBpm;
+
+        // 再生時のBPM設定
+        if (type === 'boss') {
+            if (this.bgmData.boss) {
+                notesToPlay = this.bgmData.boss;
+                bpmToUse = 236; // Laqryma
+            } else if (this.bgmData.elite) {
+                notesToPlay = this.bgmData.elite;
+                bpmToUse = 220;
+            }
+        } 
+        else if (type === 'elite') {
+            if (this.bgmData.elite) {
+                notesToPlay = this.bgmData.elite;
+                bpmToUse = 220; // Endymion
             } else {
-                this.fixedBpm = this.baseBpm; 
+                notesToPlay = this.bgmData.normal;
+                bpmToUse = this.baseBpm * 1.2;
             }
         }
+
+        this.allNotes = notesToPlay;
+        this.fixedBpm = bpmToUse;
 
         if (this.allNotes && this.allNotes.length > 0) {
             this.isPlaying = true;
@@ -168,14 +202,14 @@ export class BattleBGM {
         }, (duration + 0.2) * 1000);
     }
 
-    // エイリアス
     stop() {
         this.stopBGM();
     }
 
     stopBGM() {
-        this.isPlaying = false; // これをfalseにすることでvictoryLoop内のscheduleNextも止まる仕組み
+        this.isPlaying = false;
         if (this.schedulerTimer) clearTimeout(this.schedulerTimer);
+        // ★重要: 勝利BGMのループタイマーもここで止める
         if (this.victoryLoopTimer) {
             clearTimeout(this.victoryLoopTimer);
             this.victoryLoopTimer = null;
@@ -184,7 +218,6 @@ export class BattleBGM {
         this.activeSources = [];
     }
 
-    // --- MIDI解析 ---
     parseMidiBuffer(buffer, targetBpm) {
         const data = new DataView(buffer);
         let offset = 0;
@@ -265,17 +298,19 @@ export class BattleBGM {
         osc.stop(now + 0.2);
     }
     
+    /**
+     * 勝利ファンファーレ（イントロ演奏後、ループへ移行）
+     */
     playVictoryFanfare() {
-        this.stop(); 
-        this.initContext();
-        this.isPlaying = false; // 通常BGMフラグをオフ
-
+        if (!this.ctx) return;
+        this.stopBGM();
         const now = this.ctx.currentTime + 0.1;
+        
+        // Cメジャーコードのファンファーレ（FF風）
         const C4=261.6, E4=329.6, G4=392.0, Ab4=415.3, Bb4=466.2, C5=523.2, F4=349.2, D4=293.7;
-        const s = 0.11; // テンポ設定
-        const v = 0.05; // 音量
+        const s = 0.11; 
+        const v = 0.05; 
 
-        // 1. メインフレーズ
         this.playInstr([C5, G4, E4], now + 0, 0.1, v);
         this.playInstr([C5, G4, E4], now + s, 0.1, v);
         this.playInstr([C5, G4, E4], now + s * 2, 0.1, v);
@@ -288,33 +323,24 @@ export class BattleBGM {
         this.playInstr([Bb4, F4, D4], t3 + 0.35, 0.12, v);
         this.playInstr([C5, G4, E4, 261.6], t3 + 0.47, 2.5, v + 0.02);
 
-        // 3秒後にループBGMへ移行
+        // ★追加: 3秒後にループBGMへ移行
         this.startVictoryLoop(now + 3.0);
     }
 
-    /**
-     * 指定した周波数（単音または配列による和音）を鳴らす関数
-     * ★引数に type (波形) を追加しました！
-     */
     playInstr(freqs, time, dur, vol, type = "sawtooth") {
         if (!this.ctx) return;
-        
         const tones = Array.isArray(freqs) ? freqs : [freqs];
 
         tones.forEach(f => {
             const osc = this.ctx.createOscillator();
             const g = this.ctx.createGain();
-            
-            // ★ここを変更：引数で指定された波形を使う（デフォルトはsawtooth）
             osc.type = type;
 
-            // フィルター（ブラスっぽい響きのため）
             const filter = this.ctx.createBiquadFilter();
             filter.type = "lowpass";
             filter.frequency.value = 2000;
 
             osc.frequency.setValueAtTime(f, time);
-            
             g.gain.setValueAtTime(0, time);
             g.gain.linearRampToValueAtTime(vol, time + 0.02);
             g.gain.setValueAtTime(vol * 0.8, time + 0.05); 
@@ -332,23 +358,27 @@ export class BattleBGM {
         });
     }
 
-    // ★ご指定のループ関数（playInstrの波形指定に対応済み）
+    /**
+     * ★追加: 勝利後のBGMループ処理
+     */
     startVictoryLoop(startTime) {
         const self = this;
         const scheduleNext = (time) => {
-            // 他のBGM（戦闘開始やマップ遷移で isPlaying が true に戻ったら）停止
-            if (self.isPlaying) return; 
+            // もしstopBGM()が呼ばれてisPlaying=falseになっていたら止める
+            // (注意: isPlayingは通常BGM用なので、勝利ループ中はfalseのままで正解だが、
+            //  マップに戻る時などにstopBGM()でvictoryLoopTimerがクリアされるので、ここでは単純に実行する)
+            if (self.victoryLoopTimer === null) return;
 
-            const C3=130.8, G3=196.0, C4=261.6, D4=293.7, E4=329.6, F4=349.2, G4=392.0, A4=440.0, B4=493.8, C5=523.2;
+            const C3=130.8, C4=261.6, D4=293.7, E4=329.6, F4=349.2, G4=392.0, A4=440.0, B4=493.8, C5=523.2;
 
-            // --- A. ベースライン（ドッ・ドッのリズム） ---
+            // ベース
             for (let i = 0; i < 8; i++) {
                 const t = time + i * 0.4;
                 self.playInstr([C3], t, 0.2, 0.05, "square"); 
                 self.playInstr([C4], t + 0.2, 0.1, 0.03, "square");
             }
 
-            // --- B. 凱旋メロディ（力強い旋律） ---
+            // メロディ
             const melody = [
                 { f: [C5, G4], d: 0, dur: 0.3 },
                 { f: [C5, G4], d: 0.4, dur: 0.3 },
@@ -359,22 +389,24 @@ export class BattleBGM {
             ];
 
             melody.forEach(m => {
-                // 複数の波形を重ねて音に厚みを出す
                 self.playInstr(m.f, time + m.d, m.dur, 0.06, "sawtooth");
                 self.playInstr(m.f, time + m.d, m.dur, 0.03, "square");
             });
 
-            // --- C. 背後の和音 ---
+            // 和音
             self.playInstr([E4, G4], time, 1.5, 0.03, "triangle");
             self.playInstr([F4, A4], time + 1.6, 1.5, 0.03, "triangle");
 
-            // 再帰的に次の小節を予約
+            // 再帰呼び出し（3秒ループ）
             self.victoryLoopTimer = setTimeout(() => {
                 const nextStartTime = Math.max(time + 3.2, self.ctx.currentTime + 0.1);
                 scheduleNext(nextStartTime);
             }, 3000);
         };
-
+        
+        // 初回起動
+        // タイマーIDをセットしておかないと stopBGM で止められないため、ダミーでも入れておく
+        this.victoryLoopTimer = setTimeout(() => {}, 0); 
         scheduleNext(startTime);
     }
 }

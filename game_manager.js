@@ -72,14 +72,15 @@ export class GameManager {
 
     /**
      * バトル画面を表示して開始
-     * @param {string} enemyType - 'slime', 'elite', 'boss' など
+     * @param {string} enemyType - 敵の種類
+     * @param {string} bgmType - 'normal', 'elite', 'boss' (省略可)
      */
-    startBattle(enemyType) {
+    startBattle(enemyType, bgmType = null) {
         this.hideAllScreens();
         document.getElementById('game-wrapper').style.display = 'flex';
         
-        // パーティの状態を引き継いでバトル初期化
-        this.battleManager.setupBattle(this.party, this.inventory, enemyType);
+        // bgmTypeをBattleManagerにそのまま渡す
+        this.battleManager.setupBattle(this.party, this.inventory, enemyType, bgmType);
     }
 
     /**

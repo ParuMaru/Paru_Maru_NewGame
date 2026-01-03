@@ -196,14 +196,14 @@ export class MapManager {
 
         if (node.type === 'battle') {
             const type = Math.random() < 0.6 ? 'slime' : 'goblin';
-            this.game.startBattle(type);
+            this.game.startBattle(type,'normal');
         } 
         else if (node.type === 'elite') {
             const type = 'king' ; 
-            this.game.startBattle(type); 
+            this.game.startBattle(type,'elite'); 
         } 
         else if (node.type === 'boss') {
-            this.game.startBattle('dragon'); 
+            this.game.startBattle('dragon','boss'); 
         } 
         else if (node.type === 'rest') {
             // ★変更：HP・MPを8割回復
