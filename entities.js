@@ -139,7 +139,7 @@ export class Hero extends Entity {
  */
 export class Wizard extends Entity {
     constructor(name = "魔法使い") {
-        super(name, 180, 150, 20, 20, 70, 50, 12, 40);
+        super(name, 200, 150, 20, 20, 70, 50, 12, 40);
         this.job = "wizard";
         this.skills = ["fire", "fira", "meteor", "meditation"];
     }
@@ -189,8 +189,8 @@ export class KingSlime extends Slime {
 // ゴブリン
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
-        // HP:450, ATK:65 (スライムより攻撃的)
-        super(name, 450, 0, 65, 30, 10, 20, 35, 10, './resource/goblin.png'); 
+        // HP:350, ATK:60 (スライムより攻撃的)
+        super(name, 350, 0, 60, 30, 10, 20, 35, 10, './resource/goblin.png'); 
         this.enemyType = "goblin";
     }
 }
