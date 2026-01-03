@@ -18,6 +18,7 @@ export class BattleBGM {
         
         // 楽曲データ保存用
         this.bgmData = {
+            map:    [],
             normal: [], 
             elite:  [], 
             boss:   []    
@@ -25,6 +26,7 @@ export class BattleBGM {
         
         // ファイルパス設定
         this.bgmFiles = {
+            map: './resource/map.mid',
             normal: './resource/endtime.mid', 
             elite:  './resource/endymion.mid', 
             boss:   './resource/Laqryma.mid'   
@@ -67,6 +69,7 @@ export class BattleBGM {
         });
 
         // 各BGMの読み込み
+        const bgmPromiseMap = this.loadMidi(this.bgmFiles.map, 'map');
         const bgmPromiseNormal = this.loadMidi(this.bgmFiles.normal, 'normal');
         
         const bgmPromiseElite = this.loadMidi(this.bgmFiles.elite, 'elite').catch(() => {
@@ -90,6 +93,7 @@ export class BattleBGM {
         
         // 読み込み時のBPM解析設定
         let targetBpm = 180;
+        if (type ==='map') targetBpm = 100;
         if (type === 'elite') targetBpm = 220; // エリートは220
         if (type === 'boss')  targetBpm = 236; // ボスは236
 
@@ -125,7 +129,16 @@ export class BattleBGM {
         let bpmToUse = this.baseBpm;
 
         // 再生時のBPM設定
-        if (type === 'boss') {
+        if (type === 'map'){
+            if (this.bgmData.map) {
+                notesToPlay = this.bgmData.map;
+                bpmToUse = 100; // ゆったり
+            } else {
+                // ファイルがない場合は鳴らさない（または通常曲をスローにする）
+                notesToPlay = []; 
+            }
+        }
+        else if (type === 'boss') {
             if (this.bgmData.boss) {
                 notesToPlay = this.bgmData.boss;
                 bpmToUse = 236; // Laqryma

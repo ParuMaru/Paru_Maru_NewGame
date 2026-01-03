@@ -76,9 +76,9 @@ export class MapManager {
                 let type = 'battle';
                 let icon = '⚔️';
                 
-                if (f === 10) { type = 'boss'; icon = '👿'; }
+                if (f === 10) { type = 'boss'; icon = '🐉'; }
                 else if (f === 9) { type = 'rest'; icon = '⛺'; }
-                else if (f === 4 || f === 8) { type = 'elite'; icon = '🔥'; }
+                else if (f === 4 || f === 8) { type = 'elite'; icon = '💀'; }
                 else if (f === 0) { type = 'battle'; icon = '⚔️'; }
                 else {
                     const rand = Math.random();

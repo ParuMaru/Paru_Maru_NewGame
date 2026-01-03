@@ -83,7 +83,7 @@ export class ActionExecutor {
                 });
                 this.director.music.playDamage();
                 break;
-
+                
             case 'heal':
                 this.director.music.playHeal();
                 targets.forEach(t => {

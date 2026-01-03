@@ -68,6 +68,11 @@ export class GameManager {
         this.hideAllScreens();
         this.mapManager.render();
         document.getElementById('map-screen').style.display = 'flex';
+        
+        if (this.battleManager && this.battleManager.bgm) {
+            this.battleManager.bgm.initContext();
+            this.battleManager.bgm.playBGM('map');
+        }
     }
 
     /**
