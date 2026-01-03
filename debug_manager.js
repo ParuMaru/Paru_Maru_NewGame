@@ -1,10 +1,18 @@
 // debug_manager.js
 
 export class DebugManager {
-    constructor(battleManager) {
-        this.game = battleManager;
+    constructor(gameInstance) {
+        this.game = gameInstance; // 今は GameManager が入ってくる
         this.isVisible = false; 
         this.initUI();
+    }
+
+    /**
+     * ★追加：現在アクティブなバトルマネージャーを取得する
+     * GameManager経由なら .battleManager を、直接なら自分自身を返す
+     */
+    get bm() {
+        return this.game.battleManager || this.game;
     }
 
     initUI() {
@@ -75,8 +83,6 @@ export class DebugManager {
             fontFamily: 'sans-serif',
             boxShadow: '0 4px 15px rgba(0,0,0,0.8)',
             border: '1px solid #444',
-            
-            // ★ここを修正！画面サイズに合わせて自動調整する設定
             maxHeight: 'calc(100% - 90px)', 
             overflowY: 'auto'
         });
@@ -93,7 +99,7 @@ export class DebugManager {
 
         this.createBtn(this.panel, "❤️ 全回復", "#2ecc71", () => this.fullHeal());
         this.createBtn(this.panel, "🩸 味方HP激減 (瀕死)", "#e74c3c", () => this.damageParty());
-        this.createBtn(this.panel, "📉 味方MP枯渇 (0)", "#3498db", () => this.emptyMP()); // ★追加
+        this.createBtn(this.panel, "📉 味方MP枯渇 (0)", "#3498db", () => this.emptyMP());
         this.createBtn(this.panel, "💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
         this.createBtn(this.panel, "🤏 敵HP半減 (分裂)", "#f39c12", () => this.halfEnemyHP());
         this.createBtn(this.panel, "☠️ 自爆 (敗北)", "#95a5a6", () => this.suicide());
@@ -136,107 +142,103 @@ export class DebugManager {
     }
 
     safeUpdateUI() {
-        if (typeof this.game.updateUI === 'function') {
-            this.game.updateUI();
-            if (this.game.ui && this.game.ui.updateEnemyHP) {
-                this.game.ui.updateEnemyHP(this.game.state.enemies);
+        // this.bm を使うことで、GameManager経由でも直接でも動くようにする
+        if (typeof this.bm.updateUI === 'function') {
+            this.bm.updateUI();
+            if (this.bm.ui && this.bm.ui.updateEnemyHP) {
+                this.bm.ui.updateEnemyHP(this.bm.state.enemies);
             }
         } 
-        else if (typeof this.game.update_display === 'function') {
-            this.game.update_display();
-        }
     }
 
     getParty() {
-        return this.game.state ? this.game.state.party : this.game.party;
+        // GameManagerなら .party、BattleManagerなら .state.party
+        if (this.game.party) return this.game.party;
+        return this.game.state ? this.game.state.party : [];
     }
+    
     getEnemies() {
-        return this.game.state ? this.game.state.enemies : this.game.enemies;
+        // 敵データは常に BattleState (this.bm.state) にある
+        return this.bm.state ? this.bm.state.enemies : [];
     }
 
-    // --- ロジック ---
+    // --- ロジック (this.bm を使用して実行) ---
 
     fullHeal() {
         this.getParty().forEach(p => {
             if (p.is_alive()) {
-                if (p.set_hp) { p.set_hp(p.max_hp); p.set_mp(p.max_mp); }
-                else { p.add_hp(p.max_hp - p.hp); p.add_mp(p.max_mp - p.mp); }
+                p.add_hp(p.max_hp - p.hp); 
+                p.add_mp(p.max_mp - p.mp);
             } else {
                 p.revive(p.max_hp);
-                if (p.set_mp) p.set_mp(p.max_mp);
-                else p.add_mp(p.max_mp - p.mp);
+                p.add_mp(p.max_mp - p.mp);
             }
         });
-        this.game.ui.addLog("[DEBUG] 全回復しました", "#2ecc71", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] 全回復しました", "#2ecc71", true);
     }
 
     damageParty() {
         this.getParty().forEach(p => {
             if (p.is_alive()) {
-                const current = p.hp !== undefined ? p.hp : p.get_hp();
+                const current = p.hp;
                 const damage = current - 1;
-                if (p.set_hp) p.set_hp(-damage);
-                else p.add_hp(-damage);
+                p.add_hp(-damage);
             }
         });
-        this.game.ui.addLog("[DEBUG] 味方が瀕死になった！", "#e74c3c", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] 味方が瀕死になった！", "#e74c3c", true);
     }
 
-    // ★追加：MPを0にする
     emptyMP() {
         this.getParty().forEach(p => {
             if (p.is_alive()) {
-                const current = p.mp !== undefined ? p.mp : p.get_mp();
-                if (p.set_mp) p.set_mp(-current);
-                else p.add_mp(-current);
+                const current = p.mp;
+                p.add_mp(-current);
             }
         });
-        this.game.ui.addLog("[DEBUG] MPが枯渇した！", "#3498db", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] MPが枯渇した！", "#3498db", true);
     }
 
     killEnemies() {
         this.getEnemies().forEach((e, i) => {
-            if (e.set_hp) e.set_hp(-9999);
-            else e.add_hp(-e.hp);
+            e.add_hp(-9999);
             
-            if(this.game.effects && this.game.effects.enemyDeath) {
-                this.game.effects.enemyDeath(`enemy-sprite-${i}`);
+            if(this.bm.effects && this.bm.effects.enemyDeath) {
+                this.bm.effects.enemyDeath(`enemy-sprite-${i}`);
             }
         });
-        this.game.ui.addLog("[DEBUG] 敵を全滅させました", "#e74c3c", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] 敵を全滅させました", "#e74c3c", true);
         setTimeout(() => this.skipTurn(), 500);
     }
 
     halfEnemyHP() {
         this.getEnemies().forEach(e => {
             if (e.is_alive()) {
-                const current = e.hp !== undefined ? e.hp : e.get_hp();
+                const current = e.hp;
                 const target = Math.floor(e.max_hp / 2);
                 if (current > target) {
                     const dmg = current - target;
-                    if (e.set_hp) e.set_hp(-dmg);
-                    else e.add_hp(-dmg);
+                    e.add_hp(-dmg);
                 }
             }
         });
-        this.game.ui.addLog("[DEBUG] 敵HPを半分にしました", "#f39c12", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] 敵HPを半分にしました", "#f39c12", true);
         setTimeout(() => this.skipTurn(), 500);
     }
 
     suicide() {
         this.getParty().forEach(p => {
-            if (p.set_hp) p.set_hp(-9999);
-            else p.add_hp(-p.hp);
+            p.add_hp(-9999);
         });
-        this.game.ui.addLog("[DEBUG] 味方が全滅しました", "#95a5a6", true);
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] 味方が全滅しました", "#95a5a6", true);
         setTimeout(() => this.skipTurn(), 500);
     }
     
     skipTurn() {
-        this.game.ui.addLog("[DEBUG] ターンを経過させます", "#bdc3c7");
-        if (this.game.isProcessing !== undefined) this.game.isProcessing = false;
+        if(this.bm.ui) this.bm.ui.addLog("[DEBUG] ターンを経過させます", "#bdc3c7");
         
-        if (this.game.nextTurn) this.game.nextTurn();
-        else if (this.game.finish_turn) this.game.finish_turn();
+        // 処理中フラグを強制解除
+        if (this.bm.isProcessing !== undefined) this.bm.isProcessing = false;
+        
+        if (this.bm.nextTurn) this.bm.nextTurn();
     }
 }

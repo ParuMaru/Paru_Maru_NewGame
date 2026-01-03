@@ -209,6 +209,8 @@ export class ActionExecutor {
      * @param {number} enemyIndex - 分裂する敵のインデックス
      */
     async executeSplit(enemyIndex) {
+        
+        
         const enemy = this.enemies[enemyIndex];
         
         // 1. 予兆演出

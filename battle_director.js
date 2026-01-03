@@ -22,7 +22,8 @@ export class BattleDirector {
     // --- 攻撃系の演出 ---
 
     showAttackStart(actor) {
-        this.ui.addLog(`${actor.name}の攻撃！`, "#ecf0f1", true);
+        const logColor = actor.job ? "#3498db" : "#f1c40f";
+        this.ui.addLog(`${actor.name}の攻撃！`, logColor, true);
         const isMagicUser = (actor.job === 'wizard' || actor.job === 'healer');
         
         if (isMagicUser) this.music.playMagic();
@@ -52,7 +53,7 @@ export class BattleDirector {
     // --- スキル・魔法系の演出 ---
 
     showSkillStart(actor, skill) {
-        const logColor = skill.type === 'magic' ? "#9b59b6" : "#e67e22";
+        const logColor = actor.job ? "#3498db" : "#f1c40f";
         this.ui.addLog(`${actor.name}は ${skill.name} を使った！`, logColor, true);
     }
 

@@ -8,10 +8,14 @@ export class UIManager {
         this.turnLabel = document.getElementById('turn-label');
         this.enemyContainer = document.getElementById('enemy-target');
         this.currentActor = null; 
+        this.inventory = null;
     }
-
+    
+    setInventory(inventory) {
+        this.inventory = inventory;
+    }
     // ログ出力
-    addLog(message, color = "white",isBold = false) {
+    addLog(message, color = "white",isBold = false){
         const div = document.createElement('div');
         div.style.color = color;
         div.innerHTML = message;
@@ -21,8 +25,8 @@ export class UIManager {
             div.style.fontSize = "15px"; 
         }
         
-        this.logElement.prepend(div); // 最新を上に
-        this.logElement.scrollTop = 0;
+        this.logElement.appendChild(div);
+        this.logElement.scrollTop = this.logElement.scrollHeight;
     }
 
     showCommands(actor, onSelect) {
@@ -86,8 +90,10 @@ export class UIManager {
     showItemMenu(onSelect) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = "アイテムを選択";
+        
+        const items = this.inventory || ItemData;
 
-        Object.values(ItemData).forEach(item => {
+        Object.values(items).forEach(item => {
             const canUse = item.count > 0;
             this._createButton(
                 `${item.name} (${item.count})`,

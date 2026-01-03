@@ -3,18 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>JS Battle RPG V0.14 - Modular</title>
+    <title>JS Battle RPG - Roguelike</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="start-overlay">
-        <h1 style="color: white; font-size: 3em; text-shadow: 2px 2px 4px #000;">BATTLE</h1>
-        <button id="start-button">戦闘開始</button>
+    <div id="title-screen">
+        <div class="title-logo">ぱるむの大冒険</div>
+        <div class="title-sub">The Most Cutest Cat</div>
+        <button id="game-start-btn" class="start-btn">GAME START</button>
     </div>
     
     <div id="result-overlay" style="display: none;">
         <h1 id="result-title">VICTORY</h1>
-        <button id="restart-button" class="btn">もう一度戦う</button>
+        <button id="restart-button" class="btn">つぎへ</button>
     </div>
 
     <div id="size-control">
@@ -57,6 +58,8 @@
             <div id="turn-label" style="text-align:center; margin-bottom:10px; font-weight:bold; color: white;"></div>
             <div id="command-container" class="btn-group"></div>
         </div>
-    </div> <script type="module" src="main.js"></script>
+    </div> 
+    
+    <script type="module" src="main.js"></script>
 </body>
 </html>

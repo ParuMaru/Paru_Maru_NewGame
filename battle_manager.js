@@ -3,31 +3,73 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Slime } from './entities.js';
-import { EffectManager } from './effects.js'; // これを追加！
+import { Slime, KingSlime } from './entities.js'; // ★KingSlime追加
+import { EffectManager } from './effects.js';
 
 export class BattleManager {
-    constructor() {
+    // ★変更: コンストラクタで gameManager を受け取る
+    constructor(gameManager) {
+        this.gameManager = gameManager; // 親への参照を保持
+
         this.ui = new UIManager();
         this.bgm = new BattleBGM();
         this.effects = new EffectManager();
         this.state = new BattleState();
-        this.executor = new ActionExecutor(this.ui, this.bgm, this.effects,this.state.enemies,this.state.party);
+        
+        // Executorは setupBattle でデータを更新するので、ここでは仮作成
+        this.executor = new ActionExecutor(this.ui, this.bgm, this.effects, this.state.enemies, this.state.party);
         this.ai = new EnemyAI();
         this.isProcessing = false;
+        
+        // 音声ファイルのロードだけは先に済ませておく
+        this.bgm.initAndLoad(); 
     }
 
-    async init() {
+    // ★initは削除し、代わりに setupBattle を使う
+    // async init() { ... } 
+
+    /**
+     * GameManagerから呼ばれる戦闘開始メソッド
+     * @param {Array} party - GameManagerから渡される味方配列
+     * @param {Object} inventory - アイテムデータ
+     * @param {string} enemyType - 敵の種類
+     */
+    setupBattle(party, inventory, enemyType) {
+        //  パーティ情報を同期
+        this.state.party = party;
         
-        await this.bgm.initAndLoad();
-        this.ui.addLog("戦闘開始！", "#ffff00");
+        //インベントリデータを渡す
+        this.ui.setInventory(inventory);
         
-        
+        //  敵を生成
+        this.state.enemies = [];
+        if (enemyType === 'king') {
+            this.state.enemies.push(new KingSlime());
+        } else {
+            // 通常戦闘: ランダムなスライムたち
+            this.state.enemies.push(new Slime(false, "スライムA"));
+            this.state.enemies.push(new Slime(false, "スライムB"));
+        }
+
+        //  Executor に最新のメンツを教える
+        this.executor.party = this.state.party;
+        this.executor.enemies = this.state.enemies;
+        // Executor内のDirectorにも教える必要がある
+        this.executor.director.party = this.state.party;
+        this.executor.director.enemies = this.state.enemies;
+
+        //  ターン順の初期化
+        this.state.calculateTurnOrder();
+
+        //  画面と音楽の準備
+        this.ui.addLog("---------- BATTLE START ----------", "#ffff00");
         this.bgm.initContext();
         this.bgm.playBGM();
         this.ui.refreshEnemyGraphics(this.state.enemies);
+        this.updateUI(); // 味方の表示更新
+
+        //  戦闘開始！
         this.runTurn();
-        
     }
 
     async runTurn() {
@@ -40,28 +82,21 @@ export class BattleManager {
         }
 
         const actor = this.state.getCurrentActor();
-        
-        //現在の行動者が味方なら光らせる、敵なら光を消す
+        if (!actor) return; // 安全策
+
         const partyIndex = this.state.party.indexOf(actor);
         this.ui.highlightActiveMember(partyIndex);
         
-        //いのり
+        // リジェネ処理
         if (actor.is_alive() && actor.regen_turns > 0) {
-            // 最大HPの n% 回復
             const healVal = Math.floor(actor.max_hp * actor.regen_value);
             actor.add_hp(healVal);
-            actor.regen_turns--; // 残りターンを減らす
+            actor.regen_turns--; 
 
             this.ui.addLog(`> ${actor.name}のHPが ${healVal} 回復した(祝福)`, "#2ecc71");
-            
-            // UI反映とウェイト（演出用）
             this.updateUI();
             
-            // 味方のIDを取得してエフェクト（敵のリジェネは一旦考慮外）
-            const partyIndex = this.state.party.indexOf(actor);
-            if (partyIndex >= 0) {
-                 this.effects.healEffect(`card-${partyIndex}`);
-            }
+            if (partyIndex >= 0) this.effects.healEffect(`card-${partyIndex}`);
             
             await new Promise(r => setTimeout(r, 600));
 
@@ -70,7 +105,7 @@ export class BattleManager {
             }
         }
         
-        //鼓舞
+        // バフ処理
         if (actor.is_alive() && actor.buff_turns > 0) {
             actor.buff_turns--;
             if (actor.buff_turns === 0) {
@@ -78,7 +113,7 @@ export class BattleManager {
             }
         }
         
-        //かばう
+        // かばう解除
         if (actor.is_covering) {
             actor.is_covering = false;
             this.ui.addLog(`${actor.name}は身構えるのをやめた`, "#bdc3c7"); 
@@ -100,57 +135,38 @@ export class BattleManager {
         for (let i = 0; i < this.state.enemies.length; i++) {
             const enemy = this.state.enemies[i];
             
-            // 条件：王様 かつ HP半分以下 かつ 生存
             if (enemy.isKing && enemy.hp <= (enemy.max_hp / 2) && enemy.is_alive()) {
-                
-                // ★すべて Executor に丸投げ！
+                this.isProcessing = true; 
                 await this.executor.executeSplit(i);
-                
-                // 敵の数やメンバーが変わったので、行動順だけ再計算しておく
                 this.state.calculateTurnOrder();
+                this.isProcessing = false; 
             }
         }
     }
-
     
     async handlePlayerAction(actor, action) {
         if (this.isProcessing) return;
 
-        //  スキルかつ、まだターゲットが決まっていない場合
         if (action.type === 'skill' && !action.target) {
             const skill = action.detail;
-
             if (skill.target === 'all') {
-                // 回復・蘇生・バフ・リジェネなら「味方全員」、それ以外（攻撃）なら「敵全員」
                 const isFriendSkill = ['heal', 'res', 'buff', 'regen', 'mp_recovery'].includes(skill.type) || skill.id === 'cover';
-
                 action.target = isFriendSkill ? this.state.party : this.state.getAliveEnemies();
-
                 this._startExecute(actor, action);
             } 
-            //ターゲットが自分自身の場合
             else if(skill.target ==='self'){
                 action.target = actor;
                 this._startExecute(actor,action);
-                
             }
-            // 単体ならターゲット選択画面へ
             else {
-                
                 let potentialTargets;
                 if (skill.type === 'res') {
-                    // 蘇生スキル（レイズ）は「死んでいる味方」のみ
                     potentialTargets = this.state.party.filter(m => !m.is_alive());
-                } 
-                else if (['heal', 'buff', 'regen', 'mp_recovery'].includes(skill.type)) {
-                    // その他の支援スキルは「生きている味方」のみ
+                } else if (['heal', 'buff', 'regen', 'mp_recovery'].includes(skill.type)) {
                     potentialTargets = this.state.party.filter(m => m.is_alive());
-                } 
-                else {
-                    // 攻撃スキルは「生きている敵」
+                } else {
                     potentialTargets = this.state.getAliveEnemies();
                 }
-
                 this.ui.showTargetMenu(
                     potentialTargets,
                     (selectedTarget) => {
@@ -163,7 +179,6 @@ export class BattleManager {
             return;
         }
 
-        // 攻撃の場合も単体ならターゲットを選ばせる
         if (action.type === 'attack' && !action.target) {
             this.ui.showTargetMenu(
                 this.state.getAliveEnemies(),
@@ -178,15 +193,8 @@ export class BattleManager {
         
         if (action.type === 'item' && !action.target) {
             const item = action.detail;
-
-            let potentialTargets;
-            if (item.id === 'phoenix') {
-                // フェニックスの尾は「死んでいる人」だけ選べる
-                potentialTargets = this.state.party.filter(m => !m.is_alive());
-            } else {
-                // その他のアイテム：生きている人のみ
-                potentialTargets = this.state.party.filter(m => m.is_alive());
-            }
+            let potentialTargets = (item.id === 'phoenix') ? this.state.party.filter(m => !m.is_alive()) 
+                : this.state.party.filter(m => m.is_alive());
 
             this.ui.showTargetMenu(
                 potentialTargets,
@@ -218,13 +226,9 @@ export class BattleManager {
 
     updateUI() {
         this.state.party.forEach((p, i) => {
-            // ★追加：名前の表示も更新する
             const nameLabel = document.getElementById(`p${i}-name`);
-            if (nameLabel) {
-                nameLabel.innerText = p.name;
-            }
+            if (nameLabel) nameLabel.innerText = p.name;
 
-            // ステータス更新（最大値表示込み）
             document.getElementById(`p${i}-hp-text`).innerText = `HP: ${p.hp} / ${p.max_hp}`;
             document.getElementById(`p${i}-mp-text`).innerText = `MP: ${p.mp} / ${p.max_mp}`;
             
@@ -232,13 +236,11 @@ export class BattleManager {
             document.getElementById(`p${i}-mp-bar`).style.width = `${(p.mp / p.max_mp) * 100}%`;
             
             const card = document.getElementById(`card-${i}`);
-            // クリック選択用に、カードに「データ本体」への参照を埋め込んでおく
-            if (card) card._memberRef = p;
+            if (card) card._memberRef = p; 
             
             card.style.opacity = p.is_alive() ? "1" : "0.5";
             card.style.position = "relative"; 
 
-            // --- ステータスバッジ処理 ---
             let badgeContainer = card.querySelector('.status-container');
             if (!badgeContainer) {
                 badgeContainer = document.createElement('div');
@@ -248,79 +250,71 @@ export class BattleManager {
 
             let badgesHTML = "";
             if (p.is_alive()) {
-                if (p.is_covering) {
-                    badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
-                }
-                if (p.regen_turns > 0) {
-                    badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.regen_turns}</span></div>`;
-                }
-                if (p.buff_turns > 0) {
-                    badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buff_turns}</span></div>`;
-                }
+                if (p.is_covering) badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
+                if (p.regen_turns > 0) badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.regen_turns}</span></div>`;
+                if (p.buff_turns > 0) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buff_turns}</span></div>`;
             }
             badgeContainer.innerHTML = badgesHTML;
         });
     }
-
     
     async _startExecute(actor, action) {
         if (this.isProcessing) return;
         this.isProcessing = true;
-        
-        // ターゲットがまだ決まっていない場合（念のため）
+        this.ui.commandContainer.innerHTML = "";
+
         if (!action.target) {
-            // 全体攻撃なら敵全員、回復なら自分自身などをデフォルトにする救済措置
             if (action.detail && action.detail.target === 'all') {
                 action.target = this.state.getAliveEnemies();
             } else {
                 action.target = this.state.getAliveEnemies()[0];
             }
         }
-
         await this.executor.execute(actor, action.target, action);
         this.nextTurn();
     }
     
     cleanup() {
-        if (this.bgm) this.bgm.stopBGM(); // BGM停止
+        if (this.bgm) this.bgm.stopBGM(); 
         this.isProcessing = false;
     }
 
     processEndGame() {
         const win = this.state.checkVictory();
-        
-        // 1. ログとBGMの処理
         this.bgm.stopBGM();
         if (win) {
             this.ui.addLog("戦いに勝利した！", "#f1c40f");
-            this.bgm.playVictoryFanfare(); // ファンファーレ再生！
+            this.bgm.playVictoryFanfare(); 
         } else {
             this.ui.addLog("全滅した...", "#e74c3c");
         }
 
-        // 2. リザルト画面の表示（少し待ってから）
         setTimeout(() => {
             const overlay = document.getElementById('result-overlay');
             const title = document.getElementById('result-title');
             const restartBtn = document.getElementById('restart-button');
 
-            // 勝敗で文字と色を変える
             title.innerText = win ? "VICTORY" : "DEFEAT...";
             title.className = win ? "victory-title" : "defeat-title";
 
-            overlay.style.display = 'flex'; // 表示
+            overlay.style.display = 'flex'; 
 
-            // 3. 再戦ボタンの処理
+            // ★変更: リロードではなく GameManager へ報告する
             restartBtn.onclick = () => {
-                overlay.style.display = 'none';
-                
-                // 自分自身をクリーンアップ
                 this.cleanup();
-
-                // 新しいバトルを開始（ページリロードに近い挙動）
-
-                location.reload(); 
+                
+                // 親(GameManager)に報告
+                if (this.gameManager) {
+                    if (win) {
+                        this.gameManager.onBattleWin();
+                    } else {
+                        this.gameManager.onGameOver();
+                    }
+                } else {
+                    // 万が一GameManagerがいなかった時の保険
+                    location.reload(); 
+                }
             };
-        }, 1000); // 1秒余韻を持たせる
+        }, 1000); 
     }
 }
