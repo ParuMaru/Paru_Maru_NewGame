@@ -27,7 +27,8 @@ export class BattleBGM {
             'splited': './resource/splited.mp3',
             'bukubuku': './resource/bukubuku.mp3',
             'damage': './resource/damage.mp3',
-            'poison': './resource/poison.mp3'
+            'poison': './resource/poison.mp3',
+            'breath': './resource/breath.mp3'
         };
         
         this.victoryLoopTimer = null;
@@ -343,6 +344,8 @@ export class BattleBGM {
     playSplited(){this.playSE('splited');}
     playBukubuku(){this.playSE('bukubuku');}
     playPoison(){this.playSE('poison');}
+    playBreath(){this.playSE('breath');}
+
     
     playDamage() {
         if (!this.ctx) this.initContext();

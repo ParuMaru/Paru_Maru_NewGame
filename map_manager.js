@@ -1,3 +1,5 @@
+import { ItemData } from './items.js';
+
 export class MapManager {
     constructor(gameManager) {
         this.game = gameManager;
@@ -50,8 +52,10 @@ export class MapManager {
                 else if (f > 0) {
                     const rand = Math.random();
                     if (rand < 0.15) { type = 'rest'; icon = '⛺'; }
-                    else if (rand < 0.3) { type = 'elite'; icon = '🔥'; }
-                    else if (rand < 0.45) { type = 'event'; icon = '❓'; }
+                    else if (rand < 0.35) { type = 'treasure'; icon = '🎁'; }
+                    else if (rand < 0.50) { type = 'fountain'; icon = '⛲'; }
+                    else if (rand < 0.65) { type = 'elite'; icon = '💀'; }
+                    else { type = 'battle'; icon = '⚔️'; }
                 }
 
                 floorNodes.push({
@@ -154,19 +158,58 @@ export class MapManager {
         this.currentFloor = node.floor;
         this.currentNodeIndex = node.index;
 
+        // ★敵出現パターンの変更
         if (node.type === 'battle') {
-            this.game.startBattle('slime');
-        } else if (node.type === 'elite') {
-            this.game.startBattle('king'); 
-        } else if (node.type === 'boss') {
-            this.game.startBattle('king'); 
-        } else if (node.type === 'rest') {
-            // ★変更：alert -> showMessage
+            // 通常戦闘：スライム or ゴブリン
+            const type = Math.random() < 0.6 ? 'slime' : 'goblin';
+            this.game.startBattle(type);
+        } 
+        else if (node.type === 'elite') {
+            // エリート：キングスライム or ドラゴン
+            const type = Math.random() < 0.5 ? 'king' : 'dragon';
+            this.game.startBattle(type); 
+        } 
+        else if (node.type === 'boss') {
+            // ボス：ドラゴン固定
+            this.game.startBattle('dragon'); 
+        } 
+        else if (node.type === 'rest') {
             this.game.showMessage("焚き火で休憩した。HPが50回復！");
             this.game.party.forEach(p => p.add_hp(50));
             this.render(); 
-        } else {
-            // ★変更
+        } 
+        else if (node.type === 'treasure') {
+            const itemKeys = Object.keys(ItemData);
+            const randomKey = itemKeys[Math.floor(Math.random() * itemKeys.length)];
+            const item = ItemData[randomKey];
+
+            if (!this.game.inventory[randomKey]) {
+                this.game.inventory[randomKey] = { ...item, count: 1 };
+            } else {
+                this.game.inventory[randomKey].count++;
+            }
+            this.game.showMessage(`宝箱だ！ ${item.name} を手に入れた！`);
+            this.render();
+        }
+        else if (node.type === 'fountain') {
+            if (confirm("怪しい泉があります。\n飲みますか？\n(50%で全回復 / 50%でダメージ)")) {
+                if (Math.random() < 0.5) {
+                    this.game.showMessage("なんと！ 全員のHP・MPが全回復した！");
+                    this.game.party.forEach(p => {
+                        if(p.is_alive()) { p.add_hp(999); p.add_mp(999); }
+                    });
+                } else {
+                    this.game.showMessage("うっ...！ 毒の水だった！(全員に30ダメージ)");
+                    this.game.party.forEach(p => {
+                        if(p.is_alive()) p.add_hp(-30);
+                    });
+                }
+            } else {
+                this.game.showMessage("泉には触れずに立ち去った。");
+            }
+            this.render();
+        }
+        else {
             this.game.showMessage("何もなかった...");
             this.render();
         }

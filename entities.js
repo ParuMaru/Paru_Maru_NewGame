@@ -180,3 +180,21 @@ export class KingSlime extends Slime {
         super(true, "キングスライム");
     }
 }
+
+// ゴブリン
+export class Goblin extends Entity {
+    constructor(name = "ゴブリン") {
+        // HP:450, ATK:65 (スライムより攻撃的)
+        super(name, 450, 0, 65, 30, 10, 20, 35, 10, './resource/goblin.png'); 
+        this.enemyType = "goblin";
+    }
+}
+
+// ドラゴン（強敵）
+export class IceDragon extends Entity {
+    constructor(name = "アイスドラゴン") {
+        // HP:2000, ATK:90, MATK:90,SPD:30 (ボス級)
+        super(name, 2000, 0, 90, 50, 80, 50, 30, 50, './resource/ice_dragon.png');
+        this.enemyType = "ice_dragon";
+    }
+}

@@ -18,5 +18,10 @@ export const SkillData = {
     //　スライム
     body_slam: {id: "body_slam", name: "のしかかり",power: 1.2, type: "physical", target: "all"},
     acid:      {id: "acid",      name: "消化液",     power: 1.7, type: "physical", target: "single", color: "#2ecc71"},
+    
+    //ゴブリン
+    smash:       {id: "smash",       name: "こんぼう強打", power: 1.8, type: "physical", target: "single"},
+    
+    //ドラゴン
+    ice_breath: {id: "ice_breath", name: "こごえる吹雪",     power: 1.6, type: "magic",    target: "all", color: "#e74c3c"}
 };
-

@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Slime, KingSlime } from './entities.js'; // ★KingSlime追加
+import { Slime, KingSlime, Goblin, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 
 export class BattleManager {
@@ -43,12 +43,27 @@ export class BattleManager {
         
         //  敵を生成
         this.state.enemies = [];
+        
         if (enemyType === 'king') {
             this.state.enemies.push(new KingSlime());
-        } else {
-            // 通常戦闘: ランダムなスライムたち
-            this.state.enemies.push(new Slime(false, "スライムA"));
-            this.state.enemies.push(new Slime(false, "スライムB"));
+        } 
+        else if (enemyType === 'dragon') {
+            this.state.enemies.push(new IceDragon());
+        }
+        else if (enemyType === 'goblin') {
+            // ゴブリン2体
+            this.state.enemies.push(new Goblin("ゴブリンA"));
+            this.state.enemies.push(new Goblin("ゴブリンB"));
+        }
+        else {
+            // 通常（スライムかゴブリンをランダムで混ぜる）
+            if (Math.random() < 0.5) {
+                this.state.enemies.push(new Slime(false, "スライムA"));
+                this.state.enemies.push(new Slime(false, "スライムB"));
+            } else {
+                this.state.enemies.push(new Goblin("はぐれゴブリン"));
+                this.state.enemies.push(new Slime(false, "スライム"));
+            }
         }
 
         //  Executor に最新のメンツを教える
@@ -299,7 +314,7 @@ export class BattleManager {
 
             overlay.style.display = 'flex'; 
 
-            // ★変更: リロードではなく GameManager へ報告する
+            //  リロードではなく GameManager へ報告する
             restartBtn.onclick = () => {
                 this.cleanup();
                 

@@ -651,6 +651,30 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     100% { transform: translate(-50%, -100px) scale(0.8, 1.5); opacity: 0; }
 }
 
+/* =========================================
+   氷のエフェクト（こごえる吹雪）
+   ========================================= */
+.ice-pillar {
+    position: absolute;
+    bottom: 10%;
+    left: 50%;
+    width: 100px; 
+    height: 153px;
+    /* 青白いグラデーション */
+    background: radial-gradient(ellipse at bottom, #fff 0%, #00d2ff 40%, #0055ff 70%, transparent 90%);
+    filter: blur(2px);
+    transform: translate(-50%, 0) scale(0);
+    z-index: 1001;
+    mix-blend-mode: screen; 
+    animation: ice-pillar-anim 0.8s ease-out forwards;
+}
+
+@keyframes ice-pillar-anim {
+    0% { transform: translate(-50%, 20px) scale(0.2, 0); opacity: 0; }
+    20% { transform: translate(-50%, 0) scale(1.2, 1.2); opacity: 1; }
+    100% { transform: translate(-50%, -50px) scale(0.8, 1.5); opacity: 0; }
+}
+
 /* --- クリック選択用のスタイル --- */
 
 /* ターゲット候補になった時の強調表示 */
@@ -867,6 +891,56 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     color: #bdc3c7;
     line-height: 1.4;
 }
+
+/* =========================================
+   ドラゴン専用の超巨大サイズ設定（はみ出し防止版）
+   ========================================= */
+/* 画像サイズ調整 */
+.dragon-size .enemy-img {
+    /* 親要素の幅いっぱいまで広がるが... */
+    width: 100%;
+    /* 最大でも360pxまでとする（これではみ出さない） */
+    max-width: 300px;
+    height: auto;
+    
+    /* 氷のオーラと浮遊アニメーション */
+    filter: drop-shadow(0 0 25px rgba(0, 210, 255, 0.8)) brightness(1.1);
+    animation: dragonFloating 4s ease-in-out infinite;
+}
+
+/* 巨大な画像に合わせて、ふわふわ浮かぶ動きをゆっくりにする */
+@keyframes dragonFloating {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-15px) scale(1.02); }
+}
+
+/* HPバーも画像幅に合わせて調整 */
+.dragon-size .enemy-hp-container {
+    /* 画像より少し狭くする */
+    width: 90%;
+    /* 最大幅を制限 */
+    max-width: 320px;
+    height: 12px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+    /* 中央寄せ */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* 名前も大きく、青く光らせる */
+.dragon-size .enemy-label {
+    font-size: min(26px, 6vw); /* スマホでは少し文字サイズを抑える */
+    font-weight: 900;
+    color: #e0ffff;
+    text-shadow: 0 0 10px #0055ff, 0 0 20px #00d2ff;
+    margin-bottom: 8px;
+}
+
+
+
+
+
 /* =========================================
    📱 スマホ・モバイル用レスポンシブ調整
    ========================================= */

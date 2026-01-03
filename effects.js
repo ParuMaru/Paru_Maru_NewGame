@@ -270,4 +270,31 @@ export class EffectManager {
         this.flash("rgba(255, 69, 0, 0.6)");
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
+    /**
+     * ★追加：全体氷魔法（こごえる吹雪）
+     */
+    allIceEffect(party) {
+        // 全体（味方）に対してエフェクト
+        party.forEach((member, i) => {
+            if (!member.is_alive()) return;
+
+            const targetId = `card-${i}`; // 味方カードID
+            const target = document.getElementById(targetId);
+            if (!target) return;
+
+            // 氷の柱を発生させる
+            const ice = document.createElement('div');
+            ice.className = 'ice-pillar';
+            target.appendChild(ice);
+
+            setTimeout(() => {
+                if (ice.parentNode) ice.parentNode.removeChild(ice);
+            }, 800);
+        });
+
+        // 画面を青白くフラッシュ＆揺らす
+        document.body.classList.add('screen-shake');
+        this.flash("rgba(0, 200, 255, 0.6)");
+        setTimeout(() => document.body.classList.remove('screen-shake'), 400);
+    }
 }

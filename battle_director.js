@@ -71,6 +71,11 @@ export class BattleDirector {
             this.music.playMagicMeteor();
             targets.forEach(t => this.effects.meteorEffect(this._getTargetId(t)));
         }
+        else if (skill.id === 'ice_breath') {
+            
+            this.music.playBreath(); 
+            this.effects.allIceEffect(targets); // 青いエフェクト
+        }
         else {
             // 汎用魔法
             this.music.playMagic();

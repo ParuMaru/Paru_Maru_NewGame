@@ -3,8 +3,6 @@ import { SkillData } from './skills.js';
 export class EnemyAI {
     /**
      * 敵の行動を決定する
-     * @param {Entity} enemy - 行動する敵
-     * @param {Array} party - 生存している味方パーティ
      */
     think(enemy, party) {
         // ターゲットがいなければ何もしない
@@ -12,40 +10,68 @@ export class EnemyAI {
             return { type: 'wait', target: null };
         }
 
-        // --- キングスライムの行動パターン ---
-        if (enemy.isKing) {
-            // 3割の確率で全体攻撃「のしかかり」
-            if (Math.random() < 0.3) {
-                const skill = SkillData.body_slam;
-                if (skill) {
-                    return {
-                        type: 'skill',
-                        target: party, 
-                        detail: skill
-                    };
-                }
+        // ------------------------------------------
+        // 1. 氷のドラゴンの行動 (ice_dragon)
+        // ------------------------------------------
+        if (enemy.enemyType === 'ice_dragon') {
+            // 40%の確率で「こごえる吹雪」
+            if (Math.random() < 0.4) {
+                return {
+                    type: 'skill',
+                    target: party, // 全体攻撃
+                    detail: SkillData.ice_breath
+                };
             }
-        } 
-        // --- 通常スライムの行動パターン ---
-        else {
-            // 3割の確率で強攻撃「消化液」を使用
-            if (Math.random() < 0.3) {
-                const skill = SkillData.acid;
-                // ランダムに誰かを狙う
+            // それ以外は通常攻撃へ
+        }
+
+        // ------------------------------------------
+        // 2. ゴブリンの行動 (goblin)
+        // ------------------------------------------
+        if (enemy.enemyType === 'goblin') {
+            // 40%の確率で「こんぼう強打」
+            if (Math.random() < 0.4) {
                 const target = party[Math.floor(Math.random() * party.length)];
-                
-                if (skill) {
-                    return {
-                        type: 'skill',
-                        target: target,
-                        detail: skill
-                    };
-                }
+                return {
+                    type: 'skill',
+                    target: target,
+                    detail: SkillData.smash
+                };
             }
         }
 
-        // --- 通常攻撃（デフォルト） ---
-        // 上記の条件に当てはまらなかったら、ランダムに殴る
+        // ------------------------------------------
+        // 3. キングスライムの行動
+        // ------------------------------------------
+        if (enemy.isKing) {
+            // 30%で全体攻撃「のしかかり」
+            if (Math.random() < 0.3) {
+                return {
+                    type: 'skill',
+                    target: party, 
+                    detail: SkillData.body_slam
+                };
+            }
+        } 
+        
+        // ------------------------------------------
+        // 4. 通常スライム（他の条件に当てはまらない場合で、名前がスライム系）
+        // ------------------------------------------
+        else if (!enemy.enemyType && enemy.name.includes('スライム')) {
+            // 30%で「消化液」
+            if (Math.random() < 0.3) {
+                const target = party[Math.floor(Math.random() * party.length)];
+                return {
+                    type: 'skill',
+                    target: target,
+                    detail: SkillData.acid
+                };
+            }
+        }
+
+        // ------------------------------------------
+        // デフォルト：通常攻撃
+        // ------------------------------------------
         const target = party[Math.floor(Math.random() * party.length)];
         return {
             type: 'attack',

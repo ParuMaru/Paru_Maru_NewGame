@@ -211,7 +211,11 @@ export class UIManager {
             unitDiv.style.gridColumn = index + 1;
             unitDiv.style.gridRow = 1; 
 
-            if (enemy.isKing) {
+            if (enemy.enemyType === 'ice_dragon') {
+                unitDiv.classList.add('dragon-size');
+            }
+            // それ以外で王様ならキングサイズ
+            else if (enemy.isKing) {
                 unitDiv.classList.add('king-size');
             }
 
