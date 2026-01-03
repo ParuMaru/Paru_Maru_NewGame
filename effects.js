@@ -297,4 +297,45 @@ export class EffectManager {
         this.flash("rgba(0, 200, 255, 0.6)");
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
+    
+    clawEffect(targetId) {
+        // 1発目
+        this.slashEffect(targetId);
+        // 2発目を少しずらして逆向きに（×の字にする）
+        setTimeout(() => {
+            const target = document.getElementById(targetId);
+            if (!target) return;
+            
+            const slash = document.createElement('div');
+            slash.className = 'slash-line';
+            slash.style.transform = 'translate(-50%, -50%) rotate(45deg)'; // 角度を変える
+            target.appendChild(slash);
+
+            setTimeout(() => {
+                if (target.contains(slash)) target.removeChild(slash);
+            }, 200);
+        }, 100);
+    }
+    
+    roarEffect(actorId) {
+        const actor = document.getElementById(actorId);
+        if (actor) {
+            // 親枠ではなく、中の画像だけを震わせると綺麗です
+            const sprite = actor.querySelector('img') || actor;
+            
+            // 新しいクラス .roaring を使用
+            sprite.classList.add('roaring'); 
+            
+            setTimeout(() => {
+                sprite.classList.remove('roaring');
+                // もしfilterで赤くした場合は、ここでリセットされるので安心です
+            }, 800);
+        }
+        
+        // 画面全体を揺らす演出はそのまま
+        document.body.classList.add('screen-shake');
+        this.flash("rgba(255, 0, 0, 0.2)"); 
+        
+        setTimeout(() => document.body.classList.remove('screen-shake'), 800);
+    }
 }

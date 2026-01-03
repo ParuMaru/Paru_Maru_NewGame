@@ -140,8 +140,20 @@ export class BattleDirector {
     }
 
     showBuff(targets, skillName) {
-        this.music.playKobu();
-        this.ui.addLog(` > 味方の攻撃力が上がった！`); 
+        // ドラゴンの咆哮の場合の特殊演出
+        if (skillName === "竜の咆哮") {
+            this.music.playBreath(); // ブレス音を流用
+            // 咆哮エフェクト（targets[0]は自分自身）
+            const actorId = this._getTargetId(targets[0]);
+            this.effects.roarEffect(actorId);
+            
+            this.ui.addLog(` > ドラゴンの攻撃力が激増した！`, "#e74c3c");
+        } else {
+            // 既存の鼓舞など
+            this.music.playKobu();
+            this.ui.addLog(` > 味方の攻撃力が上がった！`); 
+        }
+
         targets.forEach(t => {
             if(t.is_alive()) this.effects.healEffect(this._getTargetId(t));
         });

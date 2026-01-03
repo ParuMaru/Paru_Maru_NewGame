@@ -67,7 +67,7 @@ export class GameManager {
     showMap() {
         this.hideAllScreens();
         this.mapManager.render();
-        document.getElementById('map-screen').style.display = 'block';
+        document.getElementById('map-screen').style.display = 'flex';
     }
 
     /**

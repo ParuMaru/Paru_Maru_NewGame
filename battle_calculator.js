@@ -25,7 +25,7 @@ export class BattleCalculator {
             damage = Math.floor(base + variance);
 
             // バフ補正 (攻撃UP中は魔法も1.25倍という仕様を踏襲)
-            if (actor.buff_turns > 0) {
+            if (actor.hasBuff('atk_up')) {
                 damage = Math.floor(damage * 1.25);
             }
 
@@ -41,7 +41,7 @@ export class BattleCalculator {
             damage = Math.floor(base * variance);
 
             // バフ補正
-            if (actor.buff_turns > 0) {
+            if (actor.hasBuff('atk_up')) {
                 damage = Math.floor(damage * 1.25);
             }
 

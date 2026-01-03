@@ -14,15 +14,39 @@ export class EnemyAI {
         // 1. 氷のドラゴンの行動 (ice_dragon)
         // ------------------------------------------
         if (enemy.enemyType === 'ice_dragon') {
-            // 40%の確率で「こごえる吹雪」
-            if (Math.random() < 0.4) {
+            const rand = Math.random();
+
+            // A. HPが減って怒り状態（バフがかかっていないなら優先的に咆哮）
+            // enemy.buff_turns が 0 なら 20% の確率で咆哮
+            if (!enemy.hasBuff('atk_up') && rand < 0.2) {
+                 return {
+                    type: 'skill',
+                    target: enemy,
+                    detail: SkillData.howling
+                };
+            }
+
+            // B. 35%で全体ブレス
+            if (rand < 0.35) {
                 return {
                     type: 'skill',
-                    target: party, // 全体攻撃
+                    target: party,
                     detail: SkillData.ice_breath
                 };
             }
-            // それ以外は通常攻撃へ
+            
+            // C. 35%で強力な爪攻撃（HPが低いキャラを狙う等の嫌らしい動きも可）
+            if (rand < 0.70) {
+                 // ランダムターゲット
+                 const target = party[Math.floor(Math.random() * party.length)];
+                 return {
+                    type: 'skill',
+                    target: target,
+                    detail: SkillData.dragon_claw
+                };
+            }
+
+            // D. 残りは通常攻撃
         }
 
         // ------------------------------------------

@@ -21,10 +21,6 @@ body {
     body { height: 100dvh; }
 }
 
-
-
-
-
 /* --- スマホ用サイズ調整機能 --- */
 /* スライダーエリア */
 #size-control {
@@ -116,10 +112,8 @@ body {
 }
 
 /* メインのゲーム枠 */
-
 #game-wrapper {
-    display: none; /* ここを変更！ */
-    /* 以下は維持 */
+    display: none; /* 最初は非表示 */
     width: 100%;
     max-width: 600px;
     margin: 0 auto;
@@ -248,6 +242,29 @@ body {
     50% { transform: translateY(-10px) scale(1.05, 0.95); }
 }
 
+/* 敵ユニットを配置の基準にする */
+.enemy-unit {
+    position: relative;
+}
+
+/* 敵用のステータスアイコン置き場 */
+.enemy-status-container {
+    position: absolute;
+    top: -25px; /* HPバーよりさらに上に表示 */
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* 真ん中揃え */
+    gap: 2px;
+    z-index: 10;
+    pointer-events: none; /* クリックを邪魔しない */
+}
+
+/* もしドラゴンが大きい場合は少し位置調整 */
+.enemy-unit.dragon-size .enemy-status-container {
+    top: -30px;
+}
+
 /* =========================================
    メッセージログ・ステータス表示
    ========================================= */
@@ -307,9 +324,9 @@ body {
     
     /* 横並びにする設定 */
     display: flex;
-    flex-direction: row;       /* 横に並べる */
+    flex-direction: row;        /* 横に並べる */
     justify-content: flex-end; /* 右寄せ */
-    align-items: flex-end;     /* 下揃え */
+    align-items: flex-end;      /* 下揃え */
     
     gap: 3px; /* タブ同士の隙間 */
     z-index: 10;
@@ -675,21 +692,40 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     100% { transform: translate(-50%, -50px) scale(0.8, 1.5); opacity: 0; }
 }
 
+/* 咆哮アニメーション：巨大化してガクガク震える */
+@keyframes roar-shake {
+    0%   { transform: translate(0, 0) scale(1); }
+    10%  { transform: translate(-5px, -5px) scale(1.1); } /* 1.1倍に巨大化 */
+    20%  { transform: translate(5px, 2px) scale(1.1); }
+    30%  { transform: translate(-5px, 5px) scale(1.1); }
+    40%  { transform: translate(5px, -5px) scale(1.1); }
+    50%  { transform: translate(-3px, 3px) scale(1.1); }
+    60%  { transform: translate(3px, -3px) scale(1.1); }
+    70%  { transform: translate(-1px, 1px) scale(1.1); }
+    80%  { transform: translate(1px, -1px) scale(1.1); }
+    90%  { transform: translate(0, 0) scale(1.05); }
+    100% { transform: translate(0, 0) scale(1); }
+}
+
+.roaring {
+    animation: roar-shake 0.8s ease-out;
+    /* オプション：咆哮中に少し赤く光らせて怒りを表現（不要なら削除可） */
+    filter: drop-shadow(0 0 10px red);
+    z-index: 100; /* 震えてる間は一番手前に */
+}
+
 /* --- クリック選択用のスタイル --- */
 
 /* ターゲット候補になった時の強調表示 */
 .target-candidate {
     cursor: pointer; /* 指カーソルにする */
-    /* 修正: ぼかしを5px→3pxに、透明度を0.8→0.5に下げて控えめに */
     filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)); 
     transition: all 0.2s;
 }
 
 /* ホバー時はさらに強く光る */
 .target-candidate:hover {
-    /* 修正: 拡大率を1.05→1.03に抑える */
     transform: scale(1.03);
-    /* 修正: ぼかしを10px→6pxに下げ、色も少し落ち着かせる */
     filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.7)); /* 透明度付きの金色 */
     z-index: 10;
 }
@@ -729,14 +765,29 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     position: relative;
     padding: 50px 0;
     display: flex;
-    flex-direction: column-reverse; /* 下から上へ並べる！ */
+    flex-direction: column;
     align-items: center;
     gap: 40px; /* 階層ごとの間隔 */
     
     /* スクロールバーを隠す（見た目重視） */
     scrollbar-width: none; 
 }
-#map-scroll-area::-webkit-scrollbar { display: none; }
+
+/* マップのスクロールエリアを微調整 */
+#map-scroll-area {
+    /* 上下の余白を増やして、最初と最後が見えやすくする */
+    padding: 100px 0 50px 0;
+    
+    /* スマホでの慣性スクロールを有効化 */
+    -webkit-overflow-scrolling: touch;
+    
+    /* 中身が増えた時にスクロールバーが邪魔しないように */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+#map-scroll-area::-webkit-scrollbar { 
+    display: none; /* Chrome/Safari */
+}
 
 /* 1つの階層（横並びの行） */
 .map-floor {
@@ -765,6 +816,116 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     z-index: 2; /* 線より上に表示 */
 }
+
+/* =========================================
+   泉イベント用のモーダル画面
+   ========================================= */
+#fountain-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); /* 背景を暗く */
+    display: none; /* 初期は非表示 */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000; /* マップよりさらに上 */
+    color: white;
+    backdrop-filter: blur(2px); /* 背景を少しぼかす */
+}
+
+/* メッセージボックス */
+.fountain-box {
+    background: linear-gradient(135deg, #2c3e50, #1a252f);
+    border: 3px solid #3498db;
+    border-radius: 15px;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(52, 152, 219, 0.3);
+    animation: popIn 0.3s ease-out;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.fountain-icon {
+    font-size: 60px;
+    margin-bottom: 20px;
+    filter: drop-shadow(0 0 10px #3498db);
+}
+
+.fountain-title {
+    font-size: 24px;
+    font-weight: bold;
+    color: #3498db;
+    margin-bottom: 15px;
+    text-shadow: 0 0 5px rgba(52, 152, 219, 0.5);
+}
+
+.fountain-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+    color: #ecf0f1;
+}
+
+/* ボタンエリア */
+.fountain-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.fountain-btn {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 120px;
+}
+
+/* 「飲む」ボタン */
+.btn-drink {
+    background: #3498db;
+    color: white;
+    box-shadow: 0 4px 0 #2980b9;
+}
+.btn-drink:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #2980b9;
+}
+.btn-drink:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #2980b9;
+}
+
+/* 「立ち去る」ボタン */
+.btn-leave {
+    background: #95a5a6;
+    color: white;
+    box-shadow: 0 4px 0 #7f8c8d;
+}
+.btn-leave:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #7f8c8d;
+}
+
+/* 結果表示用のテキスト */
+.fountain-result {
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: bold;
+    min-height: 24px;
+}
+.result-good { color: #2ecc71; }
+.result-bad  { color: #e74c3c; }
 
 /* --- ノードの状態 --- */
 
@@ -805,7 +966,8 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 #map-lines-svg {
     position: absolute;
     top: 0; left: 0;
-    width: 100%; height: 100%;
+    width: 100%;
+    height: auto;
     pointer-events: none; /* クリックを邪魔しない */
     z-index: 1;
 }
@@ -937,10 +1099,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     margin-bottom: 8px;
 }
 
-
-
-
-
 /* =========================================
    📱 スマホ・モバイル用レスポンシブ調整
    ========================================= */
@@ -949,7 +1107,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     /* --- 1. タイトル画面の調整 --- */
     #title-screen {
         padding: 20px; /* 端っこに余裕を持たせる */
-        
     }
 
     .title-logo {

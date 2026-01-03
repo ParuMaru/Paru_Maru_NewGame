@@ -32,12 +32,17 @@ export class Entity {
 
         // --- 状態フラグ ---
         this.is_covering = false; // かばう状態
-        this.buffs = {
-            atk: 0,   // 鼓舞（物理攻撃バフ）
-            regen: 0  // いのり（継続回復ターン数）
-        };
+        this.buffs = {};   // 有利な効果 { "atk_up": 3, "regen": 5 }
+        this.debuffs = {}; // 不利な効果 { "poison": 4, "def_down": 3 }
         this.is_dead = false;
         this.skills = []; // skills.js の ID文字列を格納
+    }
+    
+    hasBuff(id) {
+        return this.buffs[id] && this.buffs[id] > 0;
+    }
+    hasDebuff(id) {
+        return this.debuffs[id] && this.debuffs[id] > 0;
     }
 
     // --- 状態取得 (ゲッター) ---
@@ -89,10 +94,10 @@ export class Entity {
     }
     
     clear_all_buffs() {
-        this.buff_turns = 0;
-        this.regen_turns = 0;
+        this.buffs = {};
+        this.debuffs = {};
         this.is_covering = false;
-        // 他にもリセットしたいフラグがあればここに追加
+        this.regen_value = 0;
     }
 
     /**

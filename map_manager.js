@@ -4,13 +4,17 @@ export class MapManager {
     constructor(gameManager) {
         this.game = gameManager;
         this.container = null;
+        this.fountainOverlay = null; 
         this.mapData = []; 
         this.currentFloor = -1; 
         this.currentNodeIndex = -1;
-        this.FLOOR_COUNT = 10; 
-        this.NODES_PER_FLOOR = [3, 4, 4, 3, 2, 3, 4, 3, 2, 1]; 
+        
+        // 全11階層
+        this.FLOOR_COUNT = 11; 
+        this.NODES_PER_FLOOR = [3, 3, 4, 3, 2, 3, 4, 3, 2, 1, 1]; 
         
         this.initUI();
+        this.initFountainUI(); 
     }
 
     initUI() {
@@ -33,6 +37,32 @@ export class MapManager {
         document.body.appendChild(this.container);
     }
 
+    initFountainUI() {
+        this.fountainOverlay = document.createElement('div');
+        this.fountainOverlay.id = 'fountain-overlay';
+        
+        this.fountainOverlay.innerHTML = `
+            <div class="fountain-box">
+                <div class="fountain-icon">⛲</div>
+                <div class="fountain-title">怪しい泉</div>
+                <div class="fountain-desc">
+                    神秘的なオーラを放つ泉がある...<br>
+                    一口飲んでみますか？<br>
+                    <span style="font-size:12px; color:#bdc3c7;">(50%でステータスUP / 50%でHP減少)</span>
+                </div>
+                <div class="fountain-buttons">
+                    <button class="fountain-btn btn-drink" id="btn-drink">飲む</button>
+                    <button class="fountain-btn btn-leave" id="btn-leave">立ち去る</button>
+                </div>
+                <div class="fountain-result" id="fountain-result"></div>
+            </div>
+        `;
+        document.body.appendChild(this.fountainOverlay);
+
+        document.getElementById('btn-drink').onclick = () => this.handleDrink();
+        document.getElementById('btn-leave').onclick = () => this.closeFountain();
+    }
+
     generateMap() {
         this.mapData = [];
         this.currentFloor = -1;
@@ -40,21 +70,21 @@ export class MapManager {
 
         for (let f = 0; f < this.FLOOR_COUNT; f++) {
             const floorNodes = [];
-            const count = (f === this.FLOOR_COUNT - 1) ? 1 : this.NODES_PER_FLOOR[f] || 3;
+            const count = this.NODES_PER_FLOOR[f] || 3;
             
             for (let i = 0; i < count; i++) {
                 let type = 'battle';
                 let icon = '⚔️';
                 
-                if (f === this.FLOOR_COUNT - 1) {
-                    type = 'boss'; icon = '👿';
-                } 
-                else if (f > 0) {
+                if (f === 10) { type = 'boss'; icon = '👿'; }
+                else if (f === 9) { type = 'rest'; icon = '⛺'; }
+                else if (f === 4 || f === 8) { type = 'elite'; icon = '🔥'; }
+                else if (f === 0) { type = 'battle'; icon = '⚔️'; }
+                else {
                     const rand = Math.random();
                     if (rand < 0.15) { type = 'rest'; icon = '⛺'; }
                     else if (rand < 0.35) { type = 'treasure'; icon = '🎁'; }
                     else if (rand < 0.50) { type = 'fountain'; icon = '⛲'; }
-                    else if (rand < 0.65) { type = 'elite'; icon = '💀'; }
                     else { type = 'battle'; icon = '⚔️'; }
                 }
 
@@ -66,7 +96,7 @@ export class MapManager {
         }
         this.connectNodes();
     }
-
+    
     connectNodes() {
         for (let f = 0; f < this.FLOOR_COUNT - 1; f++) {
             const currentFloor = this.mapData[f];
@@ -108,18 +138,19 @@ export class MapManager {
         this.scrollArea.appendChild(this.svgLayer);
         this.svgLayer.innerHTML = ''; 
 
-        this.mapData.forEach((floorNodes, fIndex) => {
+        for (let f = this.mapData.length - 1; f >= 0; f--) {
+            const floorNodes = this.mapData[f];
             const floorDiv = document.createElement('div');
             floorDiv.className = 'map-floor';
-            floorDiv.id = `floor-${fIndex}`;
+            floorDiv.id = `floor-${f}`;
 
-            floorNodes.forEach((node, nIndex) => {
+            floorNodes.forEach((node) => {
                 const nodeDiv = document.createElement('div');
                 nodeDiv.className = 'map-node';
-                nodeDiv.id = `node-${fIndex}-${nIndex}`;
+                nodeDiv.id = `node-${node.floor}-${node.index}`;
                 nodeDiv.innerText = node.icon;
                 
-                const status = this.getNodeStatus(fIndex, nIndex);
+                const status = this.getNodeStatus(node.floor, node.index);
                 if (status === 'selectable') {
                     nodeDiv.classList.add('node-selectable');
                     nodeDiv.onclick = () => this.onNodeSelect(node);
@@ -133,12 +164,17 @@ export class MapManager {
                 floorDiv.appendChild(nodeDiv);
             });
             this.scrollArea.appendChild(floorDiv);
-        });
+        }
 
         setTimeout(() => this.drawLines(), 50);
+        
         setTimeout(() => {
             const currentEl = document.getElementById(`floor-${Math.max(0, this.currentFloor)}`);
-            if (currentEl) currentEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            if (currentEl && this.currentFloor > 0) {
+                currentEl.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+                this.scrollArea.scrollTop = this.scrollArea.scrollHeight;
+            }
         }, 100);
     }
 
@@ -158,24 +194,26 @@ export class MapManager {
         this.currentFloor = node.floor;
         this.currentNodeIndex = node.index;
 
-        // ★敵出現パターンの変更
         if (node.type === 'battle') {
-            // 通常戦闘：スライム or ゴブリン
             const type = Math.random() < 0.6 ? 'slime' : 'goblin';
             this.game.startBattle(type);
         } 
         else if (node.type === 'elite') {
-            // エリート：キングスライム or ドラゴン
-            const type = Math.random() < 0.5 ? 'king' : 'dragon';
+            const type = 'king' ; 
             this.game.startBattle(type); 
         } 
         else if (node.type === 'boss') {
-            // ボス：ドラゴン固定
             this.game.startBattle('dragon'); 
         } 
         else if (node.type === 'rest') {
-            this.game.showMessage("焚き火で休憩した。HPが50回復！");
-            this.game.party.forEach(p => p.add_hp(50));
+            // ★変更：HP・MPを8割回復
+            this.game.showMessage("焚き火で休憩した。HP・MPが大きく回復！(80%)");
+            this.game.party.forEach(p => {
+                if(p.is_alive()) {
+                    p.add_hp(Math.floor(p.max_hp * 0.8));
+                    p.add_mp(Math.floor(p.max_mp * 0.8));
+                }
+            });
             this.render(); 
         } 
         else if (node.type === 'treasure') {
@@ -192,22 +230,7 @@ export class MapManager {
             this.render();
         }
         else if (node.type === 'fountain') {
-            if (confirm("怪しい泉があります。\n飲みますか？\n(50%で全回復 / 50%でダメージ)")) {
-                if (Math.random() < 0.5) {
-                    this.game.showMessage("なんと！ 全員のHP・MPが全回復した！");
-                    this.game.party.forEach(p => {
-                        if(p.is_alive()) { p.add_hp(999); p.add_mp(999); }
-                    });
-                } else {
-                    this.game.showMessage("うっ...！ 毒の水だった！(全員に30ダメージ)");
-                    this.game.party.forEach(p => {
-                        if(p.is_alive()) p.add_hp(-30);
-                    });
-                }
-            } else {
-                this.game.showMessage("泉には触れずに立ち去った。");
-            }
-            this.render();
+            this.showFountain();
         }
         else {
             this.game.showMessage("何もなかった...");
@@ -215,12 +238,75 @@ export class MapManager {
         }
     }
 
+    showFountain() {
+        document.getElementById('fountain-result').innerText = "";
+        document.getElementById('fountain-result').className = "fountain-result";
+        document.getElementById('btn-drink').style.display = 'inline-block';
+        document.getElementById('btn-leave').innerText = "立ち去る";
+        
+        this.fountainOverlay.style.display = 'flex';
+    }
+
+    handleDrink() {
+        const resultDiv = document.getElementById('fountain-result');
+        const drinkBtn = document.getElementById('btn-drink');
+        const leaveBtn = document.getElementById('btn-leave');
+
+        drinkBtn.style.display = 'none';
+        leaveBtn.innerText = "戻る";
+
+        if (Math.random() < 0.5) {
+            // ★変更：成功時はランダムでステータスアップ
+            const stats = [
+                { key: 'max_hp', name: '最大HP', val: 20 },
+                { key: 'max_mp', name: '最大MP', val: 10 },
+                { key: 'atk',    name: '攻撃力', val: 3 },
+                { key: 'def',    name: '防御力', val: 3 },
+                { key: 'matk',   name: '魔力',   val: 3 },
+            ];
+            const boost = stats[Math.floor(Math.random() * stats.length)];
+
+            this.game.showMessage(`泉の力で、全員の${boost.name}が ${boost.val} 上がった！`);
+            this.game.party.forEach(p => {
+                if(p.is_alive()) { 
+                    if(typeof p[boost.key] !== 'undefined') {
+                        p[boost.key] += boost.val;
+                        // 最大値が増えたら現在値も少し回復してあげる
+                        if(boost.key === 'max_hp') p.add_hp(boost.val);
+                        if(boost.key === 'max_mp') p.add_mp(boost.val);
+                    }
+                }
+            });
+            resultDiv.innerText = `✨ 不思議な力が宿る... (${boost.name} +${boost.val})`;
+            resultDiv.className = "fountain-result result-good";
+        } else {
+            // ★変更：失敗時は最大HPの3割ダメージ
+            this.game.showMessage("うっ...！ 毒の水だった！(HP30%ダメージ)");
+            this.game.party.forEach(p => {
+                if(p.is_alive()) {
+                    const dmg = Math.floor(p.max_hp * 0.3);
+                    p.add_hp(-dmg);
+                }
+            });
+            resultDiv.innerText = "☠️ ぐはっ... 毒だ！ (HP3割減少)";
+            resultDiv.className = "fountain-result result-bad";
+        }
+        
+        this.render();
+    }
+
+    closeFountain() {
+        this.fountainOverlay.style.display = 'none';
+        this.render(); 
+    }
+
     drawLines() {
         const svg = this.svgLayer;
-        const rect = this.scrollArea.getBoundingClientRect();
-        
         svg.setAttribute('width', this.scrollArea.scrollWidth);
         svg.setAttribute('height', this.scrollArea.scrollHeight);
+
+        const containerRect = this.scrollArea.getBoundingClientRect();
+        const scrollTop = this.scrollArea.scrollTop;
 
         this.mapData.forEach(floorNodes => {
             floorNodes.forEach(node => {
@@ -231,11 +317,11 @@ export class MapManager {
                     if (startEl && endEl) {
                         const startRect = startEl.getBoundingClientRect();
                         const endRect = endEl.getBoundingClientRect();
-
-                        const x1 = startRect.left - rect.left + startRect.width / 2;
-                        const y1 = startRect.top - rect.top + startRect.height / 2 + this.scrollArea.scrollTop;
-                        const x2 = endRect.left - rect.left + endRect.width / 2;
-                        const y2 = endRect.top - rect.top + endRect.height / 2 + this.scrollArea.scrollTop;
+                        
+                        const x1 = startRect.left - containerRect.left + startRect.width / 2;
+                        const y1 = startRect.top - containerRect.top + startRect.height / 2 + scrollTop;
+                        const x2 = endRect.left - containerRect.left + endRect.width / 2;
+                        const y2 = endRect.top - containerRect.top + endRect.height / 2 + scrollTop;
 
                         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
                         line.setAttribute("x1", x1); line.setAttribute("y1", y1);
