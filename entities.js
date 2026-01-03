@@ -189,8 +189,8 @@ export class KingSlime extends Slime {
 // ゴブリン
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
-        // HP:450, ATK:65 (スライムより攻撃的)
-        super(name, 450, 0, 65, 30, 10, 20, 35, 10, './resource/goblin.png'); 
+        // HP:350, ATK:60 (スライムより攻撃的)
+        super(name, 350, 0, 60, 30, 10, 20, 35, 10, './resource/goblin.png'); 
         this.enemyType = "goblin";
     }
 }
@@ -202,4 +202,5 @@ export class IceDragon extends Entity {
         super(name, 2000, 0, 90, 50, 80, 50, 30, 50, './resource/ice_dragon.png');
         this.enemyType = "ice_dragon";
     }
+
 }
