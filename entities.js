@@ -195,6 +195,36 @@ export class Goblin extends Entity {
     }
 }
 
+// ★追加：影の勇者
+export class ShadowHero extends Entity {
+    constructor() {
+        // HP:400, ATK:60
+        super("影の勇者", 400, 100, 60, 40, 20, 30, 40, 0, './resource/shadow_hero.png');
+        this.enemyType = "shadow_hero"; 
+        this.skills = ["encourage"];
+    }
+}
+
+// ★追加：影の魔法使い
+export class ShadowWizard extends Entity {
+    constructor() {
+        // HP:300, MATK:50
+        super("影の魔導師", 300, 200, 20, 20, 50, 50, 35, 0, './resource/shadow_wizard.png');
+        this.enemyType = "shadow_wizard"; 
+        this.skills = ["fire", "fira"];
+    }
+}
+
+// ★追加：影のヒーラー
+export class ShadowHealer extends Entity {
+    constructor() {
+        // HP:350
+        super("影の僧侶", 350, 200, 30, 30, 40, 40, 30, 60, './resource/shadow_healer.png');
+        this.enemyType = "shadow_healer";
+        this.skills = ["heal", "medica"];
+    }
+}
+
 // ドラゴン（強敵）
 export class IceDragon extends Entity {
     constructor(name = "アイスドラゴン") {

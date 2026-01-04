@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Slime, KingSlime, Goblin, IceDragon } from './entities.js'; 
+import { Slime, KingSlime, Goblin, ShadowHero, ShadowWizard, ShadowHealer, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 
@@ -22,22 +22,28 @@ export class BattleManager {
 
     setupBattle(party, inventory, enemyType, bgmType = null) {
         this.state.party = party;
-        this.ui.setInventory(inventory);
-        
+        this.ui.setInventory(inventory);   
         this.state.enemies = [];
+        
+        const rnd = Math.random();
+        
         if (enemyType === 'king') this.state.enemies.push(new KingSlime());
         else if (enemyType === 'dragon') this.state.enemies.push(new IceDragon());
-        else if (enemyType === 'goblin') {
-            this.state.enemies.push(new Goblin("ゴブリンA"));
-            this.state.enemies.push(new Goblin("ゴブリンB"));
+        else if (enemyType === 'shadow') {
+            this.state.enemies.push(new ShadowHero());
+            this.state.enemies.push(new ShadowWizard());
+            this.state.enemies.push(new ShadowHealer());
         }
         else {
-            if (Math.random() < 0.5) {
+            if (rnd < 0.33) {
                 this.state.enemies.push(new Slime(false, "スライムA"));
                 this.state.enemies.push(new Slime(false, "スライムB"));
-            } else {
+            } else if(rnd < 0.66) {
                 this.state.enemies.push(new Goblin("はぐれゴブリン"));
                 this.state.enemies.push(new Slime(false, "スライム"));
+            }else{
+                this.state.enemies.push(new Goblin("ゴブリンA"));
+                this.state.enemies.push(new Goblin("ゴブリンB"));
             }
         }
 
@@ -56,6 +62,7 @@ export class BattleManager {
         } else {
             if (enemyType === 'dragon') this.bgm.playBGM('boss');
             else if (enemyType === 'king') this.bgm.playBGM('elite');
+            else if (enemyType === 'shadow') this.bgm.playBGM('shadow');
             else this.bgm.playBGM('normal');
         }
         
@@ -248,7 +255,7 @@ export class BattleManager {
     async handleEnemyTurn(enemy) {
         this.ui.commandContainer.innerHTML = "";
         await new Promise(r => setTimeout(r, 800));
-        const action = this.ai.think(enemy, this.state.getAliveParty());
+        const action = this.ai.think(enemy, this.state.getAliveParty(), this.state.getAliveEnemies());
         await this.executor.execute(enemy, action.target, action);
         
         // 行動終了時にバフ減少

@@ -3,6 +3,7 @@ import { MapManager } from './map_manager.js';
 import { RewardManager } from './reward_manager.js';
 import { Hero, Wizard, Healer } from './entities.js';
 import { ItemData } from './items.js';
+import { DebugManager } from './debug_manager.js';
 
 export class GameManager {
     constructor() {
@@ -24,6 +25,7 @@ export class GameManager {
         this.battleManager = new BattleManager(this); 
         this.mapManager = new MapManager(this);       
         this.rewardManager = new RewardManager(this);
+        this.debugManager = new DebugManager(this);
         
         this.initMessageUI();
         
@@ -66,12 +68,17 @@ export class GameManager {
         
         // ボス戦（ドラゴン）の時だけ背景を変える
         const canvasArea = document.getElementById('canvas-area');
-        if (enemyType === 'dragon') {
-            
+        if (enemyType === 'dragon') {   
             canvasArea.style.backgroundImage = "linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('./resource/boss_bg.png')";
+        } else if (enemyType === 'shadow') {
+            // ★追加: 影バトルの時は暗い雰囲気を付与
+            canvasArea.classList.add('dark-atmosphere');
+            canvasArea.style.backgroundImage = "url('./resource/dark_bg.png')"; // 一旦元の背景
         } else {
+            canvasArea.classList.remove('dark-atmosphere'); // 通常時は外す
             canvasArea.style.backgroundImage = "url('./resource/bg.png')"; 
         }
+        
         
         document.getElementById('game-wrapper').style.display = 'flex';
         this.battleManager.setupBattle(this.party, this.inventory, enemyType, bgmType);

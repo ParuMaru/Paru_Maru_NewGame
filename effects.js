@@ -10,25 +10,24 @@ export class EffectManager {
         const target = document.getElementById(targetId);
         if (!target) return;
 
-        // 斬撃の線を出す（これはそのまま）
+        // 斬撃の線を出す
         const slash = document.createElement('div');
         slash.className = 'slash-line';
         target.appendChild(slash);
 
-
         const img = target.querySelector('img'); 
-        const shakeTarget = img ? img : target; // 画像があれば画像、なければ枠
+        const shakeTarget = img ? img : target; 
 
-        // 3. 振動クラスを付与
+        // 振動クラスを付与
         shakeTarget.classList.add('damage-shake');
 
-        // 4. アニメーション終了後にお片付け
+        // お片付け
         setTimeout(() => {
             if (target.contains(slash)) {
                 target.removeChild(slash);
             }
             shakeTarget.classList.remove('damage-shake');
-        }, 200); // 0.2秒後に消す
+        }, 200); 
     }
     
     /**
@@ -44,31 +43,23 @@ export class EffectManager {
         
         target.style.position = 'relative';
         
-        // 魔法陣エフェクト（CSS: .magic-circle）を生成
         const circle = document.createElement('div');
         circle.className = 'magic-circle';
         target.appendChild(circle);
 
         setTimeout(() => circle.remove(), 500);
-        // 魔法発動の瞬間、画面全体を青紫色にフラッシュさせる
         this.flash("rgba(69, 34, 197, 0.3)");
     }
 
-    /**
-     * ターゲットを小刻みに揺らす（ダメージを受けた時の演出）
-     */
     shake(id) {
         const el = document.getElementById(id);
         if (el) {
-            el.style.animation = 'none'; // 前のアニメーションをリセット
-            void el.offsetHeight;        // リフローを強制（再描画させてアニメーションをやり直す）
-            el.style.animation = 'shake 0.3s'; // CSS: @keyframes shake
+            el.style.animation = 'none'; 
+            void el.offsetHeight;        
+            el.style.animation = 'shake 0.3s'; 
         }
     }
 
-    /**
-     * 画面全体を一瞬指定した色で光らせる
-     */
     flash(color = "white") {
         const f = document.createElement('div');
         f.className = 'screen-flash';
@@ -77,23 +68,17 @@ export class EffectManager {
         setTimeout(() => f.remove(), 100);
     }
 
-    /**
-     * ダメージや回復の数値を飛び出させる
-     */
     damagePopup(value, targetId, color = "#ff4757") {
         const target = document.getElementById(targetId);
         if (!target) return;
         const p = document.createElement('div');
         p.innerText = value;
-        p.className = 'damage-popup'; // CSS: .damage-popup
+        p.className = 'damage-popup'; 
         p.style.color = color;
         target.appendChild(p);
         setTimeout(() => p.remove(), 800);
     }
 
-    /**
-     * 回復エフェクト（味方のカードを緑色に光らせる）
-     */
     healEffect(targetCardId) {
         const target = document.getElementById(targetCardId);
         if (!target) return;
@@ -101,15 +86,12 @@ export class EffectManager {
         target.style.position = 'relative';
 
         const h = document.createElement('div');
-        h.className = 'heal-light'; // CSS: .heal-light
+        h.className = 'heal-light'; 
         target.appendChild(h);
 
         setTimeout(() => h.remove(), 600);
     }
     
-    /**
-     * 蘇生エフェクト（キャラクターカード全体を光らせる）
-     */
     resurrectionEffect(targetCardId) {
         const target = document.getElementById(targetCardId);
         if (!target) return;
@@ -123,74 +105,54 @@ export class EffectManager {
         }, 1000);
     }
 
-    /**
-     * 敵が倒れた時の消滅演出
-     */
     enemyDeath(targetId) {
         const target = document.getElementById(targetId);
         if (!target) return;
         
-        // もうクリックできないようにする
         target.style.pointerEvents = "none";
-
-        // アニメーション設定（2.0秒だと長すぎるので 0.8秒に短縮）
         target.style.transition = "all 0.8s ease-out";
         target.style.filter = "brightness(5) contrast(1.2) blur(4px)";
         target.style.opacity = "0";
         target.style.transform = "scale(1.2) translateY(-20px)";
         
-        // 撃破フラッシュ
         this.flash("rgba(255, 255, 255, 0.5)");
 
-        // ★追加：アニメーションが終わったら、要素自体を画面から消す（お片付け）
         setTimeout(() => {
             if (target.parentNode) {
                 target.parentNode.removeChild(target);
             }
-        }, 800); // transitionの時間(0.8s)に合わせる
+        }, 800); 
     }
 
-    /**
-     * メテオ（究極魔法）：巨大な岩が空から降ってくる演出
-     */
     meteorEffect(targetId) {
         const target = document.getElementById(targetId);
         if (!target) return;
 
-        // 敵の現在位置を取得して、着弾地点を計算
         const rect = target.getBoundingClientRect();
         const targetX = rect.left + rect.width / 2;
         const targetY = rect.top + rect.height / 2;
 
-        // 隕石オブジェクトの生成
         const rock = document.createElement('div');
         rock.className = 'meteor-rock';
         rock.style.left = `${targetX}px`;
         rock.style.top = `0px`; 
         document.body.appendChild(rock);
 
-        // 落下前から画面を激しく揺らす（地震のような演出）
         document.body.classList.add('screen-shake');
 
-        // JSによる座標移動の開始
         setTimeout(() => {
             rock.style.transform = `translate(-50%, ${targetY}px) scale(1.2)`;
         }, 10);
 
-        // 着弾（0.4秒後）
         setTimeout(() => {
             rock.style.opacity = "0";
-
-            // 着弾地点に爆発エフェクトを生成
             const explosion = document.createElement('div');
             explosion.className = 'meteor-explosion';
             target.parentElement.appendChild(explosion);
 
-            // 強烈な閃光と、揺れの停止
             this.flash("rgba(255, 255, 255, 0.8)");
             setTimeout(() => document.body.classList.remove('screen-shake'), 200);
 
-            // 要素のクリーンアップ
             setTimeout(() => {
                 if (rock.parentNode) rock.parentNode.removeChild(rock);
                 if (explosion.parentNode) explosion.parentNode.removeChild(explosion);
@@ -200,8 +162,9 @@ export class EffectManager {
 
     /**
      * ファイア（単体魔法）：火球が飛んでいき、敵が燃え上がる
+     * ★修正: 発射元のID (sourceId) を指定可能に
      */
-    fireEffect(targetId) {
+    fireEffect(targetId, sourceId = null) {
         const target = document.getElementById(targetId);
         if (!target) return;
 
@@ -212,14 +175,33 @@ export class EffectManager {
         const ball = document.createElement('div');
         ball.className = 'fireball';
 
-        // 画面下部（プレイヤー側）から発射
-        ball.style.left = `50%`; 
-        ball.style.top = `90%`;
+        // ★修正: 発射元の位置計算
+        let startX, startY;
+
+        if (sourceId) {
+            const sourceEl = document.getElementById(sourceId);
+            if (sourceEl) {
+                const sRect = sourceEl.getBoundingClientRect();
+                startX = sRect.left + sRect.width / 2;
+                startY = sRect.top + sRect.height / 2;
+            }
+        }
+
+        // 発射元が不明なら、とりあえず画面中央下（プレイヤー側）
+        if (!startX) {
+            startX = window.innerWidth / 2;
+            startY = window.innerHeight * 0.9;
+        }
+
+        ball.style.left = `${startX}px`; 
+        ball.style.top = `${startY}px`;
         document.body.appendChild(ball);
 
-        // 敵に向かって斜めに飛ばす計算
+        // 敵に向かって飛ばす計算 (transform で差分移動)
         setTimeout(() => {
-            ball.style.transform = `translate(${targetX - (window.innerWidth/2)}px, -${window.innerHeight * 0.9 - targetY}px) scale(1.2)`;
+            const moveX = targetX - startX;
+            const moveY = targetY - startY;
+            ball.style.transform = `translate(${moveX}px, ${moveY}px) scale(1.2)`;
         }, 20);
 
         // 着弾時の燃焼演出
@@ -240,17 +222,15 @@ export class EffectManager {
     }
 
     /**
-     * ファイラ（全体魔法）：全ての生存している敵が順に燃え上がる
+     * ファイラ（全体魔法）：指定されたIDの対象が燃え上がる（火の玉なし・柱のみ）
+     * ★修正: 敵・味方問わず、IDリストを受け取って処理するように変更
      */
-    allFireEffect(enemies) {
-        enemies.forEach((enemy, i) => {
-            if (!enemy.is_alive()) return;
-
-            const targetId = `enemy-sprite-${i}`;
-            const target = document.getElementById(targetId);
+    allFireEffect(targetIds) {
+        targetIds.forEach((id, i) => {
+            const target = document.getElementById(id);
             if (!target) return;
 
-            // 1体につき3本の火柱を時間差で発生させて、炎の激しさを演出
+            // 1体につき3本の火柱を時間差で発生
             [0, 1, 2].forEach((j) => {
                 setTimeout(() => {
                     const fire = document.createElement('div');
@@ -270,19 +250,18 @@ export class EffectManager {
         this.flash("rgba(255, 69, 0, 0.6)");
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
+
     /**
-     * ★追加：全体氷魔法（こごえる吹雪）
+     * 全体氷魔法（こごえる吹雪）
      */
     allIceEffect(party) {
-        // 全体（味方）に対してエフェクト
         party.forEach((member, i) => {
             if (!member.is_alive()) return;
 
-            const targetId = `card-${i}`; // 味方カードID
+            const targetId = `card-${i}`; 
             const target = document.getElementById(targetId);
             if (!target) return;
 
-            // 氷の柱を発生させる
             const ice = document.createElement('div');
             ice.className = 'ice-pillar';
             target.appendChild(ice);
@@ -292,23 +271,20 @@ export class EffectManager {
             }, 800);
         });
 
-        // 画面を青白くフラッシュ＆揺らす
         document.body.classList.add('screen-shake');
         this.flash("rgba(0, 200, 255, 0.6)");
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
     
     clawEffect(targetId) {
-        // 1発目
         this.slashEffect(targetId);
-        // 2発目を少しずらして逆向きに（×の字にする）
         setTimeout(() => {
             const target = document.getElementById(targetId);
             if (!target) return;
             
             const slash = document.createElement('div');
             slash.className = 'slash-line';
-            slash.style.transform = 'translate(-50%, -50%) rotate(45deg)'; // 角度を変える
+            slash.style.transform = 'translate(-50%, -50%) rotate(45deg)'; 
             target.appendChild(slash);
 
             setTimeout(() => {
@@ -320,19 +296,14 @@ export class EffectManager {
     roarEffect(actorId) {
         const actor = document.getElementById(actorId);
         if (actor) {
-            // 親枠ではなく、中の画像だけを震わせると綺麗です
             const sprite = actor.querySelector('img') || actor;
-            
-            // 新しいクラス .roaring を使用
             sprite.classList.add('roaring'); 
             
             setTimeout(() => {
                 sprite.classList.remove('roaring');
-                // もしfilterで赤くした場合は、ここでリセットされるので安心です
             }, 800);
         }
         
-        // 画面全体を揺らす演出はそのまま
         document.body.classList.add('screen-shake');
         this.flash("rgba(255, 0, 0, 0.2)"); 
         

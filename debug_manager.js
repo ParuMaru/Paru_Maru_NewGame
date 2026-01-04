@@ -3,7 +3,6 @@
 export class DebugManager {
     constructor(gameInstance) {
         // GameManager または BattleManager を受け取る
-        // GameManagerならそのまま、BattleManagerなら .gameManager を参照
         if (gameInstance.battleManager) {
             this.gameManager = gameInstance;
             this.battleManager = gameInstance.battleManager;
@@ -57,7 +56,7 @@ export class DebugManager {
         Object.assign(this.panel.style, {
             position: 'absolute',
             top: '70px', right: '20px',
-            width: '180px', // 幅を少し広げた
+            width: '180px', 
             background: 'rgba(0, 0, 0, 0.9)',
             padding: '10px',
             borderRadius: '8px',
@@ -87,8 +86,14 @@ export class DebugManager {
         this.addTitle("BATTLE TEST");
         this.createBtn("⚔️ vs スライム", "#bdc3c7", () => this.startBattle('slime'));
         this.createBtn("👹 vs ゴブリン", "#27ae60", () => this.startBattle('goblin'));
-        this.createBtn("🧊 vs 氷ドラゴン", "#00d2ff", () => this.startBattle('dragon')); // ★ここ！
+        this.createBtn("👥 vs 影のパーティ", "#8e44ad", () => this.startBattle('shadow'));
+        this.createBtn("🧊 vs 氷ドラゴン", "#00d2ff", () => this.startBattle('dragon'));
         this.createBtn("👑 vs キング", "#f1c40f", () => this.startBattle('king'));
+
+        // --- 階層ワープ ---
+        this.addTitle("FLOOR JUMP");
+        this.createBtn("🏢 4階へ (キング)", "#f39c12", () => this.jumpToFloor(3));
+        this.createBtn("🏢 8階へ (影)", "#8e44ad", () => this.jumpToFloor(7));
 
         gameContainer.appendChild(this.panel);
     }
@@ -190,13 +195,25 @@ export class DebugManager {
         this.battleManager.nextTurn();
     }
 
-    // ★追加：戦闘開始コマンド
     startBattle(type) {
         if (this.gameManager) {
             this.battleManager.ui.addLog(`[DEBUG] ${type}戦を開始します`, "#fff");
             this.gameManager.startBattle(type);
         } else {
-            console.error("GameManagerが見つかりません。main.jsでGameManagerを渡していますか？");
+            console.error("GameManagerが見つかりません。");
+        }
+    }
+
+    // ★追加：階層ワープ
+    jumpToFloor(floor) {
+        if (this.gameManager && this.gameManager.mapManager) {
+            this.gameManager.mapManager.currentFloor = floor;
+            // ★重要：強制的に部屋0番にいることにする
+            this.gameManager.mapManager.currentNodeIndex = 0;
+            
+            this.battleManager.ui.addLog(`[DEBUG] ${floor}階へ移動しました`, "#fff");
+            alert(`${floor}階へ移動しました！マップ画面に戻ると反映されます。`);
+            this.killEnemies();
         }
     }
 }

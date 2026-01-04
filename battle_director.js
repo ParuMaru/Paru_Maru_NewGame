@@ -57,24 +57,29 @@ export class BattleDirector {
         this.ui.addLog(`${actor.name}は ${skill.name} を使った！`, logColor, true);
     }
 
-    showMagicEffect(skill, targets) {
-        // 魔法ごとの特殊エフェクト分岐
+    // ★修正: actor 引数を追加して、誰が撃ったかを判別可能に
+    showMagicEffect(actor, skill, targets) {
+        const actorId = this._getTargetId(actor);
+
         if (skill.id === 'fire') {
             this.music.playMagicFire();
-            targets.forEach(t => this.effects.fireEffect(this._getTargetId(t)));
+            // ★修正: 発射元(actorId)を渡して、正しい位置から火の玉を飛ばす
+            targets.forEach(t => this.effects.fireEffect(this._getTargetId(t), actorId));
         } 
         else if (skill.id === 'fira') {
             this.music.playMagicFire();
-            this.effects.allFireEffect(this.enemies);
+            // ★修正: ファイラは火の玉を飛ばさず、ターゲット全員の足元から火柱を上げる(allFireEffect)
+            // 対象のIDリストを作成して渡す
+            const targetIds = targets.map(t => this._getTargetId(t));
+            this.effects.allFireEffect(targetIds);
         } 
         else if (skill.id === 'meteor') {
             this.music.playMagicMeteor();
             targets.forEach(t => this.effects.meteorEffect(this._getTargetId(t)));
         }
         else if (skill.id === 'ice_breath') {
-            
             this.music.playBreath(); 
-            this.effects.allIceEffect(targets); // 青いエフェクト
+            this.effects.allIceEffect(targets); 
         }
         else {
             // 汎用魔法
@@ -92,15 +97,7 @@ export class BattleDirector {
 
     // --- 回復・支援系の演出 ---
 
-    /**
-     * 回復演出
-     * @param {Entity} target - 対象
-     * @param {number} amount - 回復量
-     * @param {boolean} isMp - MP回復かどうか
-     * @param {boolean} playSound - 音を鳴らすかどうか（省略時はtrue）
-     */
     showHeal(target, amount, isMp = false, playSound = true) {
-        // ★修正：playSoundが true の時だけ鳴らす
         if (playSound) {
             if (!isMp) this.music.playHeal();
             else this.music.playMeditation();
@@ -140,16 +137,12 @@ export class BattleDirector {
     }
 
     showBuff(targets, skillName) {
-        // ドラゴンの咆哮の場合の特殊演出
         if (skillName === "竜の咆哮") {
-            this.music.playBreath(); // ブレス音を流用
-            // 咆哮エフェクト（targets[0]は自分自身）
+            this.music.playBreath(); 
             const actorId = this._getTargetId(targets[0]);
             this.effects.roarEffect(actorId);
-            
             this.ui.addLog(` > ドラゴンの攻撃力が激増した！`, "#e74c3c");
         } else {
-            // 既存の鼓舞など
             this.music.playKobu();
             this.ui.addLog(` > 味方の攻撃力が上がった！`); 
         }
@@ -165,13 +158,11 @@ export class BattleDirector {
         this.ui.addLog(` > 味方全員に祝福が宿る！`, "#8e44ad");
     }
     
-    
     // --- 分裂イベント演出 ---
 
     async showSplittingTrigger(enemy) {
         this.ui.addLog(`${enemy.name}の体が震えだした...！`, "#ff00ff");
         
-        // 震えるアニメーション付与
         const targetId = this._getTargetId(enemy);
         const el = document.getElementById(targetId);
         if (el) {
@@ -180,8 +171,6 @@ export class BattleDirector {
         }
 
         this.music.playBukubuku();
-        
-        // 溜め時間（呼び出し元で待つため、ここでは待機しない）
     }
 
     showSplittingTransform(oldName) {
@@ -190,7 +179,6 @@ export class BattleDirector {
     }
 
     showSplittingAppear(startIndex) {
-        // 新しいスライムたちの登場アニメーション
         const spriteA = document.getElementById(`enemy-sprite-${startIndex}`);
         const spriteC = document.getElementById(`enemy-sprite-${startIndex+2}`);
 
@@ -206,20 +194,15 @@ export class BattleDirector {
     
     // --- 共通処理 ---
 
-    /** 死亡判定と演出 */
     _checkDeath(target, targetId) {
         if (!target.is_alive()) {
-            // 味方ならカードを暗くする処理等はupdateUIでやるが、敵なら消滅エフェクト
             if (!target.job) {
                 this.effects.enemyDeath(targetId);
             }
         }
     }
 
-    /** 画面更新（最後に呼ぶ） */
     refreshStatus() {
         this.ui.updateEnemyHP(this.enemies);
-        // ダメージ音などはここで鳴らしても良い
-        // this.music.playDamage(); // 必要に応じて
     }
 }

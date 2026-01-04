@@ -11,7 +11,7 @@ export class MapManager {
         
         // 全11階層
         this.FLOOR_COUNT = 11; 
-        this.NODES_PER_FLOOR = [3, 3, 4, 3, 2, 3, 4, 3, 2, 1, 1]; 
+        this.NODES_PER_FLOOR = [3, 3, 4, 3, 2, 3, 4, 3, 1, 1, 1]; 
         
         this.initUI();
         this.initFountainUI(); 
@@ -78,7 +78,8 @@ export class MapManager {
                 
                 if (f === 10) { type = 'boss'; icon = '🏰'; }
                 else if (f === 9) { type = 'rest'; icon = '⛺'; }
-                else if (f === 4 || f === 8) { type = 'elite'; icon = '💀'; }
+                else if (f === 4) { type = 'elite'; icon = '💀'; }
+                else if (f === 8) { type = 'elite'; icon = '💀'; }
                 else if (f === 0) { type = 'battle'; icon = '⚔️'; }
                 else {
                     const rand = Math.random();
@@ -199,8 +200,11 @@ export class MapManager {
             this.game.startBattle(type,'normal');
         } 
         else if (node.type === 'elite') {
-            const type = 'king' ; 
-            this.game.startBattle(type,'elite'); 
+            if (node.floor === 8) {
+                this.game.startBattle('shadow', 'elite'); // 8階は影のパーティ
+            } else {
+                this.game.startBattle('king', 'elite');   // 4階はキングスライム
+            }
         } 
         else if (node.type === 'boss') {
             this.game.startBattle('dragon','boss'); 

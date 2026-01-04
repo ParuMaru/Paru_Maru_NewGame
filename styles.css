@@ -1089,9 +1089,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* =========================================
    エンディング画面 (Game Clear)
    ========================================= */
-/* =========================================
-   エンディング画面 (Game Clear)
-   ========================================= */
 #ending-screen {
     position: fixed;
     top: 0; left: 0;
@@ -1218,6 +1215,83 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @keyframes dragonFloating {
     0%, 100% { transform: translateY(0) scale(1); }
     50% { transform: translateY(-15px) scale(1.02); }
+}
+
+/* =========================================
+   敵キャラの接地感・影・オーラ演出 (再調整版)
+   ========================================= */
+
+/* =========================================
+   敵キャラの接地感・影・オーラ演出 (修正版)
+   ========================================= */
+
+/* 1. 敵ユニットの足元に「影」を落とす */
+.enemy-unit::after {
+    content: "";
+    display: block;
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 85%;
+    height: 12px;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.7) 0%, transparent 70%);
+    z-index: -1;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+/* ★修正箇所：セレクタに ::after をつけ忘れていたのを修正 */
+/* これで「本体」ではなく「影」だけがアニメーションします */
+.enemy-unit:has(.enemy-img[src*="slime"])::after, 
+.enemy-unit:has(.enemy-img[src*="dragon"])::after,
+.king-size::after, 
+.dragon-size::after {
+    bottom: -4px; 
+    width: 80%; 
+    opacity: 0.6;
+    animation: shadow-scale 3s ease-in-out infinite; 
+}
+
+@keyframes shadow-scale {
+    0%, 100% { transform: translateX(-50%) scale(1); }
+    50% { transform: translateX(-50%) scale(0.9); } 
+}
+
+/* 2. 「影のパーティ」専用の邪悪なオーラ */
+.shadow-aura .enemy-img {
+    filter: brightness(0.95) contrast(1.1) drop-shadow(0 0 8px #4b0082) drop-shadow(0 0 20px #8e44ad);
+}
+
+/* 3. 敵HPバーのリッチ化 */
+.enemy-hp-container {
+    width: 80px;
+    height: 9px;
+    background: #222;
+    border: 1px solid #fff;
+    border-radius: 4px;
+    margin-bottom: 5px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+}
+
+.enemy-hp-bar {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, #ff6b81, #ff4757, #c0392b);
+    transition: width 0.3s ease;
+}
+
+/* 4. 暗い雰囲気のフィルター */
+.dark-atmosphere::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(circle, rgba(20, 0, 40, 0.2) 30%, rgba(10, 0, 20, 0.8) 100%);
+    pointer-events: none;
+    z-index: 1;
+    mix-blend-mode: multiply;
 }
 
 /* =========================================

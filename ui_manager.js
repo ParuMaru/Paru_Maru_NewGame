@@ -218,6 +218,11 @@ export class UIManager {
             else if (enemy.isKing) {
                 unitDiv.classList.add('king-size');
             }
+            
+            //  影シリーズの場合、特別なクラスを付与
+            if (enemy.enemyType && enemy.enemyType.startsWith('shadow')) {
+                unitDiv.classList.add('shadow-aura');
+            }
 
             const nameDiv = document.createElement('div');
             nameDiv.className = 'enemy-label';

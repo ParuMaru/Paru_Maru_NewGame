@@ -25,6 +25,7 @@ export class BattleBGM {
             map:    [],
             normal: [], 
             elite:  [], 
+            shadow:   [],
             boss:   []    
         };
         
@@ -33,6 +34,7 @@ export class BattleBGM {
             map: './resource/map.mid',
             normal: './resource/endtime.mid', 
             elite:  './resource/endymion.mid', 
+            shadow:   './resource/magnoria.mid', 
             boss:   './resource/Laqryma.mid'   
         };
 
@@ -100,6 +102,10 @@ export class BattleBGM {
             console.log("エリートBGMが見つかりません。通常曲を流用します。");
             this.bgmData.elite = null;
         });
+        const bgmPromiseShadow = this.loadMidi(this.bgmFiles.shadow, 'shadow').catch(() => {
+            console.log("shadowBGMが見つかりません。通常曲を流用します。");
+            this.bgmData.elite = null;
+        });
 
         const bgmPromiseBoss = this.loadMidi(this.bgmFiles.boss, 'boss').catch(() => {
             console.log("ボスBGMが見つかりません。エリート曲を流用します。");
@@ -118,6 +124,7 @@ export class BattleBGM {
         let targetBpm = 180;
         if (type ==='map') targetBpm = 100;
         if (type === 'elite') targetBpm = 220; 
+        if (type === 'dark')  targetBpm = 160; 
         if (type === 'boss')  targetBpm = 236; 
 
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
@@ -183,6 +190,15 @@ export class BattleBGM {
             if (this.bgmData.boss) {
                 notesToPlay = this.bgmData.boss;
                 bpmToUse = 236; 
+            } else if (this.bgmData.elite) {
+                notesToPlay = this.bgmData.elite;
+                bpmToUse = 220;
+            }
+        }
+        else if (type === 'shadow') {
+            if (this.bgmData.boss) {
+                notesToPlay = this.bgmData.shadow;
+                bpmToUse = 160; 
             } else if (this.bgmData.elite) {
                 notesToPlay = this.bgmData.elite;
                 bpmToUse = 220;

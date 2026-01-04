@@ -36,13 +36,11 @@ export class ActionExecutor {
 
             finalTarget.add_hp(-damage);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
-            // ヒーラーの攻撃なら「毒」を付与（3ターン）
+            // ヒーラーの攻撃なら「毒」を付与
             if (actor.job === 'healer' && finalTarget.is_alive()) {
-                // まだ毒になっていなければログを出す
                 if (!finalTarget.debuffs.poison) {
                     this.director.ui.addLog(`${finalTarget.name}は毒に侵された！`, "#9b59b6");
                 }
-                // 毒を3ターン付与（上書き更新）
                 finalTarget.debuffs.poison = 3;
             }
         });
@@ -83,7 +81,9 @@ export class ActionExecutor {
                 break;
                 
             case 'magic':
-                this.director.showMagicEffect(skill, targets);
+                // ★修正: actor を引数に追加
+                this.director.showMagicEffect(actor, skill, targets);
+                
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
@@ -136,7 +136,6 @@ export class ActionExecutor {
                     this.director.showCover(actor);
                 } 
                 else if(skill.id === 'encourage' || skill.id === 'howling') {
-                    // ★修正: ['atk_up'] -> .atk_up
                     targets.forEach(t => {
                         if (t.is_alive()) t.buffs.atk_up = 3; 
                     });
@@ -148,7 +147,6 @@ export class ActionExecutor {
                 this.director.showRegen(actor);
                 targets.forEach(t => {
                     if (t.is_alive()) {
-                        // ★修正: ['regen'] -> .regen
                         t.buffs.regen = skill.duration;
                         t.regen_value = skill.value;
                         const tId = this.director._getTargetId(t);
