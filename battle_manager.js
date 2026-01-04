@@ -5,6 +5,7 @@ import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
 import { Slime, KingSlime, Goblin, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
+import { BattleCalculator } from './battle_calculator.js';
 
 export class BattleManager {
     constructor(gameManager) {
@@ -19,25 +20,13 @@ export class BattleManager {
         this.bgm.initAndLoad(); 
     }
 
-    /**
-     * GameManagerから呼ばれる戦闘開始メソッド
-     * @param {Array} party 
-     * @param {Object} inventory 
-     * @param {string} enemyType 
-     * @param {string} bgmType - ★追加: BGMの種類指定
-     */
     setupBattle(party, inventory, enemyType, bgmType = null) {
         this.state.party = party;
         this.ui.setInventory(inventory);
         
-        // ... (敵の生成ロジックは変更なし) ...
         this.state.enemies = [];
-        if (enemyType === 'king') {
-            this.state.enemies.push(new KingSlime());
-        } 
-        else if (enemyType === 'dragon') {
-            this.state.enemies.push(new IceDragon());
-        }
+        if (enemyType === 'king') this.state.enemies.push(new KingSlime());
+        else if (enemyType === 'dragon') this.state.enemies.push(new IceDragon());
         else if (enemyType === 'goblin') {
             this.state.enemies.push(new Goblin("ゴブリンA"));
             this.state.enemies.push(new Goblin("ゴブリンB"));
@@ -52,7 +41,6 @@ export class BattleManager {
             }
         }
 
-        // ... (Executor設定などは変更なし) ...
         this.executor.party = this.state.party;
         this.executor.enemies = this.state.enemies;
         this.executor.director.party = this.state.party;
@@ -63,11 +51,9 @@ export class BattleManager {
         this.ui.addLog("---------- BATTLE START ----------", "#ffff00");
         this.bgm.initContext();
 
-        // ★変更: 指定があればそれに従う、なければ敵タイプで推測
         if (bgmType) {
             this.bgm.playBGM(bgmType);
         } else {
-            // 自動判定（念のため）
             if (enemyType === 'dragon') this.bgm.playBGM('boss');
             else if (enemyType === 'king') this.bgm.playBGM('elite');
             else this.bgm.playBGM('normal');
@@ -93,35 +79,53 @@ export class BattleManager {
         const partyIndex = this.state.party.indexOf(actor);
         this.ui.highlightActiveMember(partyIndex);
         
-        if (actor.is_alive()) {
-            // 1. リジェネ発動
-            // .hasBuff() は内部でブラケットアクセスしているのでそのままでOKですが
-            // 呼び出し側の文字列リテラルは正しいです
-            if (actor.hasBuff('regen')) {
-                const healVal = Math.floor(actor.max_hp * actor.regen_value);
-                actor.add_hp(healVal);
-                this.ui.addLog(`> ${actor.name}のHPが ${healVal} 回復した(祝福)`, "#2ecc71");
-                this.updateUI();
-                if (partyIndex >= 0) this.effects.healEffect(`card-${partyIndex}`);
-                await new Promise(r => setTimeout(r, 600));
-            }
-
-            // 2. バフ/デバフのターン経過処理
-            const processStatus = (box) => {
-                for (const key in box) {
-                    box[key]--; 
-                    if (box[key] <= 0) {
-                        delete box[key];
-                        if (key === 'atk_up') this.ui.addLog(`${actor.name}の攻撃力が元に戻った`, "#bdc3c7");
-                        if (key === 'regen') this.ui.addLog(`${actor.name}の祝福が消えた`, "#bdc3c7");
-                    }
-                }
-            };
+        // --- 1. リジェネ処理（ターン開始時） ---
+        if (actor.is_alive() && actor.buffs.regen > 0) {
+            const healVal = Math.floor(actor.max_hp * actor.regen_value);
+            actor.add_hp(healVal);
             
-            processStatus(actor.buffs);
-            processStatus(actor.debuffs);
+            this.ui.addLog(`> ${actor.name}のHPが ${healVal} 回復した(祝福)`, "#2ecc71");
+            this.updateUI();
+            
+            if (partyIndex >= 0) this.effects.healEffect(`card-${partyIndex}`);
+            
+            await new Promise(r => setTimeout(r, 600));
         }
 
+        // --- 2. 毒ダメージ処理（ターン開始時） ---
+        // ★修正: 条件判定と減算処理を確実に実行
+        if (actor.is_alive() && actor.debuffs && actor.debuffs.poison > 0) {
+            // ダメージ計算
+            const poisonDmg = BattleCalculator.calculatePoisonDamage(actor);
+            
+            // ★重要: ここで確実に毒のターンを減らす
+            actor.debuffs.poison--;
+
+            this.ui.addLog(`> ${actor.name}は毒で ${poisonDmg} のダメージ！`, "#9b59b6");
+            
+            // ターン切れなら削除
+            if (actor.debuffs.poison <= 0) {
+                delete actor.debuffs.poison;
+                this.ui.addLog(`${actor.name}の毒が消えた`, "#bdc3c7");
+            }
+
+            // 描画更新: 毒で死んだ場合の画像更新なども含めて行う
+            this.ui.refreshEnemyGraphics(this.state.enemies); 
+            // その後にアイコン（数値）を更新する
+            this.updateUI();
+            
+            // 演出待ち
+            await new Promise(r => setTimeout(r, 600));
+
+            // 毒で倒れた場合
+            if (!actor.is_alive()) {
+                this.ui.addLog(`${actor.name}は力尽きた...`, "#e74c3c");
+                this.nextTurn();
+                return; // ここで処理を抜ける
+            }
+        }
+        
+        // かばう解除
         if (actor.is_covering) {
             actor.is_covering = false;
             this.ui.addLog(`${actor.name}は身構えるのをやめた`, "#bdc3c7"); 
@@ -136,9 +140,36 @@ export class BattleManager {
         }
     }
 
+    // ターン終了処理
+    async processTurnEnd(actor) {
+        if (!actor.is_alive()) return;
+
+        const processBox = (box, typeName) => {
+            for (const key in box) {
+                //  毒(poison)はターン開始時に処理済みなので、ここでは触らない あとで追記するかも
+                if (key === 'poison') continue;
+
+                if (box[key] > 0) {
+                    box[key]--;
+                    if (box[key] <= 0) {
+                        delete box[key];
+                        if (key === 'atk_up') this.ui.addLog(`${actor.name}の攻撃力が元に戻った`, "#bdc3c7");
+                        if (key === 'regen') this.ui.addLog(`${actor.name}の祝福が消えた`, "#bdc3c7");
+                    }
+                }
+            }
+        };
+
+        processBox(actor.buffs, "buff");
+        processBox(actor.debuffs, "debuff");
+
+        this.updateUI();
+    }
+
     async checkSplitting() {
         for (let i = 0; i < this.state.enemies.length; i++) {
             const enemy = this.state.enemies[i];
+            
             if (enemy.isKing && enemy.hp <= (enemy.max_hp / 2) && enemy.is_alive()) {
                 this.isProcessing = true; 
                 await this.executor.executeSplit(i);
@@ -164,10 +195,13 @@ export class BattleManager {
             }
             else {
                 let potentialTargets;
-                if (skill.type === 'res') potentialTargets = this.state.party.filter(m => !m.is_alive());
-                else if (['heal', 'buff', 'regen', 'mp_recovery'].includes(skill.type)) potentialTargets = this.state.party.filter(m => m.is_alive());
-                else potentialTargets = this.state.getAliveEnemies();
-                
+                if (skill.type === 'res') {
+                    potentialTargets = this.state.party.filter(m => !m.is_alive());
+                } else if (['heal', 'buff', 'regen', 'mp_recovery'].includes(skill.type)) {
+                    potentialTargets = this.state.party.filter(m => m.is_alive());
+                } else {
+                    potentialTargets = this.state.getAliveEnemies();
+                }
                 this.ui.showTargetMenu(
                     potentialTargets,
                     (selectedTarget) => {
@@ -216,6 +250,10 @@ export class BattleManager {
         await new Promise(r => setTimeout(r, 800));
         const action = this.ai.think(enemy, this.state.getAliveParty());
         await this.executor.execute(enemy, action.target, action);
+        
+        // 行動終了時にバフ減少
+        await this.processTurnEnd(enemy);
+        
         this.nextTurn();
     }
 
@@ -226,17 +264,20 @@ export class BattleManager {
     }
 
     updateUI() {
-        // --- 1. 味方の更新（既存） ---
+        // --- 1. 味方の更新 ---
         this.state.party.forEach((p, i) => {
             const nameLabel = document.getElementById(`p${i}-name`);
             if (nameLabel) nameLabel.innerText = p.name;
+
             document.getElementById(`p${i}-hp-text`).innerText = `HP: ${p.hp} / ${p.max_hp}`;
             document.getElementById(`p${i}-mp-text`).innerText = `MP: ${p.mp} / ${p.max_mp}`;
+            
             document.getElementById(`p${i}-hp-bar`).style.width = `${(p.hp / p.max_hp) * 100}%`;
             document.getElementById(`p${i}-mp-bar`).style.width = `${(p.mp / p.max_mp) * 100}%`;
             
             const card = document.getElementById(`card-${i}`);
             if (card) card._memberRef = p; 
+            
             card.style.opacity = p.is_alive() ? "1" : "0.5";
             card.style.position = "relative"; 
 
@@ -250,22 +291,24 @@ export class BattleManager {
             let badgesHTML = "";
             if (p.is_alive()) {
                 if (p.is_covering) badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
+                
                 if (p.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.buffs.regen}</span></div>`;
                 if (p.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buffs.atk_up}</span></div>`;
+                
                 if (p.debuffs && p.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${p.debuffs.poison}</span></div>`;
             }
             badgeContainer.innerHTML = badgesHTML;
         });
 
-        // --- 2. 敵の更新（★ここを追加！） ---
+        // --- 2. 敵の更新 ---
         this.state.enemies.forEach((enemy, i) => {
             if (!enemy.is_alive()) return;
 
-            // 敵のDOM要素を取得 
+            // ID取得（ui_managerで設定したID）
             const unitDiv = document.getElementById(`enemy-sprite-${i}`);
             if (!unitDiv) return;
 
-            // ステータス表示領域を取得または作成
+            // ステータス表示領域を取得
             let badgeContainer = unitDiv.querySelector('.enemy-status-container');
             if (!badgeContainer) {
                 badgeContainer = document.createElement('div');
@@ -273,18 +316,13 @@ export class BattleManager {
                 unitDiv.appendChild(badgeContainer);
             }
 
-            // バッジHTML生成
             let badgesHTML = "";
-            
-            // 攻撃UP (咆哮など)
             if (enemy.buffs.atk_up) {
                 badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${enemy.buffs.atk_up}</span></div>`;
             }
-            // リジェネ
             if (enemy.buffs.regen) {
                  badgesHTML += `<div class="status-badge badge-regen" title="リジェネ">✨<span class="badge-num">${enemy.buffs.regen}</span></div>`;
             }
-            // 毒などのデバフ
              if (enemy.debuffs && enemy.debuffs.poison) {
                 badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${enemy.debuffs.poison}</span></div>`;
             }
@@ -306,16 +344,30 @@ export class BattleManager {
             }
         }
         await this.executor.execute(actor, action.target, action);
+        
+        // 行動終了時にバフ減少
+        await this.processTurnEnd(actor);
+
         this.nextTurn();
     }
     
     cleanup() {
         if (this.bgm) this.bgm.stopBGM(); 
         this.isProcessing = false;
+
+        // 戦闘終了時リセット
+        if (this.state && this.state.party) {
+            this.state.party.forEach(p => {
+                if(p.clear_all_buffs) {
+                    p.clear_all_buffs(); 
+                }
+            });
+        }
     }
 
     processEndGame() {
-        this.updateUI();
+        this.updateUI(); 
+
         const win = this.state.checkVictory();
         this.bgm.stopBGM();
         if (win) {
@@ -332,12 +384,18 @@ export class BattleManager {
 
             title.innerText = win ? "VICTORY" : "DEFEAT...";
             title.className = win ? "victory-title" : "defeat-title";
+
             overlay.style.display = 'flex'; 
+
             restartBtn.onclick = () => {
                 this.cleanup();
+                
                 if (this.gameManager) {
-                    if (win) this.gameManager.onBattleWin();
-                    else this.gameManager.onGameOver();
+                    if (win) {
+                        this.gameManager.onBattleWin();
+                    } else {
+                        this.gameManager.onGameOver();
+                    }
                 } else {
                     location.reload(); 
                 }

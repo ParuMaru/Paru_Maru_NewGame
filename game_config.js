@@ -13,6 +13,8 @@ export const GameConfig = {
     BUFF_DURATION_HERO_OTHER: 2,
     REGEN_DURATION_SELF: 4,
     REGEN_DURATION_OTHER: 3,
+    COVER_DAMAGE_RATE: 0.5,
+    
 
     // 敵（スライム）のロジック用
     SLIME_REGEN_CHANCE: 0.2,      // 再生確率

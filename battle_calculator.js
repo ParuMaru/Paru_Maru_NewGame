@@ -62,6 +62,24 @@ export class BattleCalculator {
             type: type
         };
     }
+    
+    
+    /**
+     * 毒ダメージ計算
+     * @param {Entity} target - 毒を受けているキャラ
+     */
+    static calculatePoisonDamage(target) {
+        // 最大HPの 3%
+        let damage = Math.floor(target.max_hp * 0.03);
+        
+        // 上限キャップ (50)
+        damage = Math.min(damage, 50);
+        
+        // 最低保証 (1)
+        damage = Math.max(1, damage);
+
+        return damage;
+    }
 
     /**
      * 回復量計算

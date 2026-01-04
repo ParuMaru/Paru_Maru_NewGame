@@ -1,6 +1,7 @@
 import { BattleCalculator } from './battle_calculator.js';
 import { BattleDirector } from './battle_director.js'; 
 import { Slime } from './entities.js';
+import { GameConfig } from './game_config.js';
 
 export class ActionExecutor {
     constructor(ui, music, effects, enemies, party) {
@@ -31,10 +32,19 @@ export class ActionExecutor {
             const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
             
             let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null);
-            if (isCovered) damage = Math.floor(damage * 0.8); 
+            if (isCovered) damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE); 
 
             finalTarget.add_hp(-damage);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
+            // ヒーラーの攻撃なら「毒」を付与（3ターン）
+            if (actor.job === 'healer' && finalTarget.is_alive()) {
+                // まだ毒になっていなければログを出す
+                if (!finalTarget.debuffs.poison) {
+                    this.director.ui.addLog(`${finalTarget.name}は毒に侵された！`, "#9b59b6");
+                }
+                // 毒を3ターン付与（上書き更新）
+                finalTarget.debuffs.poison = 3;
+            }
         });
         this.director.music.playDamage(); 
     }
@@ -59,7 +69,7 @@ export class ActionExecutor {
                     
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
-                    if (isCovered) damage = Math.floor(damage * 0.8);
+                    if (isCovered) damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE);
 
                     finalTarget.add_hp(-damage);
                     
@@ -74,12 +84,16 @@ export class ActionExecutor {
                 
             case 'magic':
                 this.director.showMagicEffect(skill, targets);
-                targets.forEach(t => {
-                    if (t.is_alive()) {
-                        let { damage } = BattleCalculator.calculateDamage(actor, t, skill);
-                        t.add_hp(-damage);
-                        this.director.showMagicHit(t, damage);
+                targets.forEach(originalTarget => {
+                    if (!originalTarget.is_alive()) return;
+                    const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
+                    let { damage } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
+                    if (isCovered) {
+                        damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE);
                     }
+
+                    finalTarget.add_hp(-damage);
+                    this.director.showMagicHit(finalTarget, damage);
                 });
                 this.director.music.playDamage();
                 break;

@@ -31,6 +31,10 @@ window.onload = () => {
             const mapScreen = document.getElementById('map-screen');
             if (mapScreen) {
                 mapScreen.style.transform = `scale(${scale})`;
+                
+                if (gameManager.mapManager) {
+                    gameManager.mapManager.drawLines();
+                }
             }
             
             // 3. 報酬画面のサイズ変更（もし存在すれば）

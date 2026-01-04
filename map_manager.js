@@ -76,15 +76,15 @@ export class MapManager {
                 let type = 'battle';
                 let icon = '⚔️';
                 
-                if (f === 10) { type = 'boss'; icon = '🐉'; }
+                if (f === 10) { type = 'boss'; icon = '🏰'; }
                 else if (f === 9) { type = 'rest'; icon = '⛺'; }
                 else if (f === 4 || f === 8) { type = 'elite'; icon = '💀'; }
                 else if (f === 0) { type = 'battle'; icon = '⚔️'; }
                 else {
                     const rand = Math.random();
-                    if (rand < 0.15) { type = 'rest'; icon = '⛺'; }
-                    else if (rand < 0.35) { type = 'treasure'; icon = '🎁'; }
-                    else if (rand < 0.50) { type = 'fountain'; icon = '⛲'; }
+                    if (rand < 0.1) { type = 'rest'; icon = '⛺'; }
+                    else if (rand < 0.2) { type = 'treasure'; icon = '🎁'; }
+                    else if (rand < 0.3) { type = 'fountain'; icon = '⛲'; }
                     else { type = 'battle'; icon = '⚔️'; }
                 }
 
@@ -302,9 +302,20 @@ export class MapManager {
 
     drawLines() {
         const svg = this.svgLayer;
+        // まずSVG自体の描画領域を確保
         svg.setAttribute('width', this.scrollArea.scrollWidth);
         svg.setAttribute('height', this.scrollArea.scrollHeight);
+        
+        // SVGの中身をクリア（線が重複して描画されるのを防ぐ）
+        while (svg.lastChild) {
+            svg.removeChild(svg.lastChild);
+        }
 
+        // 見た目の幅(getBoundingClientRect) ÷ 内部的な幅(offsetWidth) = 倍率
+        const currentRect = this.container.getBoundingClientRect();
+        const scale = currentRect.width ? (currentRect.width / this.container.offsetWidth) : 1.0;
+        
+        // 基準となるコンテナの位置情報
         const containerRect = this.scrollArea.getBoundingClientRect();
         const scrollTop = this.scrollArea.scrollTop;
 
@@ -318,21 +329,28 @@ export class MapManager {
                         const startRect = startEl.getBoundingClientRect();
                         const endRect = endEl.getBoundingClientRect();
                         
-                        const x1 = startRect.left - containerRect.left + startRect.width / 2;
-                        const y1 = startRect.top - containerRect.top + startRect.height / 2 + scrollTop;
-                        const x2 = endRect.left - containerRect.left + endRect.width / 2;
-                        const y2 = endRect.top - containerRect.top + endRect.height / 2 + scrollTop;
+                        // 座標計算時に scale で割って、元の「1.0倍の世界」の座標に戻す
+                        // (scrollTop は内部スクロール量なので scale の影響を受けないため、そのまま足す)
+
+                        const x1 = (startRect.left - containerRect.left) / scale + (startRect.width / scale) / 2;
+                        const y1 = (startRect.top - containerRect.top) / scale + (startRect.height / scale) / 2 + scrollTop;
+                        
+                        const x2 = (endRect.left - containerRect.left) / scale + (endRect.width / scale) / 2;
+                        const y2 = (endRect.top - containerRect.top) / scale + (endRect.height / scale) / 2 + scrollTop;
 
                         const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-                        line.setAttribute("x1", x1); line.setAttribute("y1", y1);
-                        line.setAttribute("x2", x2); line.setAttribute("y2", y2);
+                        line.setAttribute("x1", x1); 
+                        line.setAttribute("y1", y1);
+                        line.setAttribute("x2", x2); 
+                        line.setAttribute("y2", y2);
                         
                         const isClearedPath = (this.getNodeStatus(node.floor, node.index) === 'cleared' && 
                                                this.getNodeStatus(node.floor + 1, parentIndex) !== 'locked');
                         
-                        line.setAttribute("stroke", isClearedPath ? "#2ecc71" : "#555");
+                        line.setAttribute("stroke", isClearedPath ? "#2ecc71" : "rgba(255, 255, 255, 0.3)");
                         line.setAttribute("stroke-width", "3");
                         line.setAttribute("stroke-dasharray", "5,5"); 
+                        
                         svg.appendChild(line);
                     }
                 });
