@@ -1208,6 +1208,70 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     .map-floor { gap: 20px; }
     #log { font-size: 11px; line-height: 1.3; padding: 5px; min-height: 100px; }
     #log div { padding: 1px 0; border-bottom-width: 1px; }
+    #game-wrapper {
+        height: 100dvh; 
+        border-width: 2px;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* キャンバス：余ったスペースを全部ここで使う（flex: 1） */
+    #canvas-area {
+        height: auto; /* 固定高さを解除 */
+        flex: 1;      /* 残りの空間を埋める */
+        min-height: 200px; /* 最低限の高さは確保 */
+    }
+
+    /* ログとステータス：少し余裕を持たせる */
+    #log {
+        height: 15vh; /* 少し広げる */
+        min-height: 80px;
+        font-size: 11px;
+        line-height: 1.3;
+        padding: 5px;
+    }
+    #log div { padding: 1px 0; border-bottom-width: 1px; }
+
+    #status-area {
+        height: 14vh; /* 少し広げる */
+        min-height: 80px;
+    }
+
+    /* コマンドエリア：下の余白調整 */
+    #command-area {
+        padding-bottom: 10px; /* 必要十分な余白に */
+        flex-shrink: 0; /* 縮まないようにする */
+    }
+
+    /* --- 5. エンディング調整 --- */
+    .ending-cat-img { width: 80%; margin-bottom: 15px; }
+    .ending-title { font-size: 36px; }
+
+    /* --- 6. ドラゴン（ボス）のスマホ最適化 --- */
+    .dragon-size .enemy-img {
+        /* キャンバスが広がったので、少し大きめ(220px)に戻してもOK */
+        max-width: 220px; 
+    }
+
+    .enemy-unit.dragon-size {
+        transform: translateY(0);
+        margin-bottom: 10px;
+    }
+
+    .dragon-size .enemy-hp-container {
+        width: 180px; /* 少し大きく */
+        height: 10px;
+    }
+
+    .dragon-size .enemy-label {
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+    
+    .dragon-size .enemy-status-container {
+        top: -20px;
+    }
+
     
     /* --- 4. バトル画面の高さ調整 --- */
     #canvas-area { height: 32vh; min-height: 200px; }
