@@ -16,6 +16,10 @@ export class BattleBGM {
         this.startTime = 0;        
         this.activeSources = [];   
         
+        // ★重要：勝利ループ再生中かどうかの厳密なフラグ
+        // なんか止まらないからいったん保留
+        this.isVictoryLoopActive = false;
+
         // 楽曲データ保存用
         this.bgmData = {
             map:    [],
@@ -24,13 +28,17 @@ export class BattleBGM {
             boss:   []    
         };
         
-        // ファイルパス設定
+        // MIDIファイルパス設定
         this.bgmFiles = {
             map: './resource/map.mid',
             normal: './resource/endtime.mid', 
             elite:  './resource/endymion.mid', 
             boss:   './resource/Laqryma.mid'   
         };
+
+        // エンディング用MP3ファイルのパス
+        this.endingFile = './resource/ending.mp3';
+        this.endingBuffer = null;
 
         this.currentType = 'normal';
         
@@ -50,13 +58,14 @@ export class BattleBGM {
             'breath': './resource/breath.mp3'
         };
         
-        this.victoryLoopTimer = null; // 勝利BGMループ用タイマー
+        this.victoryLoopTimer = null; 
         this.seBuffers = {};       
     }
 
     async initAndLoad() {
         this.initContext();
 
+        // SEのロード
         const sePromises = Object.keys(this.seFiles).map(async key => {
             try {
                 const res = await fetch(this.seFiles[key]);
@@ -68,7 +77,22 @@ export class BattleBGM {
             }
         });
 
-        // 各BGMの読み込み
+        // エンディング曲(MP3)のロード
+        const endingPromise = (async () => {
+            try {
+                const res = await fetch(this.endingFile);
+                if(res.ok) {
+                    const arrayBuf = await res.arrayBuffer();
+                    this.endingBuffer = await this.ctx.decodeAudioData(arrayBuf);
+                } else {
+                    console.warn("Ending BGM not found.");
+                }
+            } catch(e) {
+                console.warn("Ending BGM load failed", e);
+            }
+        })();
+
+        // 各MIDI BGMの読み込み
         const bgmPromiseMap = this.loadMidi(this.bgmFiles.map, 'map');
         const bgmPromiseNormal = this.loadMidi(this.bgmFiles.normal, 'normal');
         
@@ -82,7 +106,7 @@ export class BattleBGM {
             this.bgmData.boss = null; 
         });
 
-        await Promise.all([...sePromises, bgmPromiseNormal, bgmPromiseElite, bgmPromiseBoss]);
+        await Promise.all([...sePromises, endingPromise, bgmPromiseNormal, bgmPromiseElite, bgmPromiseBoss]);
         console.log("全オーディオファイルのロード完了");
     }
 
@@ -91,11 +115,10 @@ export class BattleBGM {
         if (!res.ok) throw new Error(`File not found: ${url}`);
         const arrayBuffer = await res.arrayBuffer();
         
-        // 読み込み時のBPM解析設定
         let targetBpm = 180;
         if (type ==='map') targetBpm = 100;
-        if (type === 'elite') targetBpm = 220; // エリートは220
-        if (type === 'boss')  targetBpm = 236; // ボスは236
+        if (type === 'elite') targetBpm = 220; 
+        if (type === 'boss')  targetBpm = 236; 
 
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
     }
@@ -122,26 +145,44 @@ export class BattleBGM {
      * BGM再生
      */
     playBGM(type = 'normal') {
-        this.stopBGM();
+        this.stopBGM(); // ★ここで全てのBGM（勝利ループ含む）を停止
         this.currentType = type;
 
+        // エンディング(MP3)の場合はここで再生してリターン
+        if (type === 'ending') {
+            if (this.endingBuffer) {
+                const source = this.ctx.createBufferSource();
+                source.buffer = this.endingBuffer;
+                source.loop = true; 
+                
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.value = 0.6; 
+
+                source.connect(gainNode).connect(this.ctx.destination);
+                source.start(0);
+                
+                this.activeSources.push(source);
+                this.isPlaying = true;
+            }
+            return; // MIDI処理には行かない
+        }
+
+        // --- MIDI再生ロジック ---
         let notesToPlay = this.bgmData.normal;
         let bpmToUse = this.baseBpm;
 
-        // 再生時のBPM設定
         if (type === 'map'){
             if (this.bgmData.map) {
                 notesToPlay = this.bgmData.map;
-                bpmToUse = 100; // ゆったり
+                bpmToUse = 100; 
             } else {
-                // ファイルがない場合は鳴らさない（または通常曲をスローにする）
                 notesToPlay = []; 
             }
         }
         else if (type === 'boss') {
             if (this.bgmData.boss) {
                 notesToPlay = this.bgmData.boss;
-                bpmToUse = 236; // Laqryma
+                bpmToUse = 236; 
             } else if (this.bgmData.elite) {
                 notesToPlay = this.bgmData.elite;
                 bpmToUse = 220;
@@ -150,7 +191,7 @@ export class BattleBGM {
         else if (type === 'elite') {
             if (this.bgmData.elite) {
                 notesToPlay = this.bgmData.elite;
-                bpmToUse = 220; // Endymion
+                bpmToUse = 220; 
             } else {
                 notesToPlay = this.bgmData.normal;
                 bpmToUse = this.baseBpm * 1.2;
@@ -170,6 +211,8 @@ export class BattleBGM {
 
     schedule() {
         if (!this.isPlaying) return;
+        if (this.currentType === 'ending') return;
+
         const lookAhead = 1.0; 
         const currentTime = this.ctx.currentTime - this.startTime;
 
@@ -221,13 +264,24 @@ export class BattleBGM {
 
     stopBGM() {
         this.isPlaying = false;
+        
+        // ★修正: 停止時に勝利ループ用フラグを確実に倒す
+        this.isVictoryLoopActive = false;
+
         if (this.schedulerTimer) clearTimeout(this.schedulerTimer);
-        // ★重要: 勝利BGMのループタイマーもここで止める
+        
         if (this.victoryLoopTimer) {
             clearTimeout(this.victoryLoopTimer);
             this.victoryLoopTimer = null;
         }
-        this.activeSources.forEach(s => { try { s.stop(); s.disconnect(); } catch(e){} });
+        
+        // 全ての音源停止
+        this.activeSources.forEach(s => { 
+            try { 
+                s.stop(); 
+                s.disconnect(); 
+            } catch(e){} 
+        });
         this.activeSources = [];
     }
 
@@ -319,7 +373,10 @@ export class BattleBGM {
         this.stopBGM();
         const now = this.ctx.currentTime + 0.1;
         
-        // Cメジャーコードのファンファーレ（FF風）
+        // ★修正: 勝利モードON（このフラグがないとループしません）
+        this.isVictoryLoopActive = true;
+
+        // Cメジャーコードのファンファーレ
         const C4=261.6, E4=329.6, G4=392.0, Ab4=415.3, Bb4=466.2, C5=523.2, F4=349.2, D4=293.7;
         const s = 0.11; 
         const v = 0.05; 
@@ -336,12 +393,16 @@ export class BattleBGM {
         this.playInstr([Bb4, F4, D4], t3 + 0.35, 0.12, v);
         this.playInstr([C5, G4, E4, 261.6], t3 + 0.47, 2.5, v + 0.02);
 
-        // ★追加: 3秒後にループBGMへ移行
+        // 3秒後にループBGMへ移行
         this.startVictoryLoop(now + 3.0);
     }
 
     playInstr(freqs, time, dur, vol, type = "sawtooth") {
         if (!this.ctx) return;
+        
+        // ★修正: 停止フラグが降りていたら音を予約しない（これが重要！）
+        if (!this.isPlaying && !this.isVictoryLoopActive) return;
+
         const tones = Array.isArray(freqs) ? freqs : [freqs];
 
         tones.forEach(f => {
@@ -372,14 +433,16 @@ export class BattleBGM {
     }
 
     /**
-     * ★追加: 勝利後のBGMループ処理
+     * 勝利後のBGMループ処理
      */
     startVictoryLoop(startTime) {
         const self = this;
         const scheduleNext = (time) => {
-            // もしstopBGM()が呼ばれてisPlaying=falseになっていたら止める
-            // (注意: isPlayingは通常BGM用なので、勝利ループ中はfalseのままで正解だが、
-            //  マップに戻る時などにstopBGM()でvictoryLoopTimerがクリアされるので、ここでは単純に実行する)
+            // ★修正: ここで専用フラグをチェック！
+            // stopBGM() が呼ばれてフラグがfalseになったら、即座に終了します
+            if (!self.isVictoryLoopActive) return;
+
+            // もしstopBGM()が呼ばれていたら止める（念のため）
             if (self.victoryLoopTimer === null) return;
 
             const C3=130.8, C4=261.6, D4=293.7, E4=329.6, F4=349.2, G4=392.0, A4=440.0, B4=493.8, C5=523.2;
@@ -412,13 +475,15 @@ export class BattleBGM {
 
             // 再帰呼び出し（3秒ループ）
             self.victoryLoopTimer = setTimeout(() => {
+                // ここでも停止済みかチェック
+                if (!self.isVictoryLoopActive) return;
+                
                 const nextStartTime = Math.max(time + 3.2, self.ctx.currentTime + 0.1);
                 scheduleNext(nextStartTime);
             }, 3000);
         };
         
         // 初回起動
-        // タイマーIDをセットしておかないと stopBGM で止められないため、ダミーでも入れておく
         this.victoryLoopTimer = setTimeout(() => {}, 0); 
         scheduleNext(startTime);
     }

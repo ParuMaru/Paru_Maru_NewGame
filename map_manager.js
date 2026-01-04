@@ -48,7 +48,7 @@ export class MapManager {
                 <div class="fountain-desc">
                     神秘的なオーラを放つ泉がある...<br>
                     一口飲んでみますか？<br>
-                    <span style="font-size:12px; color:#bdc3c7;">(50%でステータスUP / 50%でHP減少)</span>
+                    <span style="font-size:12px; color:#bdc3c7;">良いことが起こるかも！？</span>
                 </div>
                 <div class="fountain-buttons">
                     <button class="fountain-btn btn-drink" id="btn-drink">飲む</button>
@@ -255,7 +255,7 @@ export class MapManager {
         drinkBtn.style.display = 'none';
         leaveBtn.innerText = "戻る";
 
-        if (Math.random() < 0.5) {
+        if (Math.random() < 0.7) {
             // ★変更：成功時はランダムでステータスアップ
             const stats = [
                 { key: 'max_hp', name: '最大HP', val: 20 },

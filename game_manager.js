@@ -113,24 +113,30 @@ export class GameManager {
      * ゲームクリア画面の表示
      */
     showGameClear() {
-        this.hideAllScreens(); // 他の画面を消す
+        this.hideAllScreens(); 
 
-        // エンディング画面を取得、なければ作る
+        // エンディングBGMを再生する
+        if (this.battleManager && this.battleManager.bgm) {
+            this.battleManager.bgm.playBGM('ending');
+        }
+
         let endingScreen = document.getElementById('ending-screen');
         if (!endingScreen) {
             endingScreen = document.createElement('div');
             endingScreen.id = 'ending-screen';
+
+            // 猫画像のファイル名リスト
             const catImages = [
-                './resource/cat_reward1.png',
-                './resource/cat_reward2.png',
+                './resource/cat_reward1.png', 
+                './resource/cat_reward2.png', 
                 './resource/cat_reward3.png'
             ];
 
-            // ★追加：ループ処理で画像のHTMLを生成
-            // mapを使って画像タグの配列を作り、join('')で連結して一つの文字列にします
+            // 画像タグを生成
             const catImagesHTML = catImages.map((src, index) => {
-                 // style="animation-delay: ...s" で、1枚ずつずらして表示させる
-                return `<img src="${src}" class="ending-cat-img" alt="ご褒美にゃんこ${index + 1}" style="animation-delay: ${1 + index * 0.5}s">`;
+                const delay = 1.5 + (index * 0.5);
+                // class に "clickable-cat" を追加して後で特定しやすくする
+                return `<img src="${src}" class="ending-cat-img clickable-cat" alt="猫画像${index}" style="animation-delay: ${delay}s;">`;
             }).join('');
 
             endingScreen.innerHTML = `
@@ -143,21 +149,61 @@ export class GameManager {
                 </div>
 
                 <div class="ending-cat-container">
-                    ${catImagesHTML} </div>
-                
-                
+                    ${catImagesHTML}
+                </div>
+                <p style="font-size:12px; color:#bdc3c7;">（画像をクリックすると拡大します）</p>
+
                 <div class="ending-thanks">Thank you for playing!</div>
                 <br><br>
                 <button id="title-return-btn" class="start-btn">タイトルへ戻る</button>
+
+                <div id="cat-modal" class="image-modal-overlay">
+                    <span class="close-modal">&times;</span>
+                    <img class="modal-content" id="expanded-cat-img" src="">
+                </div>
             `;
             document.body.appendChild(endingScreen);
             
-            // タイトルに戻るボタン（リロード）
+            // タイトルへ戻るボタンの設定
             const btn = document.getElementById('title-return-btn');
             if(btn) btn.onclick = () => location.reload();
+
+            // ★追加：画像クリックでの拡大表示処理を設定
+            this.setupImageModal(endingScreen);
         }
         
         endingScreen.style.display = 'flex';
+    }
+    
+    /**
+     * ★追加：画像の拡大表示モーダルのイベント設定
+     */
+    setupImageModal(screenElement) {
+        const modal = screenElement.querySelector('#cat-modal');
+        const modalImg = screenElement.querySelector('#expanded-cat-img');
+        const closeBtn = screenElement.querySelector('.close-modal');
+        const catImgs = screenElement.querySelectorAll('.clickable-cat');
+
+        // 各猫画像にクリックイベントを設定
+        catImgs.forEach(img => {
+            img.addEventListener('click', function() {
+                modal.style.display = "flex"; // モーダルを表示
+                modalImg.src = this.src;      // クリックした画像のURLをセット
+                modalImg.alt = this.alt;
+            });
+        });
+
+        // 閉じるボタン（×）のクリックイベント
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = "none";
+        });
+
+        // モーダルの背景部分をクリックしても閉じるようにする
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.style.display = "none";
+            }
+        });
     }
     
     /**

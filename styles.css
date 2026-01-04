@@ -49,24 +49,48 @@ body {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%);
+    
+    /* ★変更：横幅は100%、高さは自動(auto)で比率を維持する */
+    background-size: 100% auto;
+    
+    /* 画像の繰り返しを防いで、画面のど真ん中に置く */
+    background-repeat: no-repeat;
+    background-position: center center;
+    
+    /* 上下に隙間ができるので、背景色を黒にしておく */
+    background-color: #000; 
+    
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+        url("./resource/title_hero.png");
+        
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 20000; /* 最前面 */
+    
+    z-index: 20000;
     color: white;
+    text-align: center;
+    padding: 20px;
+    box-sizing: border-box;
 }
+
+/* ★削除：.title-img と @keyframes titleFloat は不要なので消しました */
 
 .title-logo {
     font-size: 60px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     text-shadow: 0 0 20px #3498db;
-    letter-spacing: 5px;
-    animation: title-float 3s ease-in-out infinite;
+    
+    /* 文字間隔のズレ補正 */
+    letter-spacing: 8px; 
+    text-indent: 8px;
+    margin-right: -8px;
+    
+    font-family: 'Times New Roman', serif;
 }
-
 .title-sub {
     font-size: 18px;
     color: #bdc3c7;
@@ -824,7 +848,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 
 /* =========================================
-   泉イベント用のモーダル画面
+   イベント用のモーダル画面
    ========================================= */
 #fountain-overlay {
     position: fixed;
@@ -1065,11 +1089,26 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 /* =========================================
    エンディング画面 (Game Clear)
    ========================================= */
+/* =========================================
+   エンディング画面 (Game Clear)
+   ========================================= */
 #ending-screen {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: radial-gradient(circle at center, #2c3e50 0%, #000000 100%);
+    
+    /* ★変更：背景を画像にする */
+    /* 背景グラデーションを削除し、画像＋フィルターに変更 */
+    /* linear-gradient(黒フィルターの濃さ), url(画像のパス) */
+    background-image: 
+        linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+        url("./resource/ending_bg.png");
+    
+    /* 画面いっぱいに引き伸ばす設定（タイトル画面と同じ） */
+    background-size: 100% auto;
+    background-position: center;
+    background-repeat: no-repeat;
+    
     display: none;
     flex-direction: column;
     justify-content: flex-start;
@@ -1289,4 +1328,83 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
         font-size: 36px; 
         margin-top: 60px;
     }
+}
+
+.ending-cat-img {
+    cursor: pointer; /* 指マークにする */
+    transition: transform 0.2s, border-color 0.2s;
+}
+.ending-cat-img:hover {
+    transform: scale(1.05); /* ホバー時に少し大きく */
+    border-color: #fff;     /* 枠線を白く光らせる */
+}
+
+/* ★追加：拡大表示用のモーダル（オーバーレイ背景） */
+.image-modal-overlay {
+    display: none; /* 最初は非表示 */
+    position: fixed; /* 画面全体に固定 */
+    z-index: 4000;   /* エンディング画面(3000)より手前に */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* 画像が大きすぎる場合はスクロール */
+    background-color: rgba(0,0,0,0.9); /* 背景を黒く透過 */
+    
+    /* 中身を中央揃え */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    animation: fadeIn 0.3s; /* ふわっと表示 */
+}
+
+/* モーダルの中の拡大画像 */
+.modal-content {
+    margin: auto;
+    display: block;
+    width: 80%;
+    max-width: 800px; /* PCで見すぎないように */
+    max-height: 80vh; /* 画面からはみ出さない高さ */
+    object-fit: contain; /* 比率を保って収める */
+    border-radius: 10px;
+    border: 2px solid #f1c40f;
+    box-shadow: 0 0 30px rgba(241, 196, 15, 0.5);
+    animation: zoomIn 0.3s; /* ズームしながら表示 */
+}
+
+/* 閉じるボタン（×マーク） */
+.close-modal {
+    position: absolute;
+    top: 20px;
+    right: 35px;
+    color: #f1c40f;
+    font-size: 40px;
+    font-weight: bold;
+    transition: 0.3s;
+    cursor: pointer;
+    z-index: 4001;
+}
+.close-modal:hover,
+.close-modal:focus {
+    color: #fff;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* スマホ用調整 */
+@media (max-width: 600px) {
+    .modal-content {
+        width: 95%; /* スマホならほぼ全幅 */
+    }
+    .close-modal {
+        top: 10px;
+        right: 20px;
+        font-size: 30px;
+    }
+}
+
+/* アニメーション定義 */
+@keyframes zoomIn {
+    from {transform:scale(0.8); opacity:0;}
+    to {transform:scale(1); opacity:1;}
 }
