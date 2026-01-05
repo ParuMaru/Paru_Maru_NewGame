@@ -1364,14 +1364,14 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     /* --- 4. ドラゴン（ボス）のスマホ最適化 --- */
     .dragon-size .enemy-img {
         /* キャンバスが広がったので少し大きめにしつつ、はみ出さないサイズ */
-        max-width: 200px; 
+        width: auto;
     }
     .enemy-unit.dragon-size {
-        transform: translateY(0);
+        transform: translateY(10);
         margin-bottom: 10px;
     }
     .dragon-size .enemy-hp-container {
-        width: 180px; 
+        width: 200px; 
         height: 10px;
     }
     .dragon-size .enemy-label {
