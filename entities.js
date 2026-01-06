@@ -33,7 +33,7 @@ export class Entity {
         // --- 状態フラグ ---
         this.is_covering = false; // かばう状態
         this.buffs = {};   // 有利な効果 { "atk_up": 3, "regen": 5 }
-        this.debuffs = {}; // 不利な効果 { "poison": 4, "def_down": 3 }
+        this.debuffs = {}; // 不利な効果 { "poison": 4, "atk_down": 3 }
         this.is_dead = false;
         this.skills = []; // skills.js の ID文字列を格納
     }
@@ -199,9 +199,9 @@ export class Goblin extends Entity {
 export class ShadowHero extends Entity {
     constructor() {
         // HP:400, ATK:75
-        super("影の勇者", 400, 100, 75, 40, 20, 30, 40, 0, './resource/shadow_hero.webp');
+        super("影の勇者", 400, 500, 75, 40, 20, 30, 40, 0, './resource/shadow_hero.webp');
         this.enemyType = "shadow_hero"; 
-        this.skills = ["encourage"];
+        this.skills = ["encourage","shadow_slash"];
     }
 }
 
@@ -211,7 +211,7 @@ export class ShadowWizard extends Entity {
         // HP:300, MATK:50
         super("影の魔導師", 300, 500, 20, 20, 50, 50, 35, 0, './resource/shadow_wizard.webp');
         this.enemyType = "shadow_wizard"; 
-        this.skills = ["fire", "fira"];
+        this.skills = ["fire", "fira","dark_meteor"];
     }
 }
 
@@ -221,9 +221,20 @@ export class ShadowHealer extends Entity {
         // HP:350
         super("影の僧侶", 350, 500, 30, 30, 40, 40, 30, 60, './resource/shadow_healer.webp');
         this.enemyType = "shadow_healer";
-        this.skills = ["heal", "medica"];
+        this.skills = ["heal", "medica","curse"];
     }
 }
+
+// ★追加：合体後のボス「影の支配者」
+export class ShadowLord extends Entity {
+    constructor() {
+        // HP:1500, 高い攻撃力と魔力
+        super("影の支配者", 1500, 500, 80, 50, 60, 50, 30, 0, './resource/shadow_lord.webp');
+        this.enemyType = "shadow_lord"; 
+        this.skills = ["shadow_slash", "dark_meteor", "chaos_wave"];
+    }
+}
+
 
 // ドラゴン（強敵）
 export class IceDragon extends Entity {

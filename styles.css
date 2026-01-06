@@ -1216,12 +1216,9 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     50% { transform: translateY(-15px) scale(1.02); }
 }
 
-/* =========================================
-   敵キャラの接地感・影・オーラ演出 (再調整版)
-   ========================================= */
 
 /* =========================================
-   敵キャラの接地感・影・オーラ演出 (修正版)
+   敵キャラの接地感・影・オーラ演出 
    ========================================= */
 
 /* 1. 敵ユニットの足元に「影」を落とす */
@@ -1291,6 +1288,63 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     pointer-events: none;
     z-index: 1;
     mix-blend-mode: multiply;
+}
+
+/* =========================================
+   合体演出用エフェクト
+   ========================================= */
+
+/* 1. 闇のコア（ブラックホール） */
+.fusion-core {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0); /* 最初は極小 */
+    width: 100px;
+    height: 100px;
+    background: black;
+    border-radius: 50%;
+    /* 紫色の禍々しい発光 */
+    box-shadow: 
+        0 0 20px #4b0082,
+        0 0 60px #8e44ad,
+        inset 0 0 30px #fff;
+    z-index: 100;
+    animation: core-pulse 2.5s ease-in-out forwards;
+}
+
+/* コアが脈打ちながら大きくなるアニメーション */
+@keyframes core-pulse {
+    0% { transform: translate(-50%, -50%) scale(0); opacity: 0.5; }
+    20% { transform: translate(-50%, -50%) scale(1.0); opacity: 1; }
+    40% { transform: translate(-50%, -50%) scale(0.9); }
+    60% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 100px red; } /* 最後は赤く発光 */
+    80% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; } /* 急激に収縮 */
+    100% { transform: translate(-50%, -50%) scale(20); opacity: 0; } /* 爆発 */
+}
+
+/* 2. 吸い込まれる敵の動き */
+.being-absorbed {
+    transition: all 1.0s ease-in !important;
+    /* 中央（ブラックホール）に向かって吸い込まれる */
+    transform: scale(0) translateY(-50px) !important; 
+    filter: brightness(0) blur(5px) !important; /* 真っ黒にボケる */
+    opacity: 0 !important;
+}
+
+/* 3. 画面全体が闇に包まれる */
+.dark-flash {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: white;
+    z-index: 9999;
+    animation: flash-invert 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes flash-invert {
+    0% { background: black; opacity: 1; }
+    100% { background: white; opacity: 0; }
 }
 
 /* =========================================

@@ -73,13 +73,32 @@ export class BattleDirector {
             const targetIds = targets.map(t => this._getTargetId(t));
             this.effects.allFireEffect(targetIds);
         } 
-        else if (skill.id === 'meteor') {
+        else if (skill.id === 'meteor' || skill.id === 'dark_meteor') {
             this.music.playMagicMeteor();
             targets.forEach(t => this.effects.meteorEffect(this._getTargetId(t)));
         }
         else if (skill.id === 'ice_breath') {
             this.music.playBreath(); 
             this.effects.allIceEffect(targets); 
+        }
+        // ★追加: カースは汎用魔法エフェクト
+        else if (skill.id === 'curse') {
+            this.music.playPoison(); 
+            targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
+        }
+        else if (skill.id === 'chaos_wave') {
+            this.music.playMagicMeteor(); // 音はメテオなどを流用
+            
+            // 画面全体を揺らすだけにする（ボス自体を変形させない）
+            document.body.classList.add('screen-shake');
+            this.effects.flash("rgba(0, 0, 0, 0.8)"); // 暗黒のフラッシュ
+            
+            // ターゲット（味方）の上に爆発エフェクト
+            targets.forEach(t => {
+                this.effects.magicExplosion(this._getTargetId(t));
+            });
+
+            setTimeout(() => document.body.classList.remove('screen-shake'), 800);
         }
         else {
             // 汎用魔法
@@ -184,6 +203,77 @@ export class BattleDirector {
 
         if (spriteA) spriteA.classList.add('appear-right'); 
         if (spriteC) spriteC.classList.add('appear-left');
+    }
+    
+    // ★修正: 派手な合体開始演出
+    async showShadowFusionStart() {
+        this.ui.addLog("影たちが一点に凝縮していく...！", "#8e44ad", true);
+        this.music.playMeditation(); // 溜めの音（怪しい音）
+
+        // 1. 敵の表示領域（コンテナ）を相対配置にしておく（中央配置のため）
+        const container = document.getElementById('enemy-target');
+        if (container) container.style.position = 'relative';
+
+        // 2. 闇のコア（ブラックホール）を生成
+        const core = document.createElement('div');
+        core.className = 'fusion-core';
+        if (container) container.appendChild(core);
+
+        // 3. 倒れている敵たちをコアに吸い込ませる
+        const deadShadows = document.querySelectorAll('.enemy-unit');
+        
+        // 少し待ってから吸い込み開始
+        setTimeout(() => {
+            deadShadows.forEach(el => {
+                el.style.opacity = '1'; // 一瞬表示
+                // 強制的に吸い込みクラスを付与
+                // ※ requestAnimationFrameでタイミングをずらさないとtransitionが効かないことがある
+                requestAnimationFrame(() => {
+                    el.classList.add('being-absorbed');
+                    // 中央寄せのCSS調整（gridの影響を無視して中央へ寄せたい場合）
+                    el.style.transformOrigin = "center center";
+                    // ここは簡易的に scale(0) で「消滅」を表現
+                });
+            });
+        }, 200);
+
+        // 4. コアのアニメーション時間分待つ (CSSで2.5sに設定)
+        await new Promise(r => setTimeout(r, 2200));
+        
+        // 5. 爆発フラッシュ
+        const flash = document.createElement('div');
+        flash.className = 'dark-flash';
+        document.body.appendChild(flash);
+        
+        // フラッシュと同時にコアを消す
+        if (core.parentNode) core.parentNode.removeChild(core);
+        
+        await new Promise(r => setTimeout(r, 500)); // フラッシュの余韻
+        if (flash.parentNode) flash.parentNode.removeChild(flash);
+    }
+
+    // ★修正: 登場演出（微調整）
+    async showShadowFusionEnd() {
+        this.ui.addLog("「影の支配者」が現れた！！！", "#e74c3c", true);
+        this.music.playSplited(); // ドーン！
+        
+        // ボス
+        const bossEl = document.getElementById('enemy-sprite-0');
+        if (bossEl) {
+            bossEl.classList.add('shadow-aura'); 
+            bossEl.classList.add('king-size'); 
+            
+            // 出現アニメーション
+            bossEl.style.animation = 'none';
+            void bossEl.offsetHeight; // リフロー
+            bossEl.style.animation = 'resurrectionFlash 1.5s ease-out';
+        }
+        
+        // 画面を激しく揺らす
+        document.body.classList.add('screen-shake');
+        setTimeout(() => document.body.classList.remove('screen-shake'), 1200);
+        
+        await new Promise(r => setTimeout(r, 1200));
     }
 
     // --- アイテム演出 ---

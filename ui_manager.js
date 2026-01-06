@@ -84,7 +84,7 @@ export class UIManager {
             }
         });
 
-        this._createButton("戻る", "#222", () => this.showCommands(this.currentActor, onSelect));
+        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect));
     }
 
     showItemMenu(onSelect) {
@@ -103,7 +103,7 @@ export class UIManager {
             );
         });
 
-        this._createButton("戻る", "#222", () => this.showCommands(this.currentActor, onSelect));
+        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect));
     }
     
     /**
@@ -159,7 +159,7 @@ export class UIManager {
             }
         });
 
-        // --- ボタン生成（従来の方法） ---
+        // --- ボタン生成 ---
         
         targets.forEach((target, i) => {
             this._createButton(
@@ -169,7 +169,7 @@ export class UIManager {
             );
         });
 
-        this._createButton("戻る", "#222", wrappedOnBack);
+        this._createButton("戻る", "#574d4d", wrappedOnBack);
     }
 
     _createButton(text, color, action, enabled = true) {

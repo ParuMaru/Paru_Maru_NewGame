@@ -73,6 +73,7 @@ export class ActionExecutor {
                     
                     const targetId = this.director._getTargetId(finalTarget); 
                     if (skill.id === 'dragon_claw') this.director.effects.clawEffect(targetId);
+                    else if (skill.id === 'shadow_slash') this.director.effects.slashEffect(targetId);
                     else this.director.effects.slashEffect(targetId); 
 
                     this.director.showPhysicalHit(finalTarget, damage, isCritical, false);
@@ -94,6 +95,15 @@ export class ActionExecutor {
 
                     finalTarget.add_hp(-damage);
                     this.director.showMagicHit(finalTarget, damage);
+                    
+                    if (skill.id === 'curse' && finalTarget.is_alive()) {
+                        // 重複しないようにチェックして付与
+                        if (!finalTarget.debuffs.atk_down) {
+                            finalTarget.debuffs.atk_down = 3; // 3ターン
+                            // ログを出す（ui経由で）
+                            this.director.ui.addLog(`${finalTarget.name}の攻撃力が下がった！`, "#7f8c8d");
+                        }
+                    }
                 });
                 this.director.music.playDamage();
                 break;

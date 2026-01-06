@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Slime, KingSlime, Goblin, ShadowHero, ShadowWizard, ShadowHealer, IceDragon } from './entities.js'; 
+import { Slime, KingSlime, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 
@@ -74,6 +74,16 @@ export class BattleManager {
 
     async runTurn() {
         await this.checkSplitting();
+        
+        // ★追加: 影の合体イベント判定
+        // 「現在の敵が影シリーズ」かつ「全員死んだ」かつ「まだ合体していない」場合
+        if (this.gameManager.currentEnemyType === 'shadow' && !this.isShadowFused) {
+             const aliveEnemies = this.state.getAliveEnemies();
+             if (aliveEnemies.length === 0) {
+                 await this.processShadowFusion();
+                 // 合体後はターンを継続（新しいボスが行動順に含まれるため）
+             }
+        }
 
         if (this.state.checkGameOver() || this.state.checkVictory()) {
             this.processEndGame();
@@ -145,6 +155,36 @@ export class BattleManager {
         } else {
             this.handleEnemyTurn(actor);
         }
+    }
+    
+    async processShadowFusion() {
+        this.isProcessing = true;
+        this.isShadowFused = true; // 合体済みフラグON
+
+        // 1. 演出開始
+        await this.executor.director.showShadowFusionStart();
+        
+        // 2. 敵データを「影の支配者」1体に書き換え
+        // ※ entities.js で import { ShadowLord } from './entities.js'; が必要ですが、
+        // 動的インポートを使わず、あとで entities.js の修正と一緒に確認してください
+        const boss = new ShadowLord();
+        
+        // 3体がいた場所から新しいボスが登場
+        this.state.enemies = [boss];
+        this.executor.enemies = this.state.enemies;
+        this.executor.director.enemies = this.state.enemies;
+
+        // 3. UI更新
+        this.ui.refreshEnemyGraphics(this.state.enemies);
+        this.updateUI();
+
+        // 4. 登場演出
+        await this.executor.director.showShadowFusionEnd();
+        
+        // 5. 行動順の再計算（ボスを混ぜる）
+        this.state.calculateTurnOrder();
+        
+        this.isProcessing = false;
     }
 
     // ターン終了処理
