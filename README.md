@@ -1,7 +1,8 @@
-BGM Source:  https://maou.audio/
+BGM Source:  
+            https://maou.audio/
+            https://music.storyinvention.com/
 
-             https://music.storyinvention.com/
+SE  Source: 
 
-SE  Source:  https://soundeffect-lab.info/
-
-             https://www.springin.org/sound-stock/
+            https://soundeffect-lab.info/
+            https://www.springin.org/sound-stock/
