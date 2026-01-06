@@ -115,8 +115,8 @@ export class EnemyAI {
                 return { type: 'skill', target: target, detail: SkillData.heal };
             }
 
-            // B. ★追加: 余裕があるときは「カース」で攻撃＆デバフ (30%)
-            if (enemy.mp >= SkillData.curse.cost && Math.random() < 0.3) {
+            // B. ★追加: 余裕があるときは「カース」で攻撃＆デバフ 
+            if (enemy.mp >= SkillData.curse.cost && Math.random() < 0.9) {
                  const target = party[Math.floor(Math.random() * party.length)];
                  return { type: 'skill', target: target, detail: SkillData.curse };
             }

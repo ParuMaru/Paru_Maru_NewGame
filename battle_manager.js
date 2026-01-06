@@ -202,6 +202,7 @@ export class BattleManager {
                         delete box[key];
                         if (key === 'atk_up') this.ui.addLog(`${actor.name}の攻撃力が元に戻った`, "#bdc3c7");
                         if (key === 'regen') this.ui.addLog(`${actor.name}の祝福が消えた`, "#bdc3c7");
+                        if (key === 'atk_down') this.ui.addLog(`${actor.name}の攻撃力が元に戻った`, "#bdc3c7");
                     }
                 }
             }
@@ -342,6 +343,9 @@ export class BattleManager {
                 if (p.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.buffs.regen}</span></div>`;
                 if (p.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buffs.atk_up}</span></div>`;
                 
+                if (p.debuffs && p.debuffs.atk_down) {
+                    badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${p.debuffs.atk_down}</span></div>`;
+                }
                 if (p.debuffs && p.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${p.debuffs.poison}</span></div>`;
             }
             badgeContainer.innerHTML = badgesHTML;
@@ -372,6 +376,9 @@ export class BattleManager {
             }
              if (enemy.debuffs && enemy.debuffs.poison) {
                 badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${enemy.debuffs.poison}</span></div>`;
+            }
+            if (enemy.debuffs && enemy.debuffs.atk_down) {
+                badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${enemy.debuffs.atk_down}</span></div>`;
             }
 
             badgeContainer.innerHTML = badgesHTML;

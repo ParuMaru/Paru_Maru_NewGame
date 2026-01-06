@@ -28,6 +28,10 @@ export class BattleCalculator {
             if (actor.hasBuff('atk_up')) {
                 damage = Math.floor(damage * 1.25);
             }
+            
+            if (actor.hasDebuff('atk_down')) {
+                damage = Math.floor(damage * 0.7); 
+            }
 
             // 魔法防御 (MDEF / 3) で軽減
             const reduction = Math.floor(target.mdef / 3);
@@ -45,6 +49,10 @@ export class BattleCalculator {
                 damage = Math.floor(damage * 1.25);
             }
 
+            if (actor.hasDebuff('atk_down')) {
+                damage = Math.floor(damage * 0.7); 
+            }
+            
             // クリティカル判定（GameConfigの値を使用）
             if (Math.random() < GameConfig.CRITICAL_RATE) {
                 damage = Math.floor(damage * GameConfig.CRITICAL_DAMAGE);

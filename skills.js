@@ -24,9 +24,9 @@ export const SkillData = {
     
     //影
     shadow_slash:   {id: "shadow_slash", name: "シャドウスラッシュ", power: 2.0, type: "physical", target: "single", cost: 20, color: "#8e44ad"},
-    dark_meteor:    {id: "dark_meteor", name: "ダークメテオ", power: 1.7, type: "magic", target: "all", cost: 60,color: "#2c3e50"},
+    dark_meteor:    {id: "dark_meteor", name: "ダークメテオ", power: 1.5, type: "magic", target: "all", cost: 60,color: "#2c3e50"},
     curse:          {id: "curse", name: "カース", power: 1.2, type: "magic", target: "single", cost: 20, color: "#7f8c8d", effect: "atk_down"},
-    chaos_wave:     {id: "chaos_wave", name: "カオスウェーブ", power: 1.8, type: "magic", target: "all", cost: 80, color: "#000000", effect: "atk_down" },
+    chaos_wave:     {id: "chaos_wave", name: "カオスウェーブ", power: 1.7, type: "magic", target: "all", cost: 80, color: "#000000", effect: "atk_down" },
     
     //ドラゴン
     ice_breath:     {id: "ice_breath", name: "こごえる吹雪",     power: 1.4, type: "magic",    target: "all", color: "#e74c3c"},
