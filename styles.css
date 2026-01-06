@@ -62,7 +62,7 @@ body {
     
     background-image: 
         linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-        url("./resource/title_hero.png");
+        url("./resource/title_hero.jpg");
         
     display: flex;
     flex-direction: column;
@@ -76,7 +76,6 @@ body {
     box-sizing: border-box;
 }
 
-/* ★削除：.title-img と @keyframes titleFloat は不要なので消しました */
 
 .title-logo {
     font-size: 60px;
@@ -201,7 +200,7 @@ body {
     position: relative;
     height: 45vh; 
     min-height: 350px;
-    background-image: url("./resource/bg.png");
+    background-image: url("./resource/bg.jpg");
     background-size: cover;
     background-position: center;
     border-bottom: 4px solid #444;
@@ -1099,7 +1098,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     /* linear-gradient(黒フィルターの濃さ), url(画像のパス) */
     background-image: 
         linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
-        url("./resource/ending_bg.png");
+        url("./resource/ending_bg.jpg");
     
     /* 画面いっぱいに引き伸ばす設定（タイトル画面と同じ） */
     background-size: 100% auto;
@@ -1258,12 +1257,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     50% { transform: translateX(-50%) scale(0.9); } 
 }
 
-/* 2. 「影のパーティ」専用の邪悪なオーラ */
+/*  「影のパーティ」専用の邪悪なオーラ */
 .shadow-aura .enemy-img {
-    filter: brightness(0.95) contrast(1.1) drop-shadow(0 0 8px #4b0082) drop-shadow(0 0 20px #8e44ad);
+    filter: brightness(0.95) contrast(1.0) drop-shadow(0 0 10px #4b0082) drop-shadow(0 0 20px #8e44ad);
 }
 
-/* 3. 敵HPバーのリッチ化 */
+/*  敵HPバーのリッチ化 */
 .enemy-hp-container {
     width: 80px;
     height: 9px;
@@ -1282,7 +1281,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     transition: width 0.3s ease;
 }
 
-/* 4. 暗い雰囲気のフィルター */
+/*  暗い雰囲気のフィルター */
 .dark-atmosphere::before {
     content: "";
     position: absolute;

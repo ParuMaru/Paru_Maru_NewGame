@@ -25,7 +25,6 @@ export class EnemyAI {
                     detail: SkillData.howling
                 };
             }
-
             // B. 35%で全体ブレス
             if (rand < 0.35) {
                 return {
@@ -34,8 +33,7 @@ export class EnemyAI {
                     detail: SkillData.ice_breath
                 };
             }
-            
-            // C. 35%で強力な爪攻撃（HPが低いキャラを狙う等の嫌らしい動きも可）
+            // C. 35%で強力な爪攻撃
             if (rand < 0.70) {
                  // ランダムターゲット
                  const target = party[Math.floor(Math.random() * party.length)];
@@ -153,8 +151,6 @@ export class EnemyAI {
             }
         }
         
-        
-
         // ------------------------------------------
         // デフォルト：通常攻撃
         // ------------------------------------------

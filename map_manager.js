@@ -262,11 +262,11 @@ export class MapManager {
         if (Math.random() < 0.7) {
             // ★変更：成功時はランダムでステータスアップ
             const stats = [
-                { key: 'max_hp', name: '最大HP', val: 20 },
-                { key: 'max_mp', name: '最大MP', val: 10 },
-                { key: 'atk',    name: '攻撃力', val: 3 },
-                { key: 'def',    name: '防御力', val: 3 },
-                { key: 'matk',   name: '魔力',   val: 3 },
+                { key: 'max_hp', name: '最大HP', val: 50 },
+                { key: 'max_mp', name: '最大MP', val: 50 },
+                { key: 'atk',    name: '攻撃力', val: 5 },
+                { key: 'def',    name: '防御力', val: 5 },
+                { key: 'matk',   name: '魔力',   val: 5 },
             ];
             const boost = stats[Math.floor(Math.random() * stats.length)];
 

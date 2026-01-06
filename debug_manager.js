@@ -213,7 +213,7 @@ export class DebugManager {
             
             this.battleManager.ui.addLog(`[DEBUG] ${floor}階へ移動しました`, "#fff");
             alert(`${floor}階へ移動しました！マップ画面に戻ると反映されます。`);
-            this.killEnemies();
+            this.gameManager.showMap();
         }
     }
 }

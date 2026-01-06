@@ -239,7 +239,7 @@ export class UIManager {
             hpBox.appendChild(hpBar);
 
             const img = document.createElement('img');
-            img.src = enemy.img || './resource/slime.png'; 
+            img.src = enemy.img || './resource/slime.webp'; 
             img.className = 'enemy-img';
             
             unitDiv.appendChild(nameDiv);

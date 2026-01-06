@@ -69,14 +69,14 @@ export class GameManager {
         // ボス戦（ドラゴン）の時だけ背景を変える
         const canvasArea = document.getElementById('canvas-area');
         if (enemyType === 'dragon') {   
-            canvasArea.style.backgroundImage = "linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('./resource/boss_bg.png')";
+            canvasArea.style.backgroundImage = "linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('./resource/boss_bg.jpg')";
         } else if (enemyType === 'shadow') {
             // ★追加: 影バトルの時は暗い雰囲気を付与
             canvasArea.classList.add('dark-atmosphere');
-            canvasArea.style.backgroundImage = "url('./resource/dark_bg.png')"; // 一旦元の背景
+            canvasArea.style.backgroundImage = "url('./resource/dark_bg.jpg')"; // 一旦元の背景
         } else {
             canvasArea.classList.remove('dark-atmosphere'); // 通常時は外す
-            canvasArea.style.backgroundImage = "url('./resource/bg.png')"; 
+            canvasArea.style.backgroundImage = "url('./resource/bg.jpg')"; 
         }
         
         
@@ -134,9 +134,9 @@ export class GameManager {
 
             // 猫画像のファイル名リスト
             const catImages = [
-                './resource/cat_reward1.png', 
-                './resource/cat_reward2.png', 
-                './resource/cat_reward3.png'
+                './resource/cat_reward1.jpg', 
+                './resource/cat_reward2.jpg', 
+                './resource/cat_reward3.jpg'
             ];
 
             // 画像タグを生成
