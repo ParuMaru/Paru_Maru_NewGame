@@ -9,17 +9,80 @@ export class BattleState {
             new Healer("癒し手なつ")
         ];
 
-        // 2. 敵の生成（初期はキングスライム）
-        this.enemies = [
-            new KingSlime()
-        ];
+        // 2. 敵の生成
+        this.enemies = [];
 
-        // 3. ターン管理（配列で順番を管理する方式に変更）
         this.turnOrder = [];
-        this.currentActorIndex = 0;
+        this.currentActor = null;
         
-        // 初回の行動順を計算
-        this.calculateTurnOrder();
+        // ★追加: 戦闘全体の経過行動値（ラウンド計算用）
+        this.totalBattleAV = 0; 
+        this.currentRound = 1;
+        
+        // 初回計算
+        this.initBattleAV();
+    }
+    
+    // 戦闘開始時の準備
+    initBattleAV() {
+        const all = [...this.getAliveParty(), ...this.getAliveEnemies()];
+        
+        // 全員に最初の行動値をセット
+        // (スターレイル仕様：開幕は全員 10000/速度 でセットされる)
+        all.forEach(chara => {
+            chara.resetActionValue();
+        });
+        
+        // ログ用などのために、行動値が小さい順に並べておく（表示用）
+        this.sortQueue();
+    }
+
+    // 行動値が小さい順に並び替え（UI表示用）
+    sortQueue() {
+        const all = [...this.getAliveParty(), ...this.getAliveEnemies()];
+        this.turnOrder = all.sort((a, b) => a.actionValue - b.actionValue);
+    }
+
+    /**
+     * ★重要: 次の行動者を決定する（時間を進める）
+     */
+    advanceTimeAndGetActor() {
+        // 生存者リスト
+        const all = [...this.getAliveParty(), ...this.getAliveEnemies()];
+        if (all.length === 0) return null;
+
+        // 1. 一番行動値が小さい人（＝次の行動者）を探す
+        // 並び替えて先頭を取る
+        const nextActor = all.sort((a, b) => a.actionValue - b.actionValue)[0];
+        
+        // 2. その人の行動値（＝経過時間）を取得
+        const elapsedAV = nextActor.actionValue;
+
+        // 3. 全員の行動値を、その時間分だけ減らす
+        // (nextActorは 0 になり、他の人は 0 に近づく)
+        all.forEach(chara => {
+            chara.actionValue = Math.max(0, chara.actionValue - elapsedAV);
+        });
+
+        // 4. 戦闘全体の時間を進める
+        this.totalBattleAV += elapsedAV;
+        this.updateRound(); // ラウンド更新チェック
+
+        return nextActor;
+    }
+    
+    // ラウンド（サイクル）の計算
+    // 1ラウンド目は150AV、2ラウンド目以降は100AVずつ
+    updateRound() {
+        // 経過時間から現在のラウンドを逆算
+        // 150 (1R) + 100 (2R) + 100 (3R)...
+        
+        if (this.totalBattleAV <= 150) {
+            this.currentRound = 1;
+        } else {
+            // (経過時間 - 最初の150) / 100 + 1ラウンド目
+            this.currentRound = 1 + Math.ceil((this.totalBattleAV - 150) / 100);
+        }
     }
 
     /**

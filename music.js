@@ -32,10 +32,10 @@ export class BattleBGM {
         // MIDIファイルパス設定
         this.bgmFiles = {
             map: './resource/map.mid',
-            normal: './resource/endtime.mid', 
-            elite:  './resource/endymion.mid', 
-            shadow:   './resource/magnoria.mid', 
-            boss:   './resource/Laqryma.mid'   
+            normal: './resource/01battle.mid', 
+            elite:  './resource/03boss_battle.mid', 
+            shadow:   './resource/04boss_battle.mid', 
+            boss:   './resource/01boss_battle.mid'   
         };
 
         // エンディング用MP3ファイルのパス
@@ -123,9 +123,9 @@ export class BattleBGM {
         
         let targetBpm = 180;
         if (type ==='map') targetBpm = 100;
-        if (type === 'elite') targetBpm = 220; 
-        if (type === 'dark')  targetBpm = 160; 
-        if (type === 'boss')  targetBpm = 236; 
+        if (type === 'elite') targetBpm = 180; 
+        if (type === 'dark')  targetBpm = 220; 
+        if (type === 'boss')  targetBpm = 180; 
 
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
     }

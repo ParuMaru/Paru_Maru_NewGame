@@ -75,18 +75,18 @@ export class EnemyAI {
                 }
             }
             
-            // B. ★追加: MPがあれば、40%で必殺技「シャドウスラッシュ」
-            if (enemy.mp >= SkillData.shadow_slash.cost && Math.random() < 0.4) {
+            // B. MPがあれば、30%で必殺技「シャドウスラッシュ」
+            if (enemy.mp >= SkillData.shadow_slash.cost && Math.random() < 0.3) {
                 // HPが一番低いキャラを狙う
-                const target = party.sort((a,b) => a.hp - b.hp)[0];
+                const target = [...party].sort((a,b) => a.hp - b.hp)[0];
                 return { type: 'skill', target: target, detail: SkillData.shadow_slash };
             }
         }
 
         // --- 2. 影の魔導師 ---
         if (enemy.enemyType === 'shadow_wizard') {
-            // A. ★追加: 2ターン目以降、30%の確率で「ダークメテオ」（全体大魔法）
-            if (enemy.mp >= SkillData.dark_meteor.cost && Math.random() < 0.3) {
+            // A. 30%の確率で「ダークメテオ」（全体大魔法）
+            if (enemy.mp >= SkillData.dark_meteor.cost && Math.random() < 0.2) {
                  return { type: 'skill', target: party, detail: SkillData.dark_meteor };
             }
 
@@ -106,16 +106,16 @@ export class EnemyAI {
         if (enemy.enemyType === 'shadow_healer') {
             const pinchAllies = allies.filter(a => (a.hp / a.max_hp) < 0.5);
 
-            // A. ピンチなら回復優先 (変更なし)
+            // A. ピンチなら回復優先 
             if (pinchAllies.length >= 2 && enemy.mp >= SkillData.medica.cost) {
                 return { type: 'skill', target: allies, detail: SkillData.medica };
             }
             if (pinchAllies.length >= 1 && enemy.mp >= SkillData.heal.cost) {
-                const target = pinchAllies.sort((a,b) => a.hp - b.hp)[0];
+                const target = [...pinchAllies].sort((a,b) => a.hp - b.hp)[0];
                 return { type: 'skill', target: target, detail: SkillData.heal };
             }
 
-            // B. ★追加: 余裕があるときは「カース」で攻撃＆デバフ 
+            // B. 余裕があるときは「カース」で攻撃＆デバフ 
             if (enemy.mp >= SkillData.curse.cost && Math.random() < 0.9) {
                  const target = party[Math.floor(Math.random() * party.length)];
                  return { type: 'skill', target: target, detail: SkillData.curse };

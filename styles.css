@@ -220,6 +220,9 @@ body {
     justify-items: center;
     width: 100%;
     height: 200px;
+    /* ★修正: 左の余白はやめて、下に余白を作る（敵を上に持ち上げる） */
+    padding-left: 0; 
+    padding-bottom: 40px; /* 下にスペースを確保 */
 }
 
 /* 敵1体分の構成（名前、HPバー、画像） */
@@ -1346,6 +1349,116 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     0% { background: black; opacity: 1; }
     100% { background: white; opacity: 0; }
 }
+
+/* =========================================
+   行動順（Action Order）リスト用UI
+   ========================================= */
+
+/* リスト全体のコンテナ */
+#turn-order-panel {
+    position: absolute;
+    
+    /* ★修正: 上ではなく「下」に配置 */
+    top: auto; 
+    bottom: 5px;
+    left: 0;
+    
+    /* 横幅いっぱいに広げて中央揃え */
+    width: 100%;
+    display: flex;
+    flex-direction: row; /* ★修正: 縦(column)から横(row)へ */
+    justify-content: center; /* 中央寄せ */
+    align-items: center;     /* 上下中央 */
+    
+    gap: 10px;
+    z-index: 500;
+    pointer-events: none;
+}
+
+/* ラウンド数表示 */
+.round-info {
+    background: rgba(0, 0, 0, 0.7);
+    color: #f1c40f;
+    font-size: 12px;
+    text-align: center;
+    padding: 5px 10px;
+    border-radius: 15px; /* ここもお好みで 4px くらいにすると四角くなります */
+    border: 1px solid #f39c12;
+    font-weight: bold;
+    
+    margin-bottom: 0;
+    margin-left: 14px;
+    height: fit-content;
+
+    /* ★追加: アイコンより手前に表示して隠れないようにする */
+    position: relative;
+    z-index: 20; 
+}
+
+/* リスト本体（横並びコンテナ） */
+#turn-list-container {
+    display: flex;
+    flex-direction: row; /* 横並び */
+    gap: 5px;
+    align-items: flex-end; /* 底辺を揃える */
+}
+
+/* 個別のキャラアイコン枠 */
+.turn-item {
+    position: relative;
+    width: 55px;
+    height: 45px;
+    background: rgba(0, 0, 0, 0.6);
+    
+    /* ★修正: 丸(50%) から 角丸四角(8px) に変更 */
+    border-radius: 5px; 
+    
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+}
+
+/* 一番左の人（現在の行動者）は大きく強調 */
+.turn-item.current-turn {
+    width: 60px;
+    height: 45px;
+    border: 3px solid #f1c40f !important;
+    transform: translateY(-5px); /* ★修正: 右ではなく「上」に少し出す */
+    z-index: 10;
+    margin-right: 5px;
+}
+
+/* 中の画像 */
+.turn-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 枠いっぱいに表示 */
+}
+
+/* 味方の枠色 */
+.turn-item.is-ally {
+    border: 1px solid #3498db;
+}
+
+/* 敵の枠色 */
+.turn-item.is-enemy {
+    border: 1px solid #e74c3c;
+}
+
+/* 行動値（AV）の数値バッジ */
+.turn-av-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 4px 0 4px 0;
+    font-family: monospace;
+}
+
 
 /* =========================================
    📱 スマホ・モバイル用レスポンシブ調整（完全版）

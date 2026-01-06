@@ -255,7 +255,7 @@ export class BattleDirector {
     // ★修正: 登場演出（微調整）
     async showShadowFusionEnd() {
         this.ui.addLog("「影の支配者」が現れた！！！", "#e74c3c", true);
-        this.music.playSplited(); // ドーン！
+        this.music.playMagicMeteor(); // ドーン！
         
         // ボス
         const bossEl = document.getElementById('enemy-sprite-0');

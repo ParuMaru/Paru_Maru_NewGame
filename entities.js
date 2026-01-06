@@ -28,6 +28,10 @@ export class Entity {
         this.spd = spd;   // 素早さ
         this.rec = rec;   // 回復力
         
+        // 行動値 (Action Value)
+        // 初期値は 0 (戦闘開始時によーいドンで計算するため)
+        this.actionValue = 0;
+        
         this.img = img;   //画像パス用
 
         // --- 状態フラグ ---
@@ -36,6 +40,14 @@ export class Entity {
         this.debuffs = {}; // 不利な効果 { "poison": 4, "atk_down": 3 }
         this.is_dead = false;
         this.skills = []; // skills.js の ID文字列を格納
+    }
+    
+    // 行動値をリセット（再計算）するメソッド
+    // 公式: 行動値 = 10000 / 速度
+    resetActionValue() {
+        // 速度が0以下だとバグるので最低1保証
+        const currentSpd = Math.max(1, this.spd);
+        this.actionValue = 10000 / currentSpd;
     }
     
     hasBuff(id) {
@@ -122,13 +134,18 @@ export class Entity {
     }
 }
 
+
+// --- ★修正箇所：SPD（素早さ）を 80〜120 基準に底上げ ---
+
 /**
  * 勇者（Hero）
+ * バランス型：速度 105 (標準より少し速い)
  */
+
 export class Hero extends Entity {
     constructor(name = "勇者") {
        　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
-        super(name, 280, 80, 75, 70, 20, 30, 35, 30);
+        super(name, 280, 80, 75, 70, 20, 30, 105, 30);
         this.job = "hero";
         this.skills = ["cover", "encourage"]; 
     }
@@ -139,7 +156,7 @@ export class Hero extends Entity {
  */
 export class Wizard extends Entity {
     constructor(name = "魔法使い") {
-        super(name, 200, 150, 20, 20, 70, 50, 12, 40);
+        super(name, 200, 150, 20, 20, 70, 50, 90, 40);
         this.job = "wizard";
         this.skills = ["fire", "fira", "meteor", "meditation"];
     }
@@ -150,7 +167,7 @@ export class Wizard extends Entity {
  */
 export class Healer extends Entity {
     constructor(name = "癒し手") {
-        super(name, 220, 150, 25, 25, 30, 60, 10, 80);
+        super(name, 220, 150, 25, 25, 30, 60, 85, 80);
         this.job = "healer";
         this.skills = ["heal", "medica", "prayer", "raise"];
     }
@@ -169,11 +186,12 @@ export class Slime extends Entity {
         console.log(`スライム生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
             // キングスライムの設定
-            super(name, 1000, 0, 70, 40, 40, 35, 20, 40, './resource/slime.webp');
+            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/slime.webp');
             this.isKing = true;
+            this.isBoss = true;
         } else {
             // 通常スライムの設定
-            super(name, 300, 0, 45, 25, 30, 20, 40, 20, './resource/splited_slime.webp');
+            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/splited_slime.webp');
             this.isKing = false;
         }
     }
@@ -190,7 +208,7 @@ export class KingSlime extends Slime {
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
         // HP:450, ATK:65 (スライムより攻撃的)
-        super(name, 450, 0, 65, 30, 10, 20, 35, 10, './resource/goblin.webp'); 
+        super(name, 450, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
     }
 }
@@ -199,7 +217,7 @@ export class Goblin extends Entity {
 export class ShadowHero extends Entity {
     constructor() {
         // HP:400, ATK:75
-        super("影の勇者", 400, 500, 65, 40, 20, 30, 40, 0, './resource/shadow_hero.webp');
+        super("影の勇者", 400, 500, 65, 40, 20, 30, 110, 0, './resource/shadow_hero.webp');
         this.enemyType = "shadow_hero"; 
         this.skills = ["encourage","shadow_slash"];
     }
@@ -209,7 +227,7 @@ export class ShadowHero extends Entity {
 export class ShadowWizard extends Entity {
     constructor() {
         // HP:300, MATK:50
-        super("影の魔導師", 300, 500, 20, 20, 40, 50, 35, 0, './resource/shadow_wizard.webp');
+        super("影の魔導師", 300, 500, 20, 20, 40, 50, 100, 0, './resource/shadow_wizard.webp');
         this.enemyType = "shadow_wizard"; 
         this.skills = ["fire", "fira","dark_meteor"];
     }
@@ -219,7 +237,7 @@ export class ShadowWizard extends Entity {
 export class ShadowHealer extends Entity {
     constructor() {
         // HP:350
-        super("影の僧侶", 350, 500, 30, 30, 40, 40, 30, 60, './resource/shadow_healer.webp');
+        super("影の僧侶", 350, 500, 30, 30, 40, 40, 90, 60, './resource/shadow_healer.webp');
         this.enemyType = "shadow_healer";
         this.skills = ["heal", "medica","curse"];
     }
@@ -228,10 +246,11 @@ export class ShadowHealer extends Entity {
 // ★追加：合体後のボス「影の支配者」
 export class ShadowLord extends Entity {
     constructor() {
-        // HP:1500, 高い攻撃力と魔力
-        super("影の支配者", 1300, 500, 80, 50, 60, 50, 30, 0, './resource/shadow_lord.webp');
+        // HP:1300, 高い攻撃力と魔力
+        super("影の支配者", 1300, 500, 80, 50, 60, 50, 85, 0, './resource/shadow_lord.webp');
         this.enemyType = "shadow_lord"; 
         this.skills = ["shadow_slash", "dark_meteor", "chaos_wave"];
+        this.isBoss = true;
     }
 }
 
@@ -240,7 +259,8 @@ export class ShadowLord extends Entity {
 export class IceDragon extends Entity {
     constructor(name = "アイスドラゴン") {
         // HP:2000, ATK:90, MATK:90,SPD:30 (ボス級)
-        super(name, 2000, 0, 90, 50, 80, 50, 30, 50, './resource/ice_dragon.webp');
+        super(name, 2000, 0, 90, 50, 80, 50, 95, 50, './resource/ice_dragon.webp');
         this.enemyType = "ice_dragon";
+        this.isBoss = true;
     }
 }

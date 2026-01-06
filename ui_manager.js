@@ -9,8 +9,94 @@ export class UIManager {
         this.enemyContainer = document.getElementById('enemy-target');
         this.currentActor = null; 
         this.inventory = null;
+        this.initTurnOrderUI();
     }
     
+    // ★追加: 画面左に行動順表示エリアを作る
+    initTurnOrderUI() {
+        // すでにあったら作らない
+        if (document.getElementById('turn-order-panel')) return;
+
+        const canvasArea = document.getElementById('canvas-area');
+        const panel = document.createElement('div');
+        panel.id = 'turn-order-panel';
+        
+        // ラウンド表示
+        const roundInfo = document.createElement('div');
+        roundInfo.className = 'round-info';
+        roundInfo.id = 'round-info-text';
+        roundInfo.innerText = "Round 1";
+        panel.appendChild(roundInfo);
+
+        // リスト本体
+        const list = document.createElement('div');
+        list.id = 'turn-list-container';
+        panel.appendChild(list);
+
+        canvasArea.appendChild(panel);
+    }
+
+    // ★追加: 行動順とラウンド情報の更新メソッド
+    updateTurnOrder(turnQueue, currentRound) {
+        const listContainer = document.getElementById('turn-list-container');
+        const roundText = document.getElementById('round-info-text');
+        
+        if (!listContainer) return;
+
+        // ラウンド表示更新
+        if (roundText) roundText.innerText = `Round ${currentRound}`;
+
+        listContainer.innerHTML = ""; // 一旦クリア
+
+        // 先頭から最大5人分だけ表示（多すぎると画面が埋まるため）
+        const displayLimit = 5;
+        const queueToShow = turnQueue.slice(0, displayLimit);
+
+        queueToShow.forEach((chara, index) => {
+            if (!chara.is_alive()) return; // 死体は表示しない
+
+            const item = document.createElement('div');
+            item.className = 'turn-item';
+            
+            // 現在の行動者（先頭）
+            if (index === 0) {
+                item.classList.add('current-turn');
+            }
+
+            // 味方か敵かで枠の色を変える
+            // entities.jsで job を持っているのが味方、enemyTypeを持ってるのが敵
+            if (chara.job) {
+                item.classList.add('is-ally');
+            } else {
+                item.classList.add('is-enemy');
+            }
+
+            // 画像
+            const img = document.createElement('img');
+            // 味方の画像パスがない場合は適当なアイコンを割り当てる想定
+            // entities.jsで味方にも img プロパティを持たせるか、ここで分岐が必要です
+            // 一旦、Entity基底クラスに img がある前提で書きます
+            if (chara.job === 'hero') img.src = './resource/hero_icon.webp'; // 
+            else if (chara.job === 'wizard') img.src = './resource/wizard_icon.webp';
+            else if (chara.job === 'healer') img.src = './resource/healer_icon.webp';
+            else img.src = chara.img || './resource/slime.webp'; // 敵は持ってるimgを使う
+
+            // ※もし味方の画像を用意していない場合は、job名で分岐して仮画像を出してください
+            // img.src が 404 になると見栄えが悪いのでエラーハンドリング
+            img.onerror = () => { img.src = './resource/slime.webp'; };
+
+            // 行動値 (Action Value) バッジ
+            const avBadge = document.createElement('div');
+            avBadge.className = 'turn-av-badge';
+            // 小数点以下は切り捨てて表示
+            avBadge.innerText = Math.floor(chara.actionValue);
+
+            item.appendChild(img);
+            item.appendChild(avBadge);
+            listContainer.appendChild(item);
+        });
+    }
+
     setInventory(inventory) {
         this.inventory = inventory;
     }
@@ -211,12 +297,12 @@ export class UIManager {
             unitDiv.style.gridColumn = index + 1;
             unitDiv.style.gridRow = 1; 
 
-            if (enemy.enemyType === 'ice_dragon') {
-                unitDiv.classList.add('dragon-size');
-            }
-            // それ以外で王様ならキングサイズ
-            else if (enemy.isKing) {
-                unitDiv.classList.add('king-size');
+            if (enemy.isBoss) {
+                if (enemy.enemyType === 'ice_dragon') {
+                    unitDiv.classList.add('dragon-size');
+                } else {
+                    unitDiv.classList.add('king-size');
+                }
             }
             
             //  影シリーズの場合、特別なクラスを付与

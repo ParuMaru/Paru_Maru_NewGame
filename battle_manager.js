@@ -17,6 +17,7 @@ export class BattleManager {
         this.executor = new ActionExecutor(this.ui, this.bgm, this.effects, this.state.enemies, this.state.party);
         this.ai = new EnemyAI();
         this.isProcessing = false;
+        this.currentActor = null;
         this.bgm.initAndLoad(); 
     }
 
@@ -52,7 +53,8 @@ export class BattleManager {
         this.executor.director.party = this.state.party;
         this.executor.director.enemies = this.state.enemies;
 
-        this.state.calculateTurnOrder();
+        this.state.initBattleAV();
+//        this.state.calculateTurnOrder();
 
         this.ui.addLog("---------- BATTLE START ----------", "#ffff00");
         this.bgm.initContext();
@@ -89,9 +91,21 @@ export class BattleManager {
             this.processEndGame();
             return;
         }
+        
+        
+        const actor = this.state.advanceTimeAndGetActor();
+        if (!actor) return;
+        
+        this.currentActor = actor;
 
-        const actor = this.state.getCurrentActor();
-        if (!actor) return; 
+        // 誰の番かログに出すと分かりやすい（デバッグ用）
+        // 行動値は「残り0」になっているはず
+         console.log(`Turn: ${actor.name} (Round: ${this.state.currentRound})`);
+
+        // 現在のラウンド数をUIに表示（もし枠があれば）
+        
+//        const actor = this.state.getCurrentActor();
+//        if (!actor) return; 
 
         const partyIndex = this.state.party.indexOf(actor);
         this.ui.highlightActiveMember(partyIndex);
@@ -305,11 +319,39 @@ export class BattleManager {
         this.nextTurn();
     }
 
-    nextTurn() {
+//    nextTurn() {
+//        this.isProcessing = false;
+//        this.state.nextTurn();
+//        this.runTurn();
+//    }
+    // ★重要: 行動が終わった後の処理
+    // ここで行動値をリチャージ（10000/速度）して、列の最後尾に並び直させる
+    nextTurn(actor) { // 引数でactorを受け取れるように変更推奨
         this.isProcessing = false;
-        this.state.nextTurn();
+        
+        // ★追加: 行動したキャラの行動値をリセット（10000 / spd を足す）
+        // 直前まで動いていたキャラを特定する必要がある
+        // runTurn内のスコープで渡すのが綺麗ですが、簡易的にこうします
+        
+        // actor引数が来ていなければ、今の行動者を探す（本来は引数で回すべき）
+        // ここでは「行動し終わった人」＝「actionValueが0の人」です
+        
+        // 行動値をリチャージ！
+        if (this.currentActor) {
+            // 動いたキャラの行動値をリセット（10000 / 速度）
+            this.currentActor.resetActionValue();
+            this.currentActor = null; // 記憶を消去
+        } else {
+            // 万が一 currentActor が取れなかった場合の保険（毒死など）
+            // 行動値が0以下になっている生存者をリセット
+            const finishedActors = [...this.state.party, ...this.state.enemies]
+                                .filter(c => c.is_alive() && c.actionValue <= 0.1); 
+            finishedActors.forEach(c => c.resetActionValue());
+        }
+        // 再帰的に次のターンへ
         this.runTurn();
     }
+
 
     updateUI() {
         // --- 1. 味方の更新 ---
@@ -383,6 +425,21 @@ export class BattleManager {
 
             badgeContainer.innerHTML = badgesHTML;
         });
+        // --- ★追加: 行動順リストの更新 ---
+        
+        // 最新の並び順を取得（state側でソート済みのもの）
+        // もし state.turnOrder が古ければ、ここで再ソートしても良いですが、
+        // state.sortQueue() は advanceTimeAndGetActor 内で呼ばれているはずです。
+        
+        // 表示用に、現在の状態から再ソートして渡すのが確実
+        const allAlive = [...this.state.party, ...this.state.enemies]
+                         .filter(c => c.is_alive());
+        
+        // 行動値が小さい順に並べる
+        const sortedQueue = allAlive.sort((a, b) => a.actionValue - b.actionValue);
+
+        // UIマネージャーに渡して描画
+        this.ui.updateTurnOrder(sortedQueue, this.state.currentRound);
     }
     
     async _startExecute(actor, action) {
