@@ -109,7 +109,7 @@ export class BattleDirector {
 
     showMagicHit(target, damage) {
         const targetId = this._getTargetId(target);
-        this.effects.damagePopup(damage, targetId, "#a29bfe");
+        this.effects.damagePopup(damage, targetId, "#ff4757");
         this.ui.addLog(`> ${target.name}に ${damage} のダメージ！`);
         this._checkDeath(target, targetId);
     }
@@ -131,6 +131,18 @@ export class BattleDirector {
 
         const typeStr = isMp ? "MP" : "HP";
         this.ui.addLog(`> ${target.name}の${typeStr}が ${amount} 回復した`);
+    }
+    //　エリクサー用全回復演出
+    showFullHeal(target) {
+        this.music.playHeal();
+        
+        const targetId = this._getTargetId(target);
+        this.effects.healEffect(targetId);
+
+        this.effects.damagePopup("FULL", targetId, "#f1c40f");
+
+        // ログもここで制御する（二重に出ないように）
+        this.ui.addLog(`> ${target.name}のHP・MPが全回復した！`, "#f1c40f");
     }
 
     showResurrection(target, isFullRevive = false) {

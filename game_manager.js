@@ -18,7 +18,8 @@ export class GameManager {
         this.inventory = {
             potion: { ...ItemData.potion },
             ether:  { ...ItemData.ether },
-            phoenix:{ ...ItemData.phoenix }
+            phoenix:{ ...ItemData.phoenix },
+            elixir: { ...ItemData.elixir }
         };
 
         // 各マネージャーの初期化
@@ -108,7 +109,7 @@ export class GameManager {
                 
                 // 2. その上に報酬画面を表示
                 if (this.rewardManager) {
-                    this.rewardManager.showRewards();
+                    this.rewardManager.showRewards(this.currentEnemyType);
                 } else {
                     console.error("RewardManagerが見つかりません");
                 }
@@ -254,5 +255,99 @@ export class GameManager {
             const el = document.getElementById(id);
             if(el) el.style.display = 'none';
         });
+    }
+    
+    /**
+     * ★追加: ゲームデータのセーブ
+     */
+    saveGame() {
+        const saveData = {
+            // 1. パーティ情報（ステータスやスキル）
+            party: this.party.map(p => ({
+                job: p.job, 
+                name: p.name,
+                hp: p.hp,
+                mp: p.mp,
+                max_hp: p.max_hp,
+                max_mp: p.max_mp,
+                atk: p.atk,
+                def: p.def,
+                matk: p.matk,
+                mdef: p.mdef,
+                spd: p.spd,
+                rec: p.rec,
+                skills: p.skills
+            })),
+            // 2. インベントリ
+            inventory: this.inventory,
+            // 3. マップ情報（構造と現在地）
+            map: {
+                currentFloor: this.mapManager.currentFloor,
+                currentNodeIndex: this.mapManager.currentNodeIndex,
+                mapData: this.mapManager.mapData 
+            }
+        };
+
+        try {
+            localStorage.setItem('parm_rpg_save', JSON.stringify(saveData));
+            this.showMessage("記録しました！");
+            console.log("Save complete:", saveData);
+        } catch (e) {
+            console.error("Save failed:", e);
+            this.showMessage("セーブに失敗しました");
+        }
+    }
+
+    /**
+     * ★追加: ゲームデータのロード
+     */
+    loadGame() {
+        const json = localStorage.getItem('parm_rpg_save');
+        if (!json) return false;
+
+        try {
+            const saveData = JSON.parse(json);
+
+            // 1. インベントリ復元
+            this.inventory = saveData.inventory;
+
+            // 2. パーティステータス復元
+            saveData.party.forEach((data, index) => {
+                const member = this.party[index];
+                if (member) {
+                    member.max_hp = data.max_hp;
+                    member.max_mp = data.max_mp;
+                    member._hp = data.hp;
+                    member._mp = data.mp;
+                    member.atk = data.atk;
+                    member.def = data.def;
+                    member.matk = data.matk;
+                    member.mdef = data.mdef;
+                    member.spd = data.spd;
+                    member.rec = data.rec;
+                    member.skills = data.skills;
+                }
+            });
+
+            // 3. マップ復元
+            this.mapManager.mapData = saveData.map.mapData;
+            this.mapManager.currentFloor = saveData.map.currentFloor;
+            this.mapManager.currentNodeIndex = saveData.map.currentNodeIndex;
+            
+            this.showMap();
+            this.showMessage("ロードしました！");
+            return true;
+        } catch (e) {
+            console.error("Load failed:", e);
+            this.showMessage("データの読み込みに失敗しました");
+            return false;
+        }
+    }
+
+    /**
+     * ★追加: セーブデータがあるか確認
+     */
+    hasSaveData() {
+        return localStorage.getItem('parm_rpg_save') !== null;
     }
 }

@@ -94,6 +94,11 @@ export class DebugManager {
         this.addTitle("FLOOR JUMP");
         this.createBtn("🏢 4階へ (キング)", "#f39c12", () => this.jumpToFloor(3));
         this.createBtn("🏢 8階へ (影)", "#8e44ad", () => this.jumpToFloor(7));
+        
+        // ---システム機能 ---
+        this.addTitle("SYSTEM");
+        this.createBtn("💾 データ確認", "#3498db", () => this.checkSaveData());
+        this.createBtn("🗑️ データ削除", "#c0392b", () => this.deleteSaveData());
 
         gameContainer.appendChild(this.panel);
     }
@@ -214,6 +219,36 @@ export class DebugManager {
             this.battleManager.ui.addLog(`[DEBUG] ${floor}階へ移動しました`, "#fff");
             alert(`${floor}階へ移動しました！マップ画面に戻ると反映されます。`);
             this.gameManager.showMap();
+        }
+    }
+    
+    // ★追加: セーブデータの確認
+    checkSaveData() {
+        const json = localStorage.getItem('parm_rpg_save');
+        if (json) {
+            const data = JSON.parse(json);
+            
+            // コンソールに詳細を出す（開発者ツール F12 で見れます）
+            console.log("=== SAVE DATA ===", data);
+            
+            // 簡易情報をログとアラートに出す
+            const floor = data.map.currentFloor + 1; // 0始まりなので+1
+            const partyNames = data.party.map(p => `${p.name}(HP${p.hp})`).join(', ');
+            
+            this.battleManager.ui.addLog(`[DEBUG] データあり: ${floor}階`, "#2ecc71");
+            alert(`【保存データあり】\n現在地: ${floor}階\nパーティ: ${partyNames}\n\n※詳細はコンソールを確認してください`);
+        } else {
+            this.battleManager.ui.addLog("[DEBUG] データなし", "#7f8c8d");
+            alert("セーブデータが見つかりません。");
+        }
+    }
+
+    // ★追加: セーブデータの削除
+    deleteSaveData() {
+        if (confirm("【警告】\n本当にセーブデータを削除しますか？\nこの操作は取り消せません。")) {
+            localStorage.removeItem('parm_rpg_save');
+            this.battleManager.ui.addLog("[DEBUG] データを削除しました", "#e74c3c");
+            alert("セーブデータを削除しました。");
         }
     }
 }

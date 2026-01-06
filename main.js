@@ -4,6 +4,8 @@ import { DebugManager } from './debug_manager.js';
 window.onload = () => {
     // GameManagerの準備
     const gameManager = new GameManager(); 
+    //つづきから
+    const continueBtn = document.getElementById('game-continue-btn');
     
     // タイトル画面の要素
     const startBtn = document.getElementById('game-start-btn'); 
@@ -12,6 +14,20 @@ window.onload = () => {
     // ズームスライダーの要素
     const zoomSlider = document.getElementById('zoom-slider');
     const gameWrapper = document.getElementById('game-wrapper');
+    
+    const sizeControl = document.getElementById('size-control');
+    const toggleBtn = document.getElementById('size-toggle-btn');
+    
+    if (toggleBtn && sizeControl) {
+        toggleBtn.addEventListener('click', () => {
+            // 1. クラスを付け外しして、CSSで隠す/出すを切り替え
+            sizeControl.classList.toggle('closed');
+            
+            // 2. アイコンの見た目を切り替え
+            const isClosed = sizeControl.classList.contains('closed');
+            toggleBtn.innerText = isClosed ? '🔍' : '➖';
+        });
+    }
 
     // ★修正：スライダー操作時の処理を拡張
     if (zoomSlider) {
@@ -45,6 +61,34 @@ window.onload = () => {
 
             document.body.style.height = 'auto'; 
         });
+    }
+    //セーブデータがあればボタンを表示
+    if (gameManager.hasSaveData() && continueBtn) {
+        continueBtn.style.display = 'block'; // flex か block で表示
+        continueBtn.style.display = 'flex';  // スタイルに合わせて flex 推奨
+
+        continueBtn.onclick = () => {
+            // フェードアウト
+            titleScreen.style.transition = "opacity 0.5s";
+            titleScreen.style.opacity = "0";
+            
+            setTimeout(() => {
+                titleScreen.style.display = 'none';
+                
+                // ロード実行
+                if (gameManager.loadGame()) {
+                    new DebugManager(gameManager);
+                    
+                    // スライダー同期
+                    const currentScale = zoomSlider ? zoomSlider.value : 1.0;
+                    const mapScreen = document.getElementById('map-screen');
+                    if (mapScreen) mapScreen.style.transform = `scale(${currentScale})`;
+                } else {
+                    alert("データが壊れている可能性があります");
+                    location.reload();
+                }
+            }, 500);
+        };
     }
 
     // スタートボタン処理

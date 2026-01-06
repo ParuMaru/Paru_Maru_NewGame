@@ -37,11 +37,11 @@ export class BattleManager {
         }
         else {
             if (rnd < 0.33) {
-                this.state.enemies.push(new Slime(false, "スライムA"));
-                this.state.enemies.push(new Slime(false, "スライムB"));
+                this.state.enemies.push(new Slime(false, "プリンA"));
+                this.state.enemies.push(new Slime(false, "プリンB"));
             } else if(rnd < 0.66) {
                 this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new Slime(false, "スライム"));
+                this.state.enemies.push(new Slime(false, "はぐれプリン"));
             }else{
                 this.state.enemies.push(new Goblin("ゴブリンA"));
                 this.state.enemies.push(new Goblin("ゴブリンB"));
@@ -483,7 +483,7 @@ export class BattleManager {
         this.bgm.stopBGM();
         if (win) {
             this.ui.addLog("戦いに勝利した！", "#f1c40f");
-            this.bgm.playVictoryFanfare(); 
+            this.bgm.playWin(); 
         } else {
             this.ui.addLog("全滅した...", "#e74c3c");
         }

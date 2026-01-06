@@ -187,7 +187,16 @@ export class ActionExecutor {
         if (item.id === 'phoenix') {
             target.revive(Math.floor(target.max_hp * item.value));
             this.director.showResurrection(target, false);
-        } 
+        }
+        else if (item.id === 'elixir') {
+            // 回復処理
+            target.add_hp(target.max_hp);
+            target.add_mp(target.max_mp);
+            
+            //  ここで専用演出を呼ぶだけにする
+            this.director.showFullHeal(target); 
+        }
+        
         else if (item.type === 'hp_heal') {
             target.add_hp(item.value);
             this.director.showHeal(target, item.value, false);
@@ -205,9 +214,9 @@ export class ActionExecutor {
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
         this.enemies.splice(enemyIndex, 1, 
-            new Slime(false, 'スライムA'), 
-            new Slime(false, 'スライムB'), 
-            new Slime(false, 'スライムC')
+            new Slime(false, 'プリンA'), 
+            new Slime(false, 'プリンB'), 
+            new Slime(false, 'プリンC')
         );
         this.director.ui.refreshEnemyGraphics(this.enemies);
         this.director.showSplittingAppear(enemyIndex);

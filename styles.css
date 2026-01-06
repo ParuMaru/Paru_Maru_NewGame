@@ -23,10 +23,11 @@ body {
 
 /* --- スマホ用サイズ調整機能 --- */
 /* スライダーエリア */
+/* 既存の #size-control を少し修正＆追記 */
 #size-control {
     position: fixed;
-    top: 10px;
-    left: 10px;
+    top: 40px;
+    left: 0;
     z-index: 99999;
     background: rgba(0, 0, 0, 0.5);
     padding: 5px 10px;
@@ -35,11 +36,30 @@ body {
     font-size: 12px;
     display: flex;
     align-items: center;
+    gap: 8px; /* ボタンとスライダーの間隔 */
+    transition: all 0.3s ease; /* なめらかに動く */
+    backdrop-filter: blur(2px); /* すりガラス効果（お好みで） */
 }
 
-#size-control input {
-    margin-left: 5px;
+/* 開閉ボタン */
+#size-toggle-btn {
     cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    user-select: none;
+    width: 20px;
+    text-align: center;
+}
+
+/* 閉じた状態のクラス（JSで付け外しする） */
+#size-control.closed {
+    background: rgba(0, 0, 0, 0.3); /* 少し薄くする */
+    padding: 5px 8px;
+}
+
+/* 閉じたときは中身を消す */
+#size-control.closed #size-content {
+    display: none;
 }
 
 /* =========================================

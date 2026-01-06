@@ -23,7 +23,39 @@ export class MapManager {
         
         const header = document.createElement('div');
         header.id = 'map-header';
-        header.innerText = "🗺️ 冒険の地図";
+        
+        Object.assign(header.style, {
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '10px 20px'
+        });
+        
+        const title = document.createElement('div');
+        title.innerText = "🗺️ 冒険の地図";
+        header.appendChild(title);
+
+        // ★追加: セーブボタン
+        const saveBtn = document.createElement('button');
+        saveBtn.innerText = "記録する";
+        Object.assign(saveBtn.style, {
+            fontSize: '12px',
+            padding: '5px 10px',
+            background: '#27ae60',
+            border: 'none',
+            borderRadius: '4px',
+            color: 'white',
+            cursor: 'pointer',
+            width: 'auto',
+            height: 'auto'
+        });
+        
+        saveBtn.onclick = (e) => {
+            e.stopPropagation(); // マップのクリック判定を防ぐ
+            this.game.saveGame();
+        };
+
+        header.appendChild(saveBtn);
         this.container.appendChild(header);
 
         this.scrollArea = document.createElement('div');
@@ -131,7 +163,8 @@ export class MapManager {
             upperNode.children.push(lowerNode.index);
         }
     }
-
+    
+    //最新の状態に合わせて画面を作り直す
     render() {
         if (this.mapData.length === 0) this.generateMap();
 
@@ -210,13 +243,29 @@ export class MapManager {
             this.game.startBattle('dragon','boss'); 
         } 
         else if (node.type === 'rest') {
-            // ★変更：HP・MPを8割回復
-            this.game.showMessage("焚き火で休憩した。HP・MPが大きく回復！(80%)");
+            // ★変更: メッセージを蘇生含む内容に変更
+            this.game.showMessage("焚き火で休憩した。全員蘇生＆HP・MPが大きく回復！(80%)");
+            
             this.game.party.forEach(p => {
-                if(p.is_alive()) {
-                    p.add_hp(Math.floor(p.max_hp * 0.8));
-                    p.add_mp(Math.floor(p.max_mp * 0.8));
+                // 回復量を計算（最大値の8割）
+                const healHp = Math.floor(p.max_hp * 0.8);
+                const healMp = Math.floor(p.max_mp * 0.8);
+
+                // ★追加: 生死判定をして処理を分ける
+                if (!p.is_alive()) {
+                    // 死んでいる場合は、HP8割の状態で蘇生させる
+                    // (reviveメソッドは entities.js で HP設定と is_dead=false を行う)
+                    p.revive(healHp);
+                } else {
+                    // 生きている場合は、現在HPに加算する
+                    p.add_hp(healHp);
                 }
+
+                // 蘇生済みなのでMP回復も通る（add_mpは死んでいると効かない仕様のため、蘇生後に呼ぶ）
+                p.add_mp(healMp);
+                
+                // お好みで状態異常も治すならこれを入れる
+                if (p.clear_all_buffs) p.clear_all_buffs();
             });
             this.render(); 
         } 

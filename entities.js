@@ -156,7 +156,7 @@ export class Hero extends Entity {
  */
 export class Wizard extends Entity {
     constructor(name = "魔法使い") {
-        super(name, 200, 150, 20, 20, 70, 50, 90, 40);
+        super(name, 200, 150, 20, 20, 70, 50, 95, 40);
         this.job = "wizard";
         this.skills = ["fire", "fira", "meteor", "meditation"];
     }
@@ -167,7 +167,7 @@ export class Wizard extends Entity {
  */
 export class Healer extends Entity {
     constructor(name = "癒し手") {
-        super(name, 220, 150, 25, 25, 30, 60, 85, 80);
+        super(name, 220, 150, 25, 25, 30, 60, 90, 80);
         this.job = "healer";
         this.skills = ["heal", "medica", "prayer", "raise"];
     }
@@ -182,25 +182,25 @@ export class Slime extends Entity {
      * @param {boolean} isKing - 王様かどうか
      * @param {string} name - 名前（省略可）
      */
-    constructor(isKing = false, name = 'スライム') {
+    constructor(isKing = false, name = 'プリン') {
         console.log(`スライム生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
             // キングスライムの設定
-            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/slime.webp');
+            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_pudding.webp');
             this.isKing = true;
             this.isBoss = true;
         } else {
             // 通常スライムの設定
-            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/splited_slime.webp');
+            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/pudding.webp');
             this.isKing = false;
         }
     }
 }
 
-// 初期配置用に KingSlime クラスも用意しておくと便利
+// 初期配置用に KingSlime クラスも用意しておく
 export class KingSlime extends Slime {
     constructor() {
-        super(true, "キングスライム");
+        super(true, "キングプリン");
     }
 }
 
@@ -259,7 +259,7 @@ export class ShadowLord extends Entity {
 export class IceDragon extends Entity {
     constructor(name = "アイスドラゴン") {
         // HP:2000, ATK:90, MATK:90,SPD:30 (ボス級)
-        super(name, 2000, 0, 90, 50, 80, 50, 95, 50, './resource/ice_dragon.webp');
+        super(name, 2000, 0, 90, 50, 80, 50, 100, 50, './resource/ice_dragon.webp');
         this.enemyType = "ice_dragon";
         this.isBoss = true;
     }

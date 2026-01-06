@@ -29,11 +29,18 @@ export class RewardManager {
         document.body.appendChild(this.container);
     }
 
-    showRewards() {
+    showRewards(enemyType = null) {
         this.cardArea.innerHTML = ""; 
         this.container.style.display = 'flex'; 
 
-        const rewards = this.generateRandomRewards();
+        let rewards;
+        // ★追加: 中ボス（キングスライム or 影のパーティ）なら専用報酬
+        if (enemyType === 'king' || enemyType === 'shadow') {
+            rewards = this.generateEliteRewards();
+        } else {
+            // それ以外（ザコ戦）はいつものランダム
+            rewards = this.generateRandomRewards();
+        }
         rewards.forEach(reward => {
             this.createCard(reward);
         });
@@ -41,6 +48,57 @@ export class RewardManager {
 
     hide() {
         this.container.style.display = 'none';
+    }
+    
+    /**
+     * ★追加: 中ボス撃破時の特別報酬（HPアップ確定）
+     */
+    generateEliteRewards() {
+        const list = [];
+
+        // 1. 【確定】最大HP超アップ
+        list.push({
+            type: 'stats',
+            data: [
+                { stat: 'max_hp', value: 80 },
+                { stat: 'def',    value: 10 } // 通常の倍 (50 -> 100)
+            ],
+            icon: '❤️',
+            name: '最大HP 超アップ',
+            desc: 'パーティ全員の最大HPが +80 上昇 防御力+10',
+            color: '#e74c3c' // 赤色で強調
+        });
+
+        // 2. 【魔力セット】最大MP ＆ 魔力 UP
+        list.push({
+            type: 'stats',
+            data: [
+                { stat: 'max_mp', value: 50 },
+                { stat: 'matk',   value: 10 }
+            ],
+            icon: '🔮',
+            name: '賢者の秘儀',
+            desc: '全員の 最大MP+50 と 魔力+10',
+            color: '#9b59b6'
+        });
+
+        // 3. 【確定】秘薬セット（エリクサー的な豪華アイテム）
+        // 
+        list.push({
+            type: 'item',
+            data: [
+                { id: 'potion',  count: 1 },  
+                { id: 'ether',   count: 1 },  
+                { id: 'phoenix', count: 1 },
+                { id: 'elixir', count: 1 } 
+            ],
+            icon: '🎒',
+            name: '冒険者セット',
+            desc: 'ポーションx1、エーテルx1、フェニックスの尾x1、エリクサーx1 を獲得！',
+            color: '#f1c40f'
+        });
+
+        return list;
     }
 
     /**
@@ -154,36 +212,60 @@ export class RewardManager {
     applyReward(reward) {
         // --- 1. アイテム ---
         if (reward.type === 'item') {
-            const key = reward.data;
             if (!this.game.inventory) this.game.inventory = {};
             
-            if (this.game.inventory[key]) {
-                this.game.inventory[key].count += reward.count;
+            // ★ポイント: データが「配列」か「単体」かを判定してリスト化
+            let itemsList = [];
+            if (Array.isArray(reward.data)) {
+                itemsList = reward.data; // 中ボス報酬（配列）の場合
             } else {
-                this.game.inventory[key] = { ...ItemData[key], count: reward.count };
+                // ランダム報酬（単体）の場合
+                // dataにID文字列、countに個数が入っている
+                itemsList = [{ id: reward.data, count: reward.count }];
             }
-            // 簡易メッセージ表示（alertではなくカスタムUI推奨ですが、一旦これで）
-            // this.game.showMessage(`${ItemData[key].name} を ${reward.count}個 手に入れた！`);
-            console.log("アイテム獲得:", ItemData[key].name);
-        } 
-        // --- 2. ステータスアップ ---
-        else if (reward.type === 'stats') {
-            const { stat, value } = reward.data;
-            this.game.party.forEach(member => {
-                // 既存パラメータへの加算
-                if (typeof member[stat] !== 'undefined') {
-                    member[stat] += value;
+            // メッセージ表示用のリスト
+            let msgParts = [];
+            // リストを回して全て付与
+            itemsList.forEach(itemInfo => {
+                const key = itemInfo.id;
+                const count = itemInfo.count;
+                // インベントリへの追加処理
+                if (this.game.inventory[key]) {
+                    this.game.inventory[key].count += count;
+                } else {
+                    // 新規追加（ItemDataから基本情報をコピー）
+                    if (ItemData[key]) {
+                        this.game.inventory[key] = { ...ItemData[key], count: count };
+                    }
                 }
                 
-                // 最大HP/MPが増えたら、現在値も回復させてあげる（親切設計）
-                if (stat === 'max_hp') {
-                    member.add_hp(value); 
-                }
-                if (stat === 'max_mp') {
-                    member.add_mp(value);
+                // ログ用メッセージ作成
+                if (ItemData[key]) {
+                    msgParts.push(`${ItemData[key].name}x${count}`);
                 }
             });
-            console.log("ステータスアップ:", stat, value);
+            // 「ポーションx1, エーテルx1... を手に入れた！」と表示
+            this.game.showMessage(`${msgParts.join(', ')} を手に入れた！`);
+        }
+        // --- 2. ステータスアップ ---
+        else if (reward.type === 'stats') {
+            // ★ここを変更: dataが配列でなければ配列に変換して統一的に扱う
+            const statsList = Array.isArray(reward.data) ? reward.data : [reward.data];
+
+            // リストの中身を順番に適用
+            statsList.forEach(item => {
+                const { stat, value } = item;
+                
+                this.game.party.forEach(member => {
+                    if (typeof member[stat] !== 'undefined') {
+                        member[stat] += value;
+                    }
+                    // 最大値が増えたら現在値も回復
+                    if (stat === 'max_hp') member.add_hp(value); 
+                    if (stat === 'max_mp') member.add_mp(value);
+                });
+                console.log("ステータスアップ:", stat, value);
+            });
         }
         // --- 3. 野営（全回復） ---
         else if (reward.type === 'rest') {

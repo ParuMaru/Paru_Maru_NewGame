@@ -41,7 +41,6 @@ export class BattleBGM {
         // エンディング用MP3ファイルのパス
         this.endingFile = './resource/ending.mp3';
         this.endingBuffer = null;
-
         this.currentType = 'normal';
         
         this.seFiles = {
@@ -57,7 +56,8 @@ export class BattleBGM {
             'bukubuku': './resource/bukubuku.mp3',
             'damage': './resource/damage.mp3',
             'poison': './resource/poison.mp3',
-            'breath': './resource/breath.mp3'
+            'breath': './resource/breath.mp3',
+            'win': './resource/win.mp3'
         };
         
         this.victoryLoopTimer = null; 
@@ -380,38 +380,8 @@ export class BattleBGM {
         osc.start();
         osc.stop(now + 0.2);
     }
+    playWin(){this.playSE('win');}
     
-    /**
-     * 勝利ファンファーレ（イントロ演奏後、ループへ移行）
-     */
-    playVictoryFanfare() {
-        if (!this.ctx) return;
-        this.stopBGM();
-        const now = this.ctx.currentTime + 0.1;
-        
-        // ★修正: 勝利モードON（このフラグがないとループしません）
-        this.isVictoryLoopActive = true;
-
-        // Cメジャーコードのファンファーレ
-        const C4=261.6, E4=329.6, G4=392.0, Ab4=415.3, Bb4=466.2, C5=523.2, F4=349.2, D4=293.7;
-        const s = 0.11; 
-        const v = 0.05; 
-
-        this.playInstr([C5, G4, E4], now + 0, 0.1, v);
-        this.playInstr([C5, G4, E4], now + s, 0.1, v);
-        this.playInstr([C5, G4, E4], now + s * 2, 0.1, v);
-        this.playInstr([C5, G4, E4], now + s * 3, 0.6, v); 
-        this.playInstr([Ab4, 311.1, 207.6], now + 0.8, 0.4, v);
-        this.playInstr([Bb4, 349.2, 233.1], now + 1.2, 0.4, v);
-
-        const t3 = now + 1.6;
-        this.playInstr([C5, G4, E4], t3, 0.2, v);
-        this.playInstr([Bb4, F4, D4], t3 + 0.35, 0.12, v);
-        this.playInstr([C5, G4, E4, 261.6], t3 + 0.47, 2.5, v + 0.02);
-
-        // 3秒後にループBGMへ移行
-        this.startVictoryLoop(now + 3.0);
-    }
 
     playInstr(freqs, time, dur, vol, type = "sawtooth") {
         if (!this.ctx) return;
@@ -448,59 +418,4 @@ export class BattleBGM {
         });
     }
 
-    /**
-     * 勝利後のBGMループ処理
-     */
-    startVictoryLoop(startTime) {
-        const self = this;
-        const scheduleNext = (time) => {
-            // ★修正: ここで専用フラグをチェック！
-            // stopBGM() が呼ばれてフラグがfalseになったら、即座に終了します
-            if (!self.isVictoryLoopActive) return;
-
-            // もしstopBGM()が呼ばれていたら止める（念のため）
-            if (self.victoryLoopTimer === null) return;
-
-            const C3=130.8, C4=261.6, D4=293.7, E4=329.6, F4=349.2, G4=392.0, A4=440.0, B4=493.8, C5=523.2;
-
-            // ベース
-            for (let i = 0; i < 8; i++) {
-                const t = time + i * 0.4;
-                self.playInstr([C3], t, 0.2, 0.05, "square"); 
-                self.playInstr([C4], t + 0.2, 0.1, 0.03, "square");
-            }
-
-            // メロディ
-            const melody = [
-                { f: [C5, G4], d: 0, dur: 0.3 },
-                { f: [C5, G4], d: 0.4, dur: 0.3 },
-                { f: [G4], d: 0.8, dur: 0.3 },
-                { f: [A4], d: 1.2, dur: 0.3 },
-                { f: [B4], d: 1.6, dur: 0.6 },
-                { f: [C5], d: 2.4, dur: 0.8 }
-            ];
-
-            melody.forEach(m => {
-                self.playInstr(m.f, time + m.d, m.dur, 0.06, "sawtooth");
-                self.playInstr(m.f, time + m.d, m.dur, 0.03, "square");
-            });
-
-            // 和音
-            self.playInstr([E4, G4], time, 1.5, 0.03, "triangle");
-            self.playInstr([F4, A4], time + 1.6, 1.5, 0.03, "triangle");
-
-            // 再帰呼び出し（3秒ループ）
-            self.victoryLoopTimer = setTimeout(() => {
-                // ここでも停止済みかチェック
-                if (!self.isVictoryLoopActive) return;
-                
-                const nextStartTime = Math.max(time + 3.2, self.ctx.currentTime + 0.1);
-                scheduleNext(nextStartTime);
-            }, 3000);
-        };
-        
-        // 初回起動
-        this.victoryLoopTimer = setTimeout(() => {}, 0); 
-        scheduleNext(startTime);
-    }
 }
