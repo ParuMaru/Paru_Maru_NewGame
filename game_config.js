@@ -16,8 +16,8 @@ export const GameConfig = {
     COVER_DAMAGE_RATE: 0.5,
     
 
-    // 敵（スライム）のロジック用
-    SLIME_REGEN_CHANCE: 0.2,      // 再生確率
-    SLIME_ALL_ATTACK_CHANCE: 0.3, // 全体攻撃確率
-    SLIME_SPLIT_HP: 500,          // 分裂しきい値
+    // 敵（クラゲ）のロジック用
+    Jellyfish_REGEN_CHANCE: 0.2,      // 再生確率
+    Jellyfish_ALL_ATTACK_CHANCE: 0.3, // 全体攻撃確率
+    Jellyfish_SPLIT_HP: 500,          // 分裂しきい値
 };

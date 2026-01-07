@@ -1,0 +1,65 @@
+/* battle.css - バトルUI・レイアウト */
+
+/* エリア共通設定 */
+#canvas-area, #log, #status-area, #command-area { width: 100%; max-width: none; margin: 0; border: none; border-radius: 0; box-sizing: border-box; }
+#log, #status-area { background-color: rgba(26, 37, 47, 0.9) !important; text-shadow: 1px 1px 0 #000; }
+
+/* =========================================
+   バトル画面（キャンバスエリア）
+   ========================================= */
+#canvas-area {
+    position: relative; height: 45vh; min-height: 350px;
+    background-image: url("../resource/bg.jpg"); background-size: cover; background-position: center;
+    border-bottom: 4px solid #444; border-radius: 10px; display: flex; flex-direction: column;
+    justify-content: center; align-items: center; overflow: hidden; padding: 10px 0;
+}
+.enemy-sprite-container { display: grid; align-items: flex-end; justify-items: center; width: 100%; height: 200px; padding-left: 0; padding-bottom: 40px; }
+.enemy-unit { position: relative; display: flex; flex-direction: column; align-items: center; transition: all 0.3s ease; }
+.enemy-hp-container { width: 80px; height: 9px; background: #222; border: 1px solid #fff; border-radius: 4px; margin-bottom: 5px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+.enemy-hp-bar { width: 100%; height: 100%; background: linear-gradient(to bottom, #ff6b81, #ff4757, #c0392b); transition: width 0.3s ease; }
+.enemy-label { color: #fff; font-weight: bold; text-shadow: 2px 2px 0 #000, -1px -1px 0 #000, -1px 1px 0 #000, 1px -1px 0 #000, 1px 1px 0 #000; z-index: 5; }
+.enemy-img { width: 120px; height: auto; cursor: pointer; } /* アニメーションはeffects.cssへ */
+.enemy-status-container { position: absolute; top: -25px; left: 0; width: 100%; display: flex; justify-content: center; gap: 2px; z-index: 10; pointer-events: none; }
+
+/* =========================================
+   ログ・ステータスエリア
+   ========================================= */
+#log { height: 15vh; min-height: 80px; background: #1a252f; padding: 8px; overflow-y: auto; font-size: 13px; text-shadow: 1px 1px 0 #333, -1px -1px 0 #333; border-bottom: 2px solid #ecf0f1 !important; }
+#log div { border-bottom: 1px dashed #333; padding: 2px 0; }
+
+#status-area { height: 15vh; max-height: 120px; display: flex; flex-direction: row; justify-content: space-around; background: #2c3e50; padding: 10px 5px; gap: 4px; align-items: center; border-bottom: 2px solid #ecf0f1 !important; }
+.member-card { flex: 1; min-width: 0; text-align: center; border: 1px solid #34495e; padding: 5px 2px; border-radius: 5px; position: relative; font-size: 12px; transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; }
+.status-container { position: absolute; top: -22px; right: 10px; display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-end; gap: 3px; z-index: 10; }
+.status-badge { border-radius: 6px 6px 0 0; height: 22px; padding: 0 8px; min-width: 24px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; font-weight: bold; box-shadow: 1px -1px 2px rgba(0,0,0,0.3); border-top: 1px solid rgba(255,255,255,0.3); border-left: 1px solid rgba(255,255,255,0.3); border-right: 1px solid rgba(255,255,255,0.3); }
+.badge-num { margin-left: 4px; font-size: 11px; }
+.badge-cover { background-color: #3498db; }
+.badge-regen { background-color: #8e44ad; }
+.badge-buff { background-color: #e74c3c; }
+.mini-hp-bar-bg, .mini-mp-bar-bg { width: 90%; height: 8px; background: #7f8c8d; margin: 3px auto; }
+.mini-hp-bar { width: 100%; height: 100%; background: #2ecc71; transition: width 0.3s; }
+.mini-mp-bar { width: 100%; height: 100%; background: #2e95cc; transition: width 0.3s; }
+
+/* =========================================
+   コマンドエリア
+   ========================================= */
+.btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+button { width: 100%; height: 40px; cursor: pointer; border: none; background-color: #34495e; color: white; font-weight: bold; border-radius: 5px; font-size: 0.9rem; }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* =========================================
+   リザルト・行動順リスト
+   ========================================= */
+#result-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 200; color: white; }
+#result-title { font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 10px gold; font-family: 'Press Start 2P', cursive; }
+.defeat-title { color: #e74c3c !important; text-shadow: 0 0 10px red !important; }
+.victory-title { color: #f1c40f !important; text-shadow: 0 0 10px orange !important; }
+
+#turn-order-panel { position: absolute; top: auto; bottom: 5px; left: 0; width: 100%; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 10px; z-index: 500; pointer-events: none; }
+.round-info { background: rgba(0, 0, 0, 0.7); color: #f1c40f; font-size: 12px; text-align: center; padding: 5px 10px; border-radius: 15px; border: 1px solid #f39c12; font-weight: bold; margin-bottom: 0; margin-left: 14px; height: fit-content; position: relative; z-index: 20; }
+#turn-list-container { display: flex; flex-direction: row; gap: 5px; align-items: flex-end; }
+.turn-item { position: relative; width: 55px; height: 45px; background: rgba(0, 0, 0, 0.6); border-radius: 5px; overflow: hidden; transition: all 0.3s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.5); flex-shrink: 0; }
+.turn-item.current-turn { width: 60px; height: 45px; border: 3px solid #f1c40f !important; transform: translateY(-5px); z-index: 10; margin-right: 5px; }
+.turn-item img { width: 100%; height: 100%; object-fit: cover; }
+.turn-item.is-ally { border: 1px solid #3498db; }
+.turn-item.is-enemy { border: 1px solid #e74c3c; }
+.turn-av-badge { position: absolute; bottom: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; font-size: 10px; padding: 2px 4px; border-radius: 4px 0 4px 0; font-family: monospace; }

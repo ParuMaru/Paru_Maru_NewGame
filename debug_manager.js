@@ -79,17 +79,18 @@ export class DebugManager {
         this.createBtn("📉 MP枯渇", "#3498db", () => this.emptyMP());
         this.createBtn("🩸 味方瀕死", "#e74c3c", () => this.damageParty());
         this.createBtn("💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
+        this.createBtn("⚡ 敵瀕死 (HP29%)", "#e74c3c", () => this.weakenEnemies());
         this.createBtn("☠️ 自爆 (敗北)", "#95a5a6", () => this.suicide());
         this.createBtn("⏭️ ターン経過", "#34495e", () => this.skipTurn());
 
         // --- 戦闘テスト ---
         this.addTitle("BATTLE TEST");
-        this.createBtn("⚔️ vs スライム", "#bdc3c7", () => this.startBattle('slime'));
+        this.createBtn("⚔️ vs クラゲ", "#bdc3c7", () => this.startBattle('Jellyfish'));
         this.createBtn("👹 vs ゴブリン", "#27ae60", () => this.startBattle('goblin'));
+        this.createBtn("👑 vs キング", "#f1c40f", () => this.startBattle('king'));
         this.createBtn("👥 vs 影のパーティ", "#8e44ad", () => this.startBattle('shadow'));
         this.createBtn("🧊 vs 氷ドラゴン", "#00d2ff", () => this.startBattle('dragon'));
-        this.createBtn("👑 vs キング", "#f1c40f", () => this.startBattle('king'));
-
+        
         // --- 階層ワープ ---
         this.addTitle("FLOOR JUMP");
         this.createBtn("🏢 4階へ (キング)", "#f39c12", () => this.jumpToFloor(3));
@@ -99,10 +100,10 @@ export class DebugManager {
         this.addTitle("SYSTEM");
         this.createBtn("💾 データ確認", "#3498db", () => this.checkSaveData());
         this.createBtn("🗑️ データ削除", "#c0392b", () => this.deleteSaveData());
-
+        
         gameContainer.appendChild(this.panel);
     }
-
+    
     addTitle(text) {
         const div = document.createElement('div');
         div.innerText = text;
@@ -188,6 +189,26 @@ export class DebugManager {
             if(this.battleManager.effects) this.battleManager.effects.enemyDeath(`enemy-sprite-${i}`);
         });
         setTimeout(() => this.skipTurn(), 500);
+    }
+    
+    weakenEnemies() {
+        const enemies = this.getEnemies();
+        let affected = false;
+        
+        enemies.forEach(enemy => {
+            if (enemy.is_alive()) {
+                // HPを最大値の29%（切り捨て）に設定
+                enemy._hp = Math.floor(enemy.max_hp * 0.29);
+                affected = true;
+            }
+        });
+
+        if (affected) {
+            this.battleManager.ui.addLog("[DEBUG] 敵HPを29%に設定", "#e74c3c", true);
+            // 画面のHPバーなどを即座に更新させるための処理
+            // (safeUpdateUIはボタンクリック時に呼ばれるので、ここではログだけでOKですが念のため)
+            this.safeUpdateUI();
+        }
     }
 
     suicide() {

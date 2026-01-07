@@ -9,9 +9,12 @@ export class MapManager {
         this.currentFloor = -1; 
         this.currentNodeIndex = -1;
         
+        // ★追加: 選択したルートの履歴 { floor: index }
+        this.pathHistory = {}; 
+
         // 全11階層
         this.FLOOR_COUNT = 11; 
-        this.NODES_PER_FLOOR = [3, 3, 4, 3, 2, 3, 4, 3, 1, 1, 1]; 
+        this.NODES_PER_FLOOR = [1, 3, 4, 3, 2, 3, 4, 3, 1, 1, 1]; 
         
         this.initUI();
         this.initFountainUI(); 
@@ -35,7 +38,6 @@ export class MapManager {
         title.innerText = "🗺️ 冒険の地図";
         header.appendChild(title);
 
-        // ★追加: セーブボタン
         const saveBtn = document.createElement('button');
         saveBtn.innerText = "記録する";
         Object.assign(saveBtn.style, {
@@ -51,7 +53,7 @@ export class MapManager {
         });
         
         saveBtn.onclick = (e) => {
-            e.stopPropagation(); // マップのクリック判定を防ぐ
+            e.stopPropagation();
             this.game.saveGame();
         };
 
@@ -99,6 +101,7 @@ export class MapManager {
         this.mapData = [];
         this.currentFloor = -1;
         this.currentNodeIndex = -1;
+        this.pathHistory = {}; // ★マップ生成時に履歴もリセット
 
         for (let f = 0; f < this.FLOOR_COUNT; f++) {
             const floorNodes = [];
@@ -164,7 +167,6 @@ export class MapManager {
         }
     }
     
-    //最新の状態に合わせて画面を作り直す
     render() {
         if (this.mapData.length === 0) this.generateMap();
 
@@ -213,7 +215,14 @@ export class MapManager {
     }
 
     getNodeStatus(floor, index) {
-        if (floor < this.currentFloor) return 'cleared'; 
+        // ★修正: 過去の階層は、実際に選んだノードだけを 'cleared' にする
+        if (floor < this.currentFloor) {
+            if (this.pathHistory[floor] === index) {
+                return 'cleared';
+            }
+            return 'locked'; // 選ばなかった道はグレーアウト
+        }
+
         if (floor === this.currentFloor && index === this.currentNodeIndex) return 'cleared'; 
         
         if (floor === this.currentFloor + 1) {
@@ -227,44 +236,37 @@ export class MapManager {
     onNodeSelect(node) {
         this.currentFloor = node.floor;
         this.currentNodeIndex = node.index;
+        
+        // ★追加: 選んだノードを履歴に記録する
+        this.pathHistory[node.floor] = node.index;
 
         if (node.type === 'battle') {
-            const type = Math.random() < 0.6 ? 'slime' : 'goblin';
+            const type = Math.random() < 0.6 ? 'Jellyfish' : 'goblin';
             this.game.startBattle(type,'normal');
         } 
         else if (node.type === 'elite') {
             if (node.floor === 8) {
-                this.game.startBattle('shadow', 'elite'); // 8階は影のパーティ
+                this.game.startBattle('shadow', 'elite'); 
             } else {
-                this.game.startBattle('king', 'elite');   // 4階はキングスライム
+                this.game.startBattle('king', 'elite');
             }
         } 
         else if (node.type === 'boss') {
             this.game.startBattle('dragon','boss'); 
         } 
         else if (node.type === 'rest') {
-            // ★変更: メッセージを蘇生含む内容に変更
             this.game.showMessage("焚き火で休憩した。全員蘇生＆HP・MPが大きく回復！(80%)");
             
             this.game.party.forEach(p => {
-                // 回復量を計算（最大値の8割）
                 const healHp = Math.floor(p.max_hp * 0.8);
                 const healMp = Math.floor(p.max_mp * 0.8);
 
-                // ★追加: 生死判定をして処理を分ける
                 if (!p.is_alive()) {
-                    // 死んでいる場合は、HP8割の状態で蘇生させる
-                    // (reviveメソッドは entities.js で HP設定と is_dead=false を行う)
                     p.revive(healHp);
                 } else {
-                    // 生きている場合は、現在HPに加算する
                     p.add_hp(healHp);
                 }
-
-                // 蘇生済みなのでMP回復も通る（add_mpは死んでいると効かない仕様のため、蘇生後に呼ぶ）
                 p.add_mp(healMp);
-                
-                // お好みで状態異常も治すならこれを入れる
                 if (p.clear_all_buffs) p.clear_all_buffs();
             });
             this.render(); 
@@ -309,7 +311,6 @@ export class MapManager {
         leaveBtn.innerText = "戻る";
 
         if (Math.random() < 0.7) {
-            // ★変更：成功時はランダムでステータスアップ
             const stats = [
                 { key: 'max_hp', name: '最大HP', val: 50 },
                 { key: 'max_mp', name: '最大MP', val: 50 },
@@ -324,7 +325,6 @@ export class MapManager {
                 if(p.is_alive()) { 
                     if(typeof p[boost.key] !== 'undefined') {
                         p[boost.key] += boost.val;
-                        // 最大値が増えたら現在値も少し回復してあげる
                         if(boost.key === 'max_hp') p.add_hp(boost.val);
                         if(boost.key === 'max_mp') p.add_mp(boost.val);
                     }
@@ -333,7 +333,6 @@ export class MapManager {
             resultDiv.innerText = `✨ 不思議な力が宿る... (${boost.name} +${boost.val})`;
             resultDiv.className = "fountain-result result-good";
         } else {
-            // ★変更：失敗時は最大HPの3割ダメージ
             this.game.showMessage("うっ...！ 毒の水だった！(HP30%ダメージ)");
             this.game.party.forEach(p => {
                 if(p.is_alive()) {
@@ -355,20 +354,16 @@ export class MapManager {
 
     drawLines() {
         const svg = this.svgLayer;
-        // まずSVG自体の描画領域を確保
         svg.setAttribute('width', this.scrollArea.scrollWidth);
         svg.setAttribute('height', this.scrollArea.scrollHeight);
         
-        // SVGの中身をクリア（線が重複して描画されるのを防ぐ）
         while (svg.lastChild) {
             svg.removeChild(svg.lastChild);
         }
 
-        // 見た目の幅(getBoundingClientRect) ÷ 内部的な幅(offsetWidth) = 倍率
         const currentRect = this.container.getBoundingClientRect();
         const scale = currentRect.width ? (currentRect.width / this.container.offsetWidth) : 1.0;
         
-        // 基準となるコンテナの位置情報
         const containerRect = this.scrollArea.getBoundingClientRect();
         const scrollTop = this.scrollArea.scrollTop;
 
@@ -382,9 +377,6 @@ export class MapManager {
                         const startRect = startEl.getBoundingClientRect();
                         const endRect = endEl.getBoundingClientRect();
                         
-                        // 座標計算時に scale で割って、元の「1.0倍の世界」の座標に戻す
-                        // (scrollTop は内部スクロール量なので scale の影響を受けないため、そのまま足す)
-
                         const x1 = (startRect.left - containerRect.left) / scale + (startRect.width / scale) / 2;
                         const y1 = (startRect.top - containerRect.top) / scale + (startRect.height / scale) / 2 + scrollTop;
                         
@@ -397,12 +389,21 @@ export class MapManager {
                         line.setAttribute("x2", x2); 
                         line.setAttribute("y2", y2);
                         
-                        const isClearedPath = (this.getNodeStatus(node.floor, node.index) === 'cleared' && 
-                                               this.getNodeStatus(node.floor + 1, parentIndex) !== 'locked');
-                        
-                        line.setAttribute("stroke", isClearedPath ? "#2ecc71" : "rgba(255, 255, 255, 0.3)");
-                        line.setAttribute("stroke-width", "3");
-                        line.setAttribute("stroke-dasharray", "5,5"); 
+                        // ★修正: 自分が選んだルート（履歴にある点同士の接続）かどうか
+                        const isHistoryPath = (this.pathHistory[node.floor] === node.index) && 
+                                              (this.pathHistory[node.floor + 1] === parentIndex);
+
+                        if (isHistoryPath) {
+                            // 選んだ道：実線で見やすく
+                            line.setAttribute("stroke", "#f1c40f"); // 金色（または緑 #2ecc71）
+                            line.setAttribute("stroke-width", "4"); // 太く
+                            // dasharrayを指定しない＝実線
+                        } else {
+                            // 選ばなかった道：薄い点線
+                            line.setAttribute("stroke", "rgba(255, 255, 255, 0.1)");
+                            line.setAttribute("stroke-width", "2");
+                            line.setAttribute("stroke-dasharray", "5,5"); 
+                        }
                         
                         svg.appendChild(line);
                     }

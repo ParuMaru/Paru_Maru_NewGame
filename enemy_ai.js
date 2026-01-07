@@ -145,7 +145,7 @@ export class EnemyAI {
         }
 
         // ------------------------------------------
-        // 3. キングスライムの行動
+        // 3. キングクラゲの行動
         // ------------------------------------------
         if (enemy.isKing) {
             // 30%で全体攻撃「のしかかり」
@@ -159,7 +159,7 @@ export class EnemyAI {
         } 
         
         // ------------------------------------------
-        // 4. 通常スライム（他の条件に当てはまらない場合で、名前がスライム系）
+        // 4. 通常クラゲ（他の条件に当てはまらない場合で、名前がクラゲ系（クラゲ））
         // ------------------------------------------
         else if (!enemy.enemyType && enemy.name.includes('クラゲ')) {
             // 30%で「触手」
@@ -168,7 +168,7 @@ export class EnemyAI {
                 return {
                     type: 'skill',
                     target: target,
-                    detail: SkillData.acid
+                    detail: SkillData.tentacle
                 };
             }
         }

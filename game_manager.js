@@ -58,7 +58,7 @@ export class GameManager {
 
     /**
      * バトル開始処理
-     * @param {string} enemyType - 敵の種類 ('slime', 'dragon' etc)
+     * @param {string} enemyType - 敵の種類 ('Jellyfish', 'dragon' etc)
      * @param {string} bgmType - BGMの種類 ('normal', 'elite', 'boss')
      */
     startBattle(enemyType, bgmType = null) {
@@ -149,6 +149,11 @@ export class GameManager {
 
             endingScreen.innerHTML = `
                 <div class="ending-title">GAME CLEAR!</div>
+
+                <div class="ending-cat-container">
+                    ${catImagesHTML}
+                </div>
+
                 <div class="ending-msg">
                     伝説のアイスドラゴンを討伐し<br>
                     世界の平和は守られた！<br>
@@ -156,12 +161,9 @@ export class GameManager {
                     勇者たちの冒険はこれからも続く...
                 </div>
 
-                <div class="ending-cat-container">
-                    ${catImagesHTML}
-                </div>
+                <div class="ending-thanks" style="margin-top: 20px;">Thank you for playing!</div>
+                
                 <p style="font-size:12px; color:#bdc3c7;">（画像をクリックすると拡大します）</p>
-
-                <div class="ending-thanks">Thank you for playing!</div>
                 <br><br>
                 <button id="title-return-btn" class="start-btn">タイトルへ戻る</button>
 

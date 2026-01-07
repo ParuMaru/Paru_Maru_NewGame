@@ -15,9 +15,9 @@ export const SkillData = {
     prayer: { id: "prayer", name: "いのり",  menu: "main", cost: 0, value: 0.1, duration: 3, type: "regen", target: "all", color: "#8e44ad"},
     raise:  { id: "raise",  name: "レイズ",   menu: "magic", cost: 40, power: 0.5, type: "res",   target: "single", color: "#f1c40f" },
 
-    //　スライム
+    //　クラゲ（クラゲ）
     body_slam: {id: "body_slam", name: "のしかかり",power: 1.2, type: "physical", target: "all"},
-    acid:      {id: "acid",      name: "触手",     power: 1.7, type: "physical", target: "single", color: "#2ecc71"},
+    tentacle:      {id: "tentacle",      name: "触手",     power: 1.7, type: "physical", target: "single", color: "#2ecc71"},
     
     //ゴブリン
     smash:       {id: "smash",       name: "こんぼう強打", power: 1.7, type: "physical", target: "single"},

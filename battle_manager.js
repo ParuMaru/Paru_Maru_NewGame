@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Slime, KingSlime, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
+import { Jellyfish, KingJellyfish, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 
@@ -28,7 +28,7 @@ export class BattleManager {
         
         const rnd = Math.random();
         
-        if (enemyType === 'king') this.state.enemies.push(new KingSlime());
+        if (enemyType === 'king') this.state.enemies.push(new KingJellyfish());
         else if (enemyType === 'dragon') this.state.enemies.push(new IceDragon());
         else if (enemyType === 'shadow') {
             this.state.enemies.push(new ShadowHero());
@@ -37,11 +37,11 @@ export class BattleManager {
         }
         else {
             if (rnd < 0.33) {
-                this.state.enemies.push(new Slime(false, "クラゲA"));
-                this.state.enemies.push(new Slime(false, "クラゲB"));
+                this.state.enemies.push(new Jellyfish(false, "クラゲA"));
+                this.state.enemies.push(new Jellyfish(false, "クラゲB"));
             } else if(rnd < 0.66) {
                 this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new Slime(false, "はぐれクラゲ"));
+                this.state.enemies.push(new Jellyfish(false, "はぐれクラゲ"));
             }else{
                 this.state.enemies.push(new Goblin("ゴブリンA"));
                 this.state.enemies.push(new Goblin("ゴブリンB"));
@@ -310,20 +310,62 @@ export class BattleManager {
     async handleEnemyTurn(enemy) {
         this.ui.commandContainer.innerHTML = "";
         await new Promise(r => setTimeout(r, 800));
-        const action = this.ai.think(enemy, this.state.getAliveParty(), this.state.getAliveEnemies());
-        await this.executor.execute(enemy, action.target, action);
+
+        // ★変更点：個別の特殊イベント（変身など）は専用の係に任せる！
+        await this.checkUniqueEnemyEvent(enemy);
+
+        // ★変更点：行動回数も「敵データ」に持たせるのが理想
+        // （enemy.actionCount がなければ 1回 とみなす、という書き方）
+        const actionCount = enemy.actionCount || 1;
+
+        for (let i = 0; i < actionCount; i++) {
+            if (!enemy.is_alive() || this.state.getAliveParty().length === 0) break;
+
+            if (i > 0) {
+                await new Promise(r => setTimeout(r, 1000));
+                this.ui.addLog(`${enemy.name}の猛攻！(連続行動)`, "#ff0000");
+            }
+
+            let action = this.ai.think(enemy, this.state.getAliveParty(), this.state.getAliveEnemies());
+            await this.executor.execute(enemy, action.target, action);
+        }
         
-        // 行動終了時にバフ減少
         await this.processTurnEnd(enemy);
-        
         this.nextTurn();
     }
+    
+    /**
+     * 敵ごとの特殊なイベント（変身、セリフなど）をチェックする場所
+     * 敵が増えたらここに追加していく（メインの処理は汚れない）
+     */
+    async checkUniqueEnemyEvent(enemy) {
+        // --- ドラゴンの場合 ---
+        if (enemy instanceof IceDragon) {
+            // HP3割以下で発狂モードへ
+            if (!enemy.isBerserk && enemy.hp <= (enemy.max_hp * 0.3)) {
+                enemy.isBerserk = true;
+                enemy.actionCount = 2; // ★ここで行動回数を設定してしまう
 
-//    nextTurn() {
-//        this.isProcessing = false;
-//        this.state.nextTurn();
-//        this.runTurn();
-//    }
+                // 画像とステータス変更
+                enemy.img = "./resource/last_dragon.webp";
+                enemy.name = "覚醒アイスドラゴン";
+                enemy.atk = Math.floor(enemy.atk * 1.2);
+                enemy.buffs.atk_up = 99;
+
+                // 演出
+                this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", "#e74c3c");
+                this.ui.addLog("ドラゴンの姿が変化し、力が暴走し始めた！", "#e74c3c");
+                
+                this.ui.refreshEnemyGraphics(this.state.enemies);
+                this.updateUI();
+                await new Promise(r => setTimeout(r, 2000));
+            }
+        }
+
+        // --- (将来追加) 魔王の場合 ---
+        // if (enemy instanceof DemonKing) { ... }
+    }
+
     // ★重要: 行動が終わった後の処理
     // ここで行動値をリチャージ（10000/速度）して、列の最後尾に並び直させる
     nextTurn(actor) { // 引数でactorを受け取れるように変更推奨

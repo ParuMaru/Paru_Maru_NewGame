@@ -1,6 +1,6 @@
 import { BattleCalculator } from './battle_calculator.js';
 import { BattleDirector } from './battle_director.js'; 
-import { Slime } from './entities.js';
+import { Jellyfish } from './entities.js';
 import { GameConfig } from './game_config.js';
 
 export class ActionExecutor {
@@ -58,7 +58,7 @@ export class ActionExecutor {
         
         switch (skill.type) {
             case 'physical': 
-                if (skill.id === 'acid') this.director.music.playPoison(); 
+                if (skill.id === 'tentacle') this.director.music.playPoison(); 
                 else if (skill.id === 'dragon_claw') this.director.music.playAttack(); 
                 else this.director.music.playAttack(); 
 
@@ -214,9 +214,9 @@ export class ActionExecutor {
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
         this.enemies.splice(enemyIndex, 1, 
-            new Slime(false, 'クラゲA'), 
-            new Slime(false, 'クラゲB'), 
-            new Slime(false, 'クラゲC')
+            new Jellyfish(false, 'クラゲA'), 
+            new Jellyfish(false, 'クラゲB'), 
+            new Jellyfish(false, 'クラゲC')
         );
         this.director.ui.refreshEnemyGraphics(this.enemies);
         this.director.showSplittingAppear(enemyIndex);

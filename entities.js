@@ -174,31 +174,31 @@ export class Healer extends Entity {
 }
 
 /**
- * スライム（Enemy）
+ * クラゲ（Enemy）
  */
-export class Slime extends Entity {
+export class Jellyfish extends Entity {
     /**
      * コンストラクタを柔軟にする
      * @param {boolean} isKing - 王様かどうか
      * @param {string} name - 名前（省略可）
      */
     constructor(isKing = false, name = 'クラゲ') {
-        console.log(`スライム生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
+        console.log(`クラゲ生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
-            // キングスライムの設定
+            // キングクラゲの設定
             super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_jellyfish.webp');
             this.isKing = true;
             this.isBoss = true;
         } else {
-            // 通常スライムの設定
+            // 通常クラゲの設定
             super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/jellyfish.webp');
             this.isKing = false;
         }
     }
 }
 
-// 初期配置用に KingSlime クラスも用意しておく
-export class KingSlime extends Slime {
+// 初期配置用に KingJellyfish クラスも用意しておく
+export class KingJellyfish extends Jellyfish {
     constructor() {
         super(true, "キングクラゲ");
     }
@@ -207,7 +207,7 @@ export class KingSlime extends Slime {
 // ゴブリン
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
-        // HP:450, ATK:65 (スライムより攻撃的)
+        // HP:450, ATK:65 (クラゲより攻撃的)
         super(name, 450, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
     }
