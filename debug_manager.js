@@ -76,7 +76,7 @@ export class DebugManager {
         // --- 基本機能 ---
         this.addTitle("CHEAT");
         this.createBtn("❤️ 全回復", "#2ecc71", () => this.fullHeal());
-        this.createBtn("📉 MP枯渇", "#3498db", () => this.emptyMP());
+        this.createBtn("👆 最大HP↑", "#c7db34", () => this.MaxHPup());
         this.createBtn("🩸 味方瀕死", "#e74c3c", () => this.damageParty());
         this.createBtn("💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
         this.createBtn("⚡ 敵瀕死 (HP49%)", "#e74c3c", () => this.weakenEnemies());
@@ -178,9 +178,9 @@ export class DebugManager {
         this.battleManager.ui.addLog("[DEBUG] 瀕死", "#e74c3c", true);
     }
 
-    emptyMP() {
-        this.getParty().forEach(p => p.add_mp(-999));
-        this.battleManager.ui.addLog("[DEBUG] MP枯渇", "#3498db", true);
+    MaxHPup() {
+        this.getParty().forEach(p => p.max_hp += 50);
+        this.battleManager.ui.addLog("[DEBUG] 最大HP50上昇", "#3498db", true);
     }
 
     killEnemies() {

@@ -441,7 +441,7 @@ export class BattleDirector {
             this.ui.addLog("ざぼちが共闘してくれる！", "#f1c40f");
         }
         // イラストのアニメーションが終わるまで少し待つ
-        await new Promise(r => setTimeout(r, 2500)); 
+        await new Promise(r => setTimeout(r, 5000)); 
         
         // 後片付け
         goldFlash.remove();

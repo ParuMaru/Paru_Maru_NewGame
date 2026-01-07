@@ -283,9 +283,9 @@ export class BattleManager {
             else {
                 let potentialTargets;
                 if (skill.type === 'res') {
-                    potentialTargets = this.state.party.filter(m => !m.is_alive());
+                    potentialTargets = this.state.party.filter(m => !m.is_alive() && !(m instanceof GodCat));
                 } else if (['heal', 'buff', 'regen', 'mp_recovery'].includes(skill.type)) {
-                    potentialTargets = this.state.party.filter(m => m.is_alive());
+                    potentialTargets = this.state.party.filter(m => m.is_alive() && !(m instanceof GodCat));
                 } else {
                     potentialTargets = this.state.getAliveEnemies();
                 }
@@ -315,8 +315,8 @@ export class BattleManager {
         
         if (action.type === 'item' && !action.target) {
             const item = action.detail;
-            let potentialTargets = (item.id === 'phoenix') ? this.state.party.filter(m => !m.is_alive()) 
-                : this.state.party.filter(m => m.is_alive());
+            let potentialTargets = (item.id === 'phoenix') ? this.state.party.filter(m => !m.is_alive()&& !(m instanceof GodCat)) 
+                : this.state.party.filter(m => m.is_alive()&& !(m instanceof GodCat));
 
             this.ui.showTargetMenu(
                 potentialTargets,
@@ -388,6 +388,7 @@ export class BattleManager {
             if (p !== actor && p.is_alive()) {
                 p.add_hp(50);
                 p.add_mp(10);
+                p.atk += 1;
                 
                 // カードに回復エフェクトを出す
                 // ※indexは0,1,2と対応
@@ -397,7 +398,7 @@ export class BattleManager {
         });
 
         if (healed) {
-            this.ui.addLog("味方全員のHP・MPが50回復した！", "#2ecc71");
+            this.ui.addLog("味方全員のHP・MPが回復した！", "#2ecc71");
         }
         
         this.updateUI();
