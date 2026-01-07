@@ -205,7 +205,7 @@ export class BattleDirector {
     }
 
     showSplittingTransform(oldName) {
-        this.ui.addLog(`${oldName}は三皿に取り分けられた！`, "#ff00ff");
+        this.ui.addLog(`${oldName}は3匹に分裂した！`, "#ff00ff");
         this.music.playSplited(); 
     }
 
