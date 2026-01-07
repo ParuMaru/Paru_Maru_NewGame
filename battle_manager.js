@@ -339,15 +339,14 @@ export class BattleManager {
         // --- ドラゴンの場合 ---
         if (enemy instanceof IceDragon && enemy.hp <= (enemy.max_hp * 0.3)) {
             
-            // 1. データ上の変身処理（Entityにやらせる）
-            // 成功したら true が返る
+            // 1. データ上の変身（Entity担当）
             if (enemy.toBerserkMode()) {
                 
-                // 2. 演出再生（Directorにやらせる！）
-                // Executorの中にDirectorがいる構成のようなので、そこを経由します
+                // 2. 演出再生（Director担当）
+                // ★ここでDirectorに丸投げします
                 await this.executor.director.playDragonTransformation(enemy, this.state.enemies);
                 
-                // 3. 最終的なステータス表示更新
+                // 3. UIの仕上げ（名前変更など）
                 this.updateUI(); 
             }
         }
@@ -496,12 +495,15 @@ export class BattleManager {
         this.isProcessing = false;
 
         // 戦闘終了時リセット
-        if (this.state && this.state.party) {
-            this.state.party.forEach(p => {
-                if(p.clear_all_buffs) {
-                    p.clear_all_buffs(); 
-                }
-            });
+        // ★追加: 吹雪エフェクトが残っていたら消す
+        const blizzard = document.getElementById('active-blizzard');
+        if (blizzard) blizzard.remove();
+        
+        // 敵エリアのスタイルも戻しておく（念のため）
+        const enemyArea = document.getElementById('canvas-area');
+        if (enemyArea) {
+            enemyArea.style.position = '';
+            enemyArea.style.overflow = '';
         }
     }
 

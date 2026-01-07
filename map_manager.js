@@ -9,7 +9,7 @@ export class MapManager {
         this.currentFloor = -1; 
         this.currentNodeIndex = -1;
         
-        // ★追加: 選択したルートの履歴 { floor: index }
+        // 選択したルートの履歴 { floor: index }
         this.pathHistory = {}; 
 
         // 全11階層
@@ -101,7 +101,7 @@ export class MapManager {
         this.mapData = [];
         this.currentFloor = -1;
         this.currentNodeIndex = -1;
-        this.pathHistory = {}; // ★マップ生成時に履歴もリセット
+        this.pathHistory = {}; 
 
         for (let f = 0; f < this.FLOOR_COUNT; f++) {
             const floorNodes = [];
@@ -133,34 +133,79 @@ export class MapManager {
         this.connectNodes();
     }
     
+    // ★追加: 距離が自然かどうか判定するヘルパー
+    isNatural(nodeIndex, nodeCount, targetIndex, targetCount) {
+        // どちらかが1個しかなければ、絶対につながる必要があるためOK
+        if (nodeCount <= 1 || targetCount <= 1) return true;
+
+        const posA = nodeIndex / (nodeCount - 1);
+        const posB = targetIndex / (targetCount - 1);
+        
+        // ズレが 35% 以内ならOKとする（この数値を小さくするとより垂直な線のみになる）
+        return Math.abs(posA - posB) <= 0.35;
+    }
+
+    // ★修正: 距離ベースの接続ロジック
     connectNodes() {
         for (let f = 0; f < this.FLOOR_COUNT - 1; f++) {
             const currentFloor = this.mapData[f];
             const nextFloor = this.mapData[f + 1];
 
+            // 1. 下から上への接続
             currentFloor.forEach(node => {
-                const ratio = node.index / (currentFloor.length - 1 || 1);
-                const nextTargetIndex = Math.round(ratio * (nextFloor.length - 1));
+                // 距離的に自然な（近い）候補だけをリストアップ
+                let candidates = nextFloor.filter(nextNode => {
+                    return this.isNatural(
+                        node.index, currentFloor.length, 
+                        nextNode.index, nextFloor.length
+                    );
+                });
+
+                // 救済処置: 候補が0個なら一番近いものを強制的に選ぶ
+                if (candidates.length === 0) {
+                    const myPos = node.index / (currentFloor.length - 1 || 1);
+                    const closest = nextFloor.reduce((prev, curr) => {
+                        const prevPos = prev.index / (nextFloor.length - 1 || 1);
+                        const currPos = curr.index / (nextFloor.length - 1 || 1);
+                        return (Math.abs(myPos - currPos) < Math.abs(myPos - prevPos)) ? curr : prev;
+                    });
+                    candidates = [closest];
+                }
+
+                // --- 1本目の接続（必須） ---
+                const target1 = candidates[Math.floor(Math.random() * candidates.length)];
+                this._link(node, target1);
                 
-                let targetIndex = nextTargetIndex;
-                if (Math.random() < 0.4 && nextTargetIndex > 0) targetIndex--;
-                else if (Math.random() < 0.4 && nextTargetIndex < nextFloor.length - 1) targetIndex++;
-                
-                targetIndex = Math.max(0, Math.min(targetIndex, nextFloor.length - 1));
-                this._link(node, nextFloor[targetIndex]);
+                // --- ★ここを追加: 2本目の接続（確率で分岐！） ---
+                // 条件: 候補が複数あって、かつ 30% の確率
+                if (candidates.length > 1 && Math.random() < 0.3) {
+                    // すでに選んだ target1 以外の候補から選ぶ
+                    const remaining = candidates.filter(c => c !== target1);
+                    if (remaining.length > 0) {
+                        const target2 = remaining[Math.floor(Math.random() * remaining.length)];
+                        this._link(node, target2);
+                    }
+                }
             });
 
+            // 2. 上から下への逆チェック（親がいない子の救済）
             nextFloor.forEach(nextNode => {
                 if (nextNode.children.length === 0) {
-                    const ratio = nextNode.index / (nextFloor.length - 1 || 1);
-                    const belowIndex = Math.round(ratio * (currentFloor.length - 1));
-                    this._link(currentFloor[belowIndex], nextNode);
+                    // 一番近い親とつなぐ
+                    const myPos = nextNode.index / (nextFloor.length - 1 || 1);
+                    const closestParent = currentFloor.reduce((prev, curr) => {
+                        const prevPos = prev.index / (currentFloor.length - 1 || 1);
+                        const currPos = curr.index / (currentFloor.length - 1 || 1);
+                        return (Math.abs(myPos - currPos) < Math.abs(myPos - prevPos)) ? curr : prev;
+                    });
+                    this._link(closestParent, nextNode);
                 }
             });
         }
     }
 
     _link(lowerNode, upperNode) {
+        // 重複防止
         if (!lowerNode.parents.includes(upperNode.index)) {
             lowerNode.parents.push(upperNode.index);
             upperNode.children.push(lowerNode.index);
@@ -215,12 +260,11 @@ export class MapManager {
     }
 
     getNodeStatus(floor, index) {
-        // ★修正: 過去の階層は、実際に選んだノードだけを 'cleared' にする
         if (floor < this.currentFloor) {
             if (this.pathHistory[floor] === index) {
                 return 'cleared';
             }
-            return 'locked'; // 選ばなかった道はグレーアウト
+            return 'locked'; 
         }
 
         if (floor === this.currentFloor && index === this.currentNodeIndex) return 'cleared'; 
@@ -237,7 +281,6 @@ export class MapManager {
         this.currentFloor = node.floor;
         this.currentNodeIndex = node.index;
         
-        // ★追加: 選んだノードを履歴に記録する
         this.pathHistory[node.floor] = node.index;
 
         if (node.type === 'battle') {
@@ -389,15 +432,14 @@ export class MapManager {
                         line.setAttribute("x2", x2); 
                         line.setAttribute("y2", y2);
                         
-                        // ★修正: 自分が選んだルート（履歴にある点同士の接続）かどうか
+                        // 自分が選んだルート（履歴にある点同士の接続）かどうか
                         const isHistoryPath = (this.pathHistory[node.floor] === node.index) && 
                                               (this.pathHistory[node.floor + 1] === parentIndex);
 
                         if (isHistoryPath) {
                             // 選んだ道：実線で見やすく
-                            line.setAttribute("stroke", "#f1c40f"); // 金色（または緑 #2ecc71）
-                            line.setAttribute("stroke-width", "4"); // 太く
-                            // dasharrayを指定しない＝実線
+                            line.setAttribute("stroke", "#f1c40f"); 
+                            line.setAttribute("stroke-width", "4"); 
                         } else {
                             // 選ばなかった道：薄い点線
                             line.setAttribute("stroke", "rgba(255, 255, 255, 0.1)");

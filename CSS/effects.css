@@ -78,6 +78,163 @@
 .being-absorbed { transition: all 1.0s ease-in !important; transform: scale(0) translateY(-50px) !important; filter: brightness(0) blur(5px) !important; opacity: 0 !important; }
 .dark-flash { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 9999; animation: flash-invert 0.5s ease-out forwards; pointer-events: none; }
 @keyframes flash-invert { 0% { background: black; opacity: 1; } 100% { background: white; opacity: 0; } }
+/* 1. ゆっくり不気味な横揺れ */
+@keyframes ominous-sway {
+    0%   { transform: translateX(0); }
+    25%  { transform: translateX(-8px); } /* 左へ */
+    75%  { transform: translateX(8px); }  /* 右へ */
+    100% { transform: translateX(0); }
+}
+.sway-slow {
+    /* 1秒かけてゆっくり揺れるのを繰り返す */
+    animation: ominous-sway 1.0s infinite ease-in-out !important;
+}
+
+/* 2. 激しい白点滅（ピシャーン！） */
+@keyframes flash-blink {
+    0%   { filter: brightness(1) opacity(1); }
+    50%  { filter: brightness(10) opacity(0.8) drop-shadow(0 0 30px white); } /* 真っ白に発光 */
+    100% { filter: brightness(1) opacity(1); }
+}
+.flash-rapid {
+    /* 0.1秒間隔でピカピカさせる */
+    animation: flash-blink 0.1s infinite !important;
+}
+
+/* === 永続する猛吹雪エフェクト === */
+#blizzard-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 1; /* 敵より手前、UIより奥 */
+    
+    /* 斜めの白い線を走らせて風を表現 */
+    background: 
+        repeating-linear-gradient(120deg, transparent, transparent 10px, rgba(255, 255, 255, 0.1) 10px, rgba(255, 255, 255, 0.2) 20px),
+        repeating-linear-gradient(60deg, transparent, transparent 20px, rgba(255, 255, 255, 0.05) 20px, rgba(255, 255, 255, 0.1) 40px);
+    background-size: 200% 200%;
+    
+    /* 全体を青白くして寒そうにする */
+    background-color: rgba(180, 220, 255, 0.15);
+    
+    opacity: 0; transition: opacity 3.0s ease-in; /* ゆっくり発生させる */
+    animation: blizzard-storm 0.3s linear infinite; /* 高速で動かす */
+}
+
+@keyframes blizzard-storm {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: -50% 50%; }
+}
+
+/* =========================================
+   ★改・極猛吹雪エフェクト（横殴りループ版）
+   ========================================= */
+
+/* 雪の粒（共通設定） */
+.snow-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%; /* 親要素に合わせて広げる */
+    background-repeat: repeat;
+    animation-timing-function: linear; /* 一定速度 */
+    animation-iteration-count: infinite;
+    /* 合成モードを変えて、重なった時に白飛びするように輝かせる（お好みで削除可） */
+    mix-blend-mode: screen;
+}
+
+/* --- レイヤー1: 奥（細かい粉雪がびっしり） --- */
+.snow-layer.back {
+    background-image: 
+        radial-gradient(circle 2px at 5% 5%,  rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 15% 25%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 25% 10%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 35% 40%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 45% 20%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 55% 50%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 65% 15%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 75% 45%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 85% 20%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 95% 50%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 10% 80%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 30% 70%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 50% 90%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 70% 60%, rgba(255,255,255,0.8) 0%, transparent 60%),
+        radial-gradient(circle 2px at 90% 80%, rgba(255,255,255,0.8) 0%, transparent 60%);
+    
+    background-size: 200px 200px;
+    opacity: 0.7;
+    animation-name: blizzard-loop-200;
+    animation-duration: 5s;
+}
+
+/* --- レイヤー2: 中（普通の雪が大量に） --- */
+.snow-layer.middle {
+    background-image: 
+        radial-gradient(circle 8px at 10% 20%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 6px at 20% 80%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 30% 10%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 7px at 40% 60%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 50% 30%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 6px at 60% 90%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 70% 20%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 7px at 80% 70%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 90% 40%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 6px at 15% 50%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 35% 85%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 7px at 55% 15%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 8px at 75% 55%, rgba(255,255,255,0.9) 0%, transparent 50%),
+        radial-gradient(circle 6px at 95% 15%, rgba(255,255,255,0.9) 0%, transparent 50%);
+    
+    background-size: 300px 300px;
+    opacity: 0.8;
+    animation-name: blizzard-loop-300;
+    animation-duration: 2.5s;
+}
+
+/* --- レイヤー3: 手前（視界を遮る巨大な塊） --- */
+.snow-layer.front {
+    background-image: 
+        radial-gradient(circle 30px at 5% 15%, white 0%, transparent 70%),
+        radial-gradient(circle 25px at 15% 75%, white 0%, transparent 70%),
+        radial-gradient(circle 40px at 25% 25%, white 0%, transparent 70%),
+        radial-gradient(circle 30px at 35% 85%, white 0%, transparent 70%),
+        radial-gradient(circle 50px at 50% 50%, white 0%, transparent 70%),
+        radial-gradient(circle 30px at 65% 10%, white 0%, transparent 70%),
+        radial-gradient(circle 40px at 75% 65%, white 0%, transparent 70%),
+        radial-gradient(circle 25px at 85% 30%, white 0%, transparent 70%),
+        radial-gradient(circle 30px at 95% 90%, white 0%, transparent 70%),
+        radial-gradient(circle 35px at 45% 5%, white 0%, transparent 70%),
+        radial-gradient(circle 25px at 60% 95%, white 0%, transparent 70%);
+    
+    background-size: 400px 400px;
+    opacity: 1.0;
+    animation-name: blizzard-loop-400;
+    animation-duration: 0.8s;
+}
+
+
+/* =========================================
+   ★重要：完璧なループのためのアニメーション定義
+   「移動距離」を「background-sizeの倍数」にするのがコツです
+   ========================================= */
+
+/* 200pxサイズ用：右に2区画(400px)、下に1区画(200px)動かす */
+@keyframes blizzard-loop-200 {
+    from { background-position: 0 0; }
+    to   { background-position: 400px 200px; } 
+}
+
+/* 300pxサイズ用：右に3区画(900px)、下に1区画(300px)動かす */
+@keyframes blizzard-loop-300 {
+    from { background-position: 0 0; }
+    /* 横の移動量を増やすほど「横殴り」感が強くなります */
+    to   { background-position: 900px 300px; } 
+}
+
+/* 400pxサイズ用：右に4区画(1600px)、下に1区画(400px)動かす */
+@keyframes blizzard-loop-400 {
+    from { background-position: 0 0; }
+    /* 手前はものすごい速度で横切る */
+    to   { background-position: 1600px 400px; } 
+}
 
 /* クリックターゲット候補 */
 .target-candidate { cursor: pointer; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)); transition: all 0.2s; }

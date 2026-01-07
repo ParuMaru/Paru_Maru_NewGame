@@ -290,50 +290,71 @@ export class BattleDirector {
     
     
     /**
-     * ドラゴンの覚醒（発狂）演出
-     * @param {object} enemy - 変身する敵オブジェクト
-     * @param {Array} allEnemies - 敵リスト（再描画用）
+     * ドラゴン覚醒演出
      */
     async playDragonTransformation(enemy, allEnemies) {
-        // 1. 予兆（セリフと振動）
-        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", "#e74c3c");
+        // ... (ここまではさきほどと同じ：揺れ → 発光 → フラッシュ) ...
         
-        // 敵のDOM要素を取得して揺らす
         const enemyIndex = allEnemies.indexOf(enemy);
         const enemyEl = document.getElementById(`enemy-sprite-${enemyIndex}`);
-        if (enemyEl) {
-            enemyEl.classList.add('shake-target'); // CSSで定義した激しい揺れ
-        }
-        
-        // タメ（1.5秒）
-        await new Promise(r => setTimeout(r, 1500));
 
-        // 2. 閃光（ホワイトアウト）
-        const flash = document.createElement('div');
-        flash.id = 'flash-overlay'; // CSSで定義した白い幕
-        document.body.appendChild(flash);
-        
-        // フェードイン
-        await new Promise(r => requestAnimationFrame(() => {
-            flash.style.opacity = '1';
-            r();
-        }));
-        
-        // 真っ白な世界で...（少し待つ）
+        // 1. 予兆（横揺れ）
+        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", "#e74c3c");
+        if (enemyEl) enemyEl.classList.add('sway-slow');
+        await new Promise(r => setTimeout(r, 2000));
+
+        // 2. 発光（点滅）
+        if (enemyEl) {
+            enemyEl.classList.remove('sway-slow');
+            enemyEl.classList.add('flash-rapid');
+        }
+        await new Promise(r => setTimeout(r, 1000));
+
+        // 3. 目潰し（ホワイトアウト）
+        const flashOverlay = document.createElement('div');
+        flashOverlay.id = 'flash-overlay';
+        document.body.appendChild(flashOverlay);
+        await new Promise(r => requestAnimationFrame(r));
+        flashOverlay.style.opacity = '1';
         await new Promise(r => setTimeout(r, 300));
 
-        // 3. 降臨（ここで見た目を更新！）
-        // ※この時点でデータ上の画像パス(img)はすでにManager側で書き換わっている前提
-        this.ui.refreshEnemyGraphics(allEnemies); 
-        // 名前などのUI更新が必要ならここで行うか、Managerに任せる
+        // 4. 変身完了 ＆ 吹雪開始！
+        this.ui.refreshEnemyGraphics(allEnemies);
         
-        // 4. フェードアウト
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 500);
+        // フラッシュを消す（先に消し始める）
+        flashOverlay.style.opacity = '0';
+        setTimeout(() => flashOverlay.remove(), 500);
 
-        this.ui.addLog("ドラゴンの姿が変化し、力が暴走し始めた！", "#ff0000");
-        
-        // 余韻
+        // ★ここを修正：画面全体ではなく「敵エリア」に吹雪を入れる
+        // 【重要】ご自身のゲームで敵キャラが格納されている親要素のIDを指定してください
+        const enemyArea = document.getElementById('canvas-area'); 
+
+        if (enemyArea) {
+            // 敵エリアのスタイルを調整（吹雪をはみ出させないため）
+            enemyArea.style.position = 'relative'; 
+            enemyArea.style.overflow = 'hidden';
+
+            // 吹雪のコンテナを作成
+            const blizzardContainer = document.createElement('div');
+            blizzardContainer.className = 'blizzard-container'; // CSSで定義したクラス
+            blizzardContainer.id = 'active-blizzard'; // 後で消す目印用ID
+
+            // 3層の雪レイヤーを作成して入れる
+            blizzardContainer.innerHTML = `
+                <div class="snow-layer back"></div>
+                <div class="snow-layer middle"></div>
+                <div class="snow-layer front"></div>
+            `;
+            
+            // 敵エリアに追加
+            enemyArea.appendChild(blizzardContainer);
+
+            // フェードイン
+            await new Promise(r => requestAnimationFrame(r));
+            blizzardContainer.style.opacity = '1';
+        }
+
+        this.ui.addLog("猛吹雪が吹き荒れる！", "#00d2ff");
         await new Promise(r => setTimeout(r, 1000));
     }
 
