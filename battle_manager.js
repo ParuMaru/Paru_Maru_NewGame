@@ -334,36 +334,23 @@ export class BattleManager {
         this.nextTurn();
     }
     
-    /**
-     * 敵ごとの特殊なイベント（変身、セリフなど）をチェックする場所
-     * 敵が増えたらここに追加していく（メインの処理は汚れない）
-     */
+    
     async checkUniqueEnemyEvent(enemy) {
         // --- ドラゴンの場合 ---
-        if (enemy instanceof IceDragon) {
-            // HP3割以下で発狂モードへ
-            if (!enemy.isBerserk && enemy.hp <= (enemy.max_hp * 0.3)) {
-                enemy.isBerserk = true;
-                enemy.actionCount = 2; // ★ここで行動回数を設定してしまう
-
-                // 画像とステータス変更
-                enemy.img = "./resource/last_dragon.webp";
-                enemy.name = "覚醒アイスドラゴン";
-                enemy.atk = Math.floor(enemy.atk * 1.2);
-                enemy.buffs.atk_up = 99;
-
-                // 演出
-                this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", "#e74c3c");
-                this.ui.addLog("ドラゴンの姿が変化し、力が暴走し始めた！", "#e74c3c");
+        if (enemy instanceof IceDragon && enemy.hp <= (enemy.max_hp * 0.3)) {
+            
+            // 1. データ上の変身処理（Entityにやらせる）
+            // 成功したら true が返る
+            if (enemy.toBerserkMode()) {
                 
-                this.ui.refreshEnemyGraphics(this.state.enemies);
-                this.updateUI();
-                await new Promise(r => setTimeout(r, 2000));
+                // 2. 演出再生（Directorにやらせる！）
+                // Executorの中にDirectorがいる構成のようなので、そこを経由します
+                await this.executor.director.playDragonTransformation(enemy, this.state.enemies);
+                
+                // 3. 最終的なステータス表示更新
+                this.updateUI(); 
             }
         }
-
-        // --- (将来追加) 魔王の場合 ---
-        // if (enemy instanceof DemonKing) { ... }
     }
 
     // ★重要: 行動が終わった後の処理

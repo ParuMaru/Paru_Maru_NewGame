@@ -63,3 +63,49 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .turn-item.is-ally { border: 1px solid #3498db; }
 .turn-item.is-enemy { border: 1px solid #e74c3c; }
 .turn-av-badge { position: absolute; bottom: 0; right: 0; background: rgba(0, 0, 0, 0.8); color: white; font-size: 10px; padding: 2px 4px; border-radius: 4px 0 4px 0; font-family: monospace; }
+
+/* =========================================
+   ★追加: 第2形態（発狂モード）演出用
+   ========================================= */
+
+/* 1. 激しく揺れる（予兆） */
+/* 既存の shake-action より激しく、回転を加えたもの */
+@keyframes violent-shake {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-15px, 15px) rotate(-5deg); }
+    50% { transform: translate(15px, -15px) rotate(5deg); }
+    75% { transform: translate(-15px, -15px) rotate(-5deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+.shake-target {
+    animation: violent-shake 0.1s infinite !important; /* 既存の浮遊などを一時的に無視して揺らす */
+    filter: brightness(0.5) sepia(1) hue-rotate(-50deg) saturate(5) !important; /* 赤黒く */
+}
+
+/* 2. 画面全体フラッシュ（目潰し） */
+/* IDなので既存クラスとは被りません */
+#flash-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: white; z-index: 99999;
+    pointer-events: none; opacity: 0; transition: opacity 0.1s ease-out;
+}
+
+/* 3. 覚醒オーラ（変身後の常時エフェクト） */
+/* .dragon-size の設定に負けないよう、詳細度を上げて上書きします */
+.dragon-size .enemy-img.berserk-aura {
+    /* 既存の浮遊アニメ(dragonFloating)は維持しつつ、赤色フィルターを強制適用 */
+    filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #c0392b) brightness(1.1) !important;
+    
+    /* もし浮遊の動きも早くしたい場合は以下をコメントアウト解除 */
+    /* animation: dragonFloating 0.5s ease-in-out infinite !important; */
+}
+
+/* ドラゴン以外（ゴブリンなど）が発狂した場合の汎用設定 */
+.enemy-img.berserk-aura:not(.dragon-size .enemy-img) {
+    filter: drop-shadow(0 0 10px #e74c3c) drop-shadow(0 0 20px #ff0000);
+    animation: aura-pulse 1.0s infinite alternate;
+}
+@keyframes aura-pulse {
+    from { transform: scale(1.0); }
+    to   { transform: scale(1.05); }
+}

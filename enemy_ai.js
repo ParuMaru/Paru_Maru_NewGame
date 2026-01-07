@@ -15,8 +15,30 @@ export class EnemyAI {
         // ------------------------------------------
         if (enemy.enemyType === 'ice_dragon') {
             const rand = Math.random();
+            
+            // ★追加: 発狂モード（第2形態）の専用ルーチン
+            if (enemy.isBerserk) {
+                const rand = Math.random();
 
-            // A. HPが減って怒り状態（バフがかかっていないなら優先的に咆哮）
+                // パターンA: 50%の高確率で「こごえる吹雪」(全体)
+                if (rand < 0.5) {
+                    return {
+                        type: 'skill',
+                        target: party,
+                        detail: SkillData.ice_breath
+                    };
+                }
+                
+                // パターンB: 残り50%で「ドラゴンクロー」(単体)
+                // 弱っているキャラを狙い撃ちする等の嫌らしい動きも可能
+                const target = party.sort((a,b) => a.hp - b.hp)[0]; // HP低い順
+                return {
+                    type: 'skill',
+                    target: target,
+                    detail: SkillData.dragon_claw
+                };
+            }
+            // A. HPが減ってバフがかかっていないなら優先的に咆哮
             // enemy.buff_turns が 0 なら 20% の確率で咆哮
             if (!enemy.hasBuff('atk_up') && rand < 0.2) {
                  return {

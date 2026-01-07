@@ -262,5 +262,21 @@ export class IceDragon extends Entity {
         super(name, 2000, 0, 90, 50, 80, 50, 100, 50, './resource/ice_dragon.webp');
         this.enemyType = "ice_dragon";
         this.isBoss = true;
+        this.isBerserk = false; // 発狂フラグ
+        this.actionCount = 1;
+    }
+    toBerserkMode() {
+        if (this.isBerserk) return false; // すでに変身済みなら何もしない
+        this.isBerserk = true;
+        this.name = "覚醒アイスドラゴン";
+        this.img = "./resource/last_dragon.webp"; // 変身後の画像
+        
+        // ステータス強化
+        this.atk = Math.floor(this.atk * 1.2);
+        
+        // ★重要: ここで行動回数を2に変える
+        this.actionCount = 2;
+
+        return true;
     }
 }

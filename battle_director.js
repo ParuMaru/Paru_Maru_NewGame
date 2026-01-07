@@ -287,6 +287,55 @@ export class BattleDirector {
         
         await new Promise(r => setTimeout(r, 1200));
     }
+    
+    
+    /**
+     * ドラゴンの覚醒（発狂）演出
+     * @param {object} enemy - 変身する敵オブジェクト
+     * @param {Array} allEnemies - 敵リスト（再描画用）
+     */
+    async playDragonTransformation(enemy, allEnemies) {
+        // 1. 予兆（セリフと振動）
+        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", "#e74c3c");
+        
+        // 敵のDOM要素を取得して揺らす
+        const enemyIndex = allEnemies.indexOf(enemy);
+        const enemyEl = document.getElementById(`enemy-sprite-${enemyIndex}`);
+        if (enemyEl) {
+            enemyEl.classList.add('shake-target'); // CSSで定義した激しい揺れ
+        }
+        
+        // タメ（1.5秒）
+        await new Promise(r => setTimeout(r, 1500));
+
+        // 2. 閃光（ホワイトアウト）
+        const flash = document.createElement('div');
+        flash.id = 'flash-overlay'; // CSSで定義した白い幕
+        document.body.appendChild(flash);
+        
+        // フェードイン
+        await new Promise(r => requestAnimationFrame(() => {
+            flash.style.opacity = '1';
+            r();
+        }));
+        
+        // 真っ白な世界で...（少し待つ）
+        await new Promise(r => setTimeout(r, 300));
+
+        // 3. 降臨（ここで見た目を更新！）
+        // ※この時点でデータ上の画像パス(img)はすでにManager側で書き換わっている前提
+        this.ui.refreshEnemyGraphics(allEnemies); 
+        // 名前などのUI更新が必要ならここで行うか、Managerに任せる
+        
+        // 4. フェードアウト
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 500);
+
+        this.ui.addLog("ドラゴンの姿が変化し、力が暴走し始めた！", "#ff0000");
+        
+        // 余韻
+        await new Promise(r => setTimeout(r, 1000));
+    }
 
     // --- アイテム演出 ---
 
