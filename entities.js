@@ -167,9 +167,22 @@ export class Wizard extends Entity {
  */
 export class Healer extends Entity {
     constructor(name = "癒し手") {
-        super(name, 220, 150, 25, 25, 30, 60, 90, 80);
+        super(name, 220, 150, 25, 25, 30, 60, 90, 90);
         this.job = "healer";
         this.skills = ["heal", "medica", "prayer", "raise"];
+    }
+}
+
+/**
+ * 神猫ざぼち（NPC）
+ */
+export class GodCat extends Entity {
+    constructor(name = "ざぼち") {
+       　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
+        super(name, 9999, 999, 90, 90, 90, 90, 80, 90,'./resource/zabochi.webp');
+        this.job = "god";
+        this.img = './resource/zabochi.webp';
+        this.skills = ["medica"]; 
     }
 }
 

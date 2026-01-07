@@ -239,3 +239,58 @@
 /* クリックターゲット候補 */
 .target-candidate { cursor: pointer; filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5)); transition: all 0.2s; }
 .target-candidate:hover { transform: scale(1.03); filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.7)); z-index: 10; }
+
+
+/* === 全滅＆復活イベント用（修正版2） === */
+
+/* 1. 全滅ダメージ（画面真っ赤） */
+.flash-red {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    /* 中心は透明、外側に向かって赤くなる（ヴィネット効果） */
+    background: radial-gradient(circle, transparent 40%, rgba(255, 0, 0, 0.5) 100%);
+    z-index: 99999; pointer-events: none;
+    mix-blend-mode: hard-light;
+    opacity: 0; animation: flash-red-anim 0.5s ease-out;
+}
+@keyframes flash-red-anim {
+    0% { opacity: 1; } 100% { opacity: 0; }
+}
+
+/* 2. 奇跡の復活（黄金の光） */
+.flash-gold {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    
+    /* 【修正】外側を transparent（透明）にして、ゲーム画面が見えるようにする */
+    background: radial-gradient(circle, rgba(255, 255, 200, 0.8) 0%, rgba(255, 215, 0, 0.3) 40%, transparent 80%);
+    
+    z-index: 99999; pointer-events: none;
+    mix-blend-mode: screen; /* 光を重ねるモード */
+    
+    opacity: 0; animation: flash-gold-anim 3.0s ease-in-out;
+}
+@keyframes flash-gold-anim {
+    0% { opacity: 0; }
+    20% { opacity: 1; } /* ふわっと光る */
+    80% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* 3. 救済神猫ざぼち降臨（ここは変更なしでもOKですが再掲） */
+.zabochi-appear {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 60%; 
+    max-height: 60%;
+    z-index: 100000;
+    pointer-events: none;
+    filter: drop-shadow(0 0 20px gold);
+    opacity: 0;
+    animation: zabochi-anim 3.0s ease-in-out forwards;
+}
+@keyframes zabochi-anim {
+    0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.5); }
+    20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    80%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
+    100% { opacity: 0; transform: translate(-50%, -60%) scale(1.2); }
+}

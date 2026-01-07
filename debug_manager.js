@@ -79,7 +79,7 @@ export class DebugManager {
         this.createBtn("📉 MP枯渇", "#3498db", () => this.emptyMP());
         this.createBtn("🩸 味方瀕死", "#e74c3c", () => this.damageParty());
         this.createBtn("💀 敵即死 (勝利)", "#e74c3c", () => this.killEnemies());
-        this.createBtn("⚡ 敵瀕死 (HP29%)", "#e74c3c", () => this.weakenEnemies());
+        this.createBtn("⚡ 敵瀕死 (HP49%)", "#e74c3c", () => this.weakenEnemies());
         this.createBtn("☠️ 自爆 (敗北)", "#95a5a6", () => this.suicide());
         this.createBtn("⏭️ ターン経過", "#34495e", () => this.skipTurn());
 
@@ -197,14 +197,14 @@ export class DebugManager {
         
         enemies.forEach(enemy => {
             if (enemy.is_alive()) {
-                // HPを最大値の29%（切り捨て）に設定
-                enemy._hp = Math.floor(enemy.max_hp * 0.29);
+                // HPを最大値の49%（切り捨て）に設定
+                enemy._hp = Math.floor(enemy.max_hp * 0.49);
                 affected = true;
             }
         });
 
         if (affected) {
-            this.battleManager.ui.addLog("[DEBUG] 敵HPを29%に設定", "#e74c3c", true);
+            this.battleManager.ui.addLog("[DEBUG] 敵HPを49%に設定", "#e74c3c", true);
             // 画面のHPバーなどを即座に更新させるための処理
             // (safeUpdateUIはボタンクリック時に呼ばれるので、ここではログだけでOKですが念のため)
             this.safeUpdateUI();

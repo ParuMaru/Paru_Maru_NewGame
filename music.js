@@ -43,6 +43,11 @@ export class BattleBGM {
         this.endingBuffer = null;
         this.currentType = 'normal';
         
+        // ボス後半戦用ファイルのパス
+        this.boss2File = './resource/burning_heart.mp3';
+        this.boss2Buffer = null;
+        this.currentType = 'normal';
+        
         this.seFiles = {
             'slash': './resource/slash.mp3',
             'magic': './resource/magic.mp3',
@@ -57,6 +62,7 @@ export class BattleBGM {
             'damage': './resource/damage.mp3',
             'poison': './resource/poison.mp3',
             'breath': './resource/breath.mp3',
+            'dragon_voice':'./resource/dragon_voice.mp3',
             'win': './resource/win.mp3'
         };
         
@@ -91,6 +97,20 @@ export class BattleBGM {
                 }
             } catch(e) {
                 console.warn("Ending BGM load failed", e);
+            }
+        })();
+        // エンディング曲(MP3)のロード
+        const boss2Promise = (async () => {
+            try {
+                const res = await fetch(this.boss2File);
+                if(res.ok) {
+                    const arrayBuf = await res.arrayBuffer();
+                    this.boss2Buffer = await this.ctx.decodeAudioData(arrayBuf);
+                } else {
+                    console.warn("Boss2 BGM not found.");
+                }
+            } catch(e) {
+                console.warn("Boss2 BGM load failed", e);
             }
         })();
 
@@ -173,6 +193,23 @@ export class BattleBGM {
             }
             return; // MIDI処理には行かない
         }
+        else if(type ==='boss2') {
+            if (this.endingBuffer) {
+                const source = this.ctx.createBufferSource();
+                source.buffer = this.boss2Buffer;
+                source.loop = true; 
+                
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.value = 0.4; 
+
+                source.connect(gainNode).connect(this.ctx.destination);
+                source.start(0);
+                
+                this.activeSources.push(source);
+                this.isPlaying = true;
+            }
+            return; // MIDI処理には行かない
+        }
 
         // --- MIDI再生ロジック ---
         let notesToPlay = this.bgmData.normal;
@@ -228,6 +265,7 @@ export class BattleBGM {
     schedule() {
         if (!this.isPlaying) return;
         if (this.currentType === 'ending') return;
+        if (this.currentType === 'boss2') return;
 
         const lookAhead = 1.0; 
         const currentTime = this.ctx.currentTime - this.startTime;
@@ -366,6 +404,7 @@ export class BattleBGM {
     playBukubuku(){this.playSE('bukubuku');}
     playPoison(){this.playSE('poison');}
     playBreath(){this.playSE('breath');}
+    playDragon_voice(){this.playSE('dragon_voice');}
     playDamage() {
         if (!this.ctx) this.initContext();
         const now = this.ctx.currentTime;

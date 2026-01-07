@@ -10,8 +10,8 @@ export const SkillData = {
     meditation: { id: "meditation", name: "瞑想", menu: "main", cost: 0, value: 30, type: "mp_recovery", target: "self", color: "#9b59b6" },
 
     // --- 癒し手（Healer） ---
-    heal:   { id: "heal",   name: "ケアル",   menu: "magic", cost: 15, power: 1.4, type: "heal", target: "single", color: "#2ecc71" },
-    medica: { id: "medica", name: "メディカ", menu: "magic", cost: 30, power: 1.1, type: "heal", target: "all",    color: "#27ae60" },
+    heal:   { id: "heal",   name: "ケアル",   menu: "magic", cost: 15, power: 1.5, type: "heal", target: "single", color: "#2ecc71" },
+    medica: { id: "medica", name: "メディカ", menu: "magic", cost: 30, power: 1.2, type: "heal", target: "all",    color: "#27ae60" },
     prayer: { id: "prayer", name: "いのり",  menu: "main", cost: 0, value: 0.1, duration: 3, type: "regen", target: "all", color: "#8e44ad"},
     raise:  { id: "raise",  name: "レイズ",   menu: "magic", cost: 40, power: 0.5, type: "res",   target: "single", color: "#f1c40f" },
 

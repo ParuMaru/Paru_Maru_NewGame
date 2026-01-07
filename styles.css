@@ -1651,6 +1651,29 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     cursor: pointer;
 }
 
+/* === 救済神猫ざぼち降臨用 === */
+.zabochi-appear {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%); /* 画面中央に配置 */
+    
+    max-width: 80%; /* 画面からはみ出さない程度の大きさ */
+    max-height: 70%;
+    z-index: 100000; /* 黄金の光より手前に表示 */
+    pointer-events: none; /* クリックを邪魔しない */
+
+    opacity: 0;
+    /* ふわっと現れて、しばらく留まって、上に消えていくアニメーション（計3秒） */
+    animation: zabochi-anim 3.0s ease-in-out forwards;
+}
+
+@keyframes zabochi-anim {
+    0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.8); } /* 下から小さく */
+    20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); } /* 中央にドン！ */
+    80%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); } /* しばらく見せる */
+    100% { opacity: 0; transform: translate(-50%, -60%) scale(1.1); } /* 上に消える */
+}
+
 /* スマホ用調整 */
 @media (max-width: 600px) {
     .modal-content {

@@ -6,6 +6,7 @@ import { EnemyAI } from './enemy_ai.js';
 import { Jellyfish, KingJellyfish, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
+import { GodCat } from './entities.js';
 
 export class BattleManager {
     constructor(gameManager) {
@@ -22,6 +23,15 @@ export class BattleManager {
     }
 
     setupBattle(party, inventory, enemyType, bgmType = null) {
+        // ★追加: リトライ用に、戦闘開始時点のデータを保存しておく
+        this.backupData = {
+            partyState: party.map(p => ({ hp: p.hp, mp: p.mp })), // HP/MPを記録
+            inventoryState: JSON.parse(JSON.stringify(inventory)), // アイテム数を記録
+            enemyType: enemyType,
+            bgmType: bgmType
+        };
+        this.isShadowFused = false;
+        
         this.state.party = party;
         this.ui.setInventory(inventory);   
         this.state.enemies = [];
@@ -86,6 +96,15 @@ export class BattleManager {
                  // 合体後はターンを継続（新しいボスが行動順に含まれるため）
              }
         }
+        // ★修正: 敗北判定ロジックを変更
+        // 「ざぼち以外」の生存者数を数える
+        const aliveMembers = this.state.getAliveParty().filter(p => !(p instanceof GodCat));
+        
+        // 「ざぼち以外の生存者が0」 または 「敵全滅（勝利）」の場合に終了処理へ
+        if (aliveMembers.length === 0 || this.state.checkVictory()) {
+            this.processEndGame();
+            return;
+        }
 
         if (this.state.checkGameOver() || this.state.checkVictory()) {
             this.processEndGame();
@@ -109,6 +128,12 @@ export class BattleManager {
 
         const partyIndex = this.state.party.indexOf(actor);
         this.ui.highlightActiveMember(partyIndex);
+        
+        // ★追加：ざぼち（NPC）のターン処理
+        if (actor instanceof GodCat) {
+            await this.handleZabochiTurn(actor);
+            return;
+        }
         
         // --- 1. リジェネ処理（ターン開始時） ---
         if (actor.is_alive() && actor.buffs.regen > 0) {
@@ -317,6 +342,8 @@ export class BattleManager {
         // ★変更点：行動回数も「敵データ」に持たせるのが理想
         // （enemy.actionCount がなければ 1回 とみなす、という書き方）
         const actionCount = enemy.actionCount || 1;
+        
+        const isNotZabochi = (p) => !(p instanceof GodCat);
 
         for (let i = 0; i < actionCount; i++) {
             if (!enemy.is_alive() || this.state.getAliveParty().length === 0) break;
@@ -326,27 +353,74 @@ export class BattleManager {
                 this.ui.addLog(`${enemy.name}の猛攻！(連続行動)`, "#ff0000");
             }
 
-            let action = this.ai.think(enemy, this.state.getAliveParty(), this.state.getAliveEnemies());
+            // ★修正: 定義済みの関数(isNotZabochi)を使ってフィルタリング
+            const targetableParty = this.state.getAliveParty().filter(isNotZabochi);
+
+            // もしターゲットがいなくなったら本来のリストを使う保険
+            const targets = targetableParty.length > 0 ? targetableParty : this.state.getAliveParty();
+
+            let action = this.ai.think(enemy, targets, this.state.getAliveEnemies());
             await this.executor.execute(enemy, action.target, action);
+            this.updateUI();
         }
         
         await this.processTurnEnd(enemy);
         this.nextTurn();
     }
     
+    /**
+     * ざぼちの自動行動ターン
+     */
+    async handleZabochiTurn(actor) {
+        this.ui.highlightActiveMember(-1); // 誰のカードもハイライトしない
+        this.ui.commandContainer.innerHTML = "";
+        
+        await new Promise(r => setTimeout(r, 600));
+
+        // 行動ログ
+        this.ui.addLog('みんな頑張るにゃ', "#f1c40f");
+        this.bgm.playHeal();
+        
+        // 味方全員（ざぼち以外）を回復
+        let healed = false;
+        this.state.party.forEach((p, index) => {
+            // 自分以外 かつ 生きているメンバー
+            if (p !== actor && p.is_alive()) {
+                p.add_hp(50);
+                p.add_mp(10);
+                
+                // カードに回復エフェクトを出す
+                // ※indexは0,1,2と対応
+                this.effects.healEffect(`card-${index}`);
+                healed = true;
+            }
+        });
+
+        if (healed) {
+            this.ui.addLog("味方全員のHP・MPが50回復した！", "#2ecc71");
+        }
+        
+        this.updateUI();
+        await new Promise(r => setTimeout(r, 1000));
+        
+        this.nextTurn();
+    }
+    
     
     async checkUniqueEnemyEvent(enemy) {
-        // --- ドラゴンの場合 ---
-        if (enemy instanceof IceDragon && enemy.hp <= (enemy.max_hp * 0.3)) {
+        if (enemy instanceof IceDragon && enemy.hp <= (enemy.max_hp * 0.5)) {
             
-            // 1. データ上の変身（Entity担当）
+            // 1. 変身（データ）
             if (enemy.toBerserkMode()) {
                 
-                // 2. 演出再生（Director担当）
-                // ★ここでDirectorに丸投げします
+                // 2. 変身演出（Director）
                 await this.executor.director.playDragonTransformation(enemy, this.state.enemies);
                 
-                // 3. UIの仕上げ（名前変更など）
+                // 3.  絶望と復活のイベント
+                await this.executor.director.playDespairAndRevival(this.state.party);
+                
+
+                // 4. UI更新（HPが満タンになった状態を反映）
                 this.updateUI(); 
             }
         }
@@ -384,52 +458,56 @@ export class BattleManager {
     updateUI() {
         // --- 1. 味方の更新 ---
         this.state.party.forEach((p, i) => {
+            // 名前
             const nameLabel = document.getElementById(`p${i}-name`);
             if (nameLabel) nameLabel.innerText = p.name;
 
-            document.getElementById(`p${i}-hp-text`).innerText = `HP: ${p.hp} / ${p.max_hp}`;
-            document.getElementById(`p${i}-mp-text`).innerText = `MP: ${p.mp} / ${p.max_mp}`;
+            // ★修正: 取得できた場合のみ書き込む (if文を追加)
+            const hpText = document.getElementById(`p${i}-hp-text`);
+            if (hpText) hpText.innerText = `HP: ${p.hp} / ${p.max_hp}`;
+
+            const mpText = document.getElementById(`p${i}-mp-text`);
+            if (mpText) mpText.innerText = `MP: ${p.mp} / ${p.max_mp}`;
             
-            document.getElementById(`p${i}-hp-bar`).style.width = `${(p.hp / p.max_hp) * 100}%`;
-            document.getElementById(`p${i}-mp-bar`).style.width = `${(p.mp / p.max_mp) * 100}%`;
+            const hpBar = document.getElementById(`p${i}-hp-bar`);
+            if (hpBar) hpBar.style.width = `${(p.hp / p.max_hp) * 100}%`;
+
+            const mpBar = document.getElementById(`p${i}-mp-bar`);
+            if (mpBar) mpBar.style.width = `${(p.mp / p.max_mp) * 100}%`;
             
             const card = document.getElementById(`card-${i}`);
-            if (card) card._memberRef = p; 
-            
-            card.style.opacity = p.is_alive() ? "1" : "0.5";
-            card.style.position = "relative"; 
+            // ★カードが存在する場合のみ中身を更新
+            if (card) {
+                card._memberRef = p; 
+                card.style.opacity = p.is_alive() ? "1" : "0.5";
+                card.style.position = "relative"; 
 
-            let badgeContainer = card.querySelector('.status-container');
-            if (!badgeContainer) {
-                badgeContainer = document.createElement('div');
-                badgeContainer.className = 'status-container';
-                card.appendChild(badgeContainer);
-            }
-
-            let badgesHTML = "";
-            if (p.is_alive()) {
-                if (p.is_covering) badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
-                
-                if (p.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.buffs.regen}</span></div>`;
-                if (p.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buffs.atk_up}</span></div>`;
-                
-                if (p.debuffs && p.debuffs.atk_down) {
-                    badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${p.debuffs.atk_down}</span></div>`;
+                let badgeContainer = card.querySelector('.status-container');
+                if (!badgeContainer) {
+                    badgeContainer = document.createElement('div');
+                    badgeContainer.className = 'status-container';
+                    card.appendChild(badgeContainer);
                 }
-                if (p.debuffs && p.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${p.debuffs.poison}</span></div>`;
+
+                let badgesHTML = "";
+                if (p.is_alive()) {
+                    if (p.is_covering) badgesHTML += `<div class="status-badge badge-cover" title="かばう">🛡️</div>`;
+                    if (p.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="祝福">✨<span class="badge-num">${p.buffs.regen}</span></div>`;
+                    if (p.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buffs.atk_up}</span></div>`;
+                    if (p.debuffs && p.debuffs.atk_down) badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${p.debuffs.atk_down}</span></div>`;
+                    if (p.debuffs && p.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${p.debuffs.poison}</span></div>`;
+                }
+                badgeContainer.innerHTML = badgesHTML;
             }
-            badgeContainer.innerHTML = badgesHTML;
         });
 
         // --- 2. 敵の更新 ---
         this.state.enemies.forEach((enemy, i) => {
             if (!enemy.is_alive()) return;
 
-            // ID取得（ui_managerで設定したID）
             const unitDiv = document.getElementById(`enemy-sprite-${i}`);
-            if (!unitDiv) return;
+            if (!unitDiv) return; // 画像がない場合はスキップ
 
-            // ステータス表示領域を取得
             let badgeContainer = unitDiv.querySelector('.enemy-status-container');
             if (!badgeContainer) {
                 badgeContainer = document.createElement('div');
@@ -438,35 +516,18 @@ export class BattleManager {
             }
 
             let badgesHTML = "";
-            if (enemy.buffs.atk_up) {
-                badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${enemy.buffs.atk_up}</span></div>`;
-            }
-            if (enemy.buffs.regen) {
-                 badgesHTML += `<div class="status-badge badge-regen" title="リジェネ">✨<span class="badge-num">${enemy.buffs.regen}</span></div>`;
-            }
-             if (enemy.debuffs && enemy.debuffs.poison) {
-                badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${enemy.debuffs.poison}</span></div>`;
-            }
-            if (enemy.debuffs && enemy.debuffs.atk_down) {
-                badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${enemy.debuffs.atk_down}</span></div>`;
-            }
+            if (enemy.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${enemy.buffs.atk_up}</span></div>`;
+            if (enemy.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="リジェネ">✨<span class="badge-num">${enemy.buffs.regen}</span></div>`;
+            if (enemy.debuffs && enemy.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${enemy.debuffs.poison}</span></div>`;
+            if (enemy.debuffs && enemy.debuffs.atk_down) badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${enemy.debuffs.atk_down}</span></div>`;
 
             badgeContainer.innerHTML = badgesHTML;
         });
-        // --- ★追加: 行動順リストの更新 ---
-        
-        // 最新の並び順を取得（state側でソート済みのもの）
-        // もし state.turnOrder が古ければ、ここで再ソートしても良いですが、
-        // state.sortQueue() は advanceTimeAndGetActor 内で呼ばれているはずです。
-        
-        // 表示用に、現在の状態から再ソートして渡すのが確実
-        const allAlive = [...this.state.party, ...this.state.enemies]
-                         .filter(c => c.is_alive());
-        
-        // 行動値が小さい順に並べる
+
+        // --- 3. 行動順リストの更新 ---
+        const allAlive = [...this.state.party, ...this.state.enemies].filter(c => c.is_alive());
         const sortedQueue = allAlive.sort((a, b) => a.actionValue - b.actionValue);
 
-        // UIマネージャーに渡して描画
         this.ui.updateTurnOrder(sortedQueue, this.state.currentRound);
     }
     
@@ -482,11 +543,23 @@ export class BattleManager {
                 action.target = this.state.getAliveEnemies()[0];
             }
         }
-        await this.executor.execute(actor, action.target, action);
         
-        // 行動終了時にバフ減少
-        await this.processTurnEnd(actor);
+        // ★追加: ターゲットが「配列（複数対象）」の場合、そこからざぼちを抜く
+        // これで全体攻撃やランダム攻撃の対象からも外れます
+        if (Array.isArray(action.target)) {
+            action.target = action.target.filter(t => !(t instanceof GodCat));
+        } else {
+            // 単体ターゲットの場合も、もしざぼちが指定されていたら無効化する（念のため）
+            if (action.target instanceof GodCat) {
+                console.log("ざぼちへの攻撃を無効化");
+                this.isProcessing = false;
+                this.nextTurn(); // ターンをスキップさせる
+                return;
+            }
+        }
 
+        await this.executor.execute(actor, action.target, action);
+        await this.processTurnEnd(actor);
         this.nextTurn();
     }
     
@@ -505,6 +578,15 @@ export class BattleManager {
             enemyArea.style.position = '';
             enemyArea.style.overflow = '';
         }
+        const allEnemies = document.querySelectorAll('.enemy-img');
+        allEnemies.forEach(img => {
+            img.classList.remove('sway-slow', 'flash-rapid', 'shake-target', 'violent-shake');
+        });
+
+        // ★追加：画面全体の揺れ（メテオなどで付くやつ）も強制停止！
+        document.body.classList.remove('screen-shake');
+        const wrapper = document.getElementById('game-wrapper');
+        if (wrapper) wrapper.classList.remove('screen-shake');
     }
 
     processEndGame() {
@@ -522,26 +604,176 @@ export class BattleManager {
         setTimeout(() => {
             const overlay = document.getElementById('result-overlay');
             const title = document.getElementById('result-title');
-            const restartBtn = document.getElementById('restart-button');
+            
+            // 既存のボタン（HTMLにあるもの）は一旦隠すか削除して、
+            // JS側で完全にコントロールする方がデザインを統一しやすいです
+            const oldBtn = document.getElementById('restart-button');
+            if (oldBtn) oldBtn.style.display = 'none';
 
             title.innerText = win ? "VICTORY" : "DEFEAT...";
             title.className = win ? "victory-title" : "defeat-title";
-
             overlay.style.display = 'flex'; 
 
-            restartBtn.onclick = () => {
-                this.cleanup();
-                
-                if (this.gameManager) {
-                    if (win) {
-                        this.gameManager.onBattleWin();
-                    } else {
-                        this.gameManager.onGameOver();
-                    }
+            // --- ボタンコンテナの準備 ---
+            let btnContainer = document.getElementById('end-btn-container');
+            if (!btnContainer) {
+                btnContainer = document.createElement('div');
+                btnContainer.id = 'end-btn-container';
+                // 親要素に追加（restart-buttonの親、またはoverlay直下）
+                if (oldBtn && oldBtn.parentNode) {
+                    oldBtn.parentNode.appendChild(btnContainer);
                 } else {
-                    location.reload(); 
+                    overlay.appendChild(btnContainer);
                 }
+            }
+            // 中身をリセット
+            btnContainer.innerHTML = '';
+            
+            // コンテナのスタイル（Flexboxで整列）
+            Object.assign(btnContainer.style, {
+                display: 'flex',
+                flexDirection: 'column', // 縦並び
+                gap: '15px',
+                marginTop: '20px',
+                alignItems: 'center',
+                width: '100%'
+            });
+
+            // --- 共通のボタンスタイル生成関数 ---
+            const createBtn = (text, color, onClick) => {
+                const btn = document.createElement('button');
+                btn.innerText = text;
+                Object.assign(btn.style, {
+                    padding: '12px 24px',
+                    fontSize: '16px',
+                    fontWeight: 'bold',
+                    color: 'white',
+                    background: color,
+                    border: 'none',
+                    borderRadius: '50px', // 丸っこく統一
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 0 rgba(0,0,0,0.2)',
+                    transition: 'all 0.1s',
+                    minWidth: '200px', // 幅を統一
+                    fontFamily: 'inherit'
+                });
+                // 押した時の凹み演出
+                btn.onmousedown = () => { btn.style.transform = 'translateY(2px)'; btn.style.boxShadow = '0 2px 0 rgba(0,0,0,0.2)'; };
+                btn.onmouseup   = () => { btn.style.transform = 'translateY(0)';   btn.style.boxShadow = '0 4px 0 rgba(0,0,0,0.2)'; };
+                
+                btn.onclick = onClick;
+                return btn;
             };
+
+            // --- 勝利時のボタン ---
+            if (win) {
+                const nextBtn = createBtn("次へ進む", "#f1c40f", () => {
+                    this.cleanup();
+                    if (this.gameManager) this.gameManager.onBattleWin();
+                });
+                btnContainer.appendChild(nextBtn);
+            } 
+            // --- 敗北時のボタン（3つ） ---
+            else {
+                // 1. そのまま再挑戦
+                const retryBtn = createBtn("再挑戦", "#e67e22", () => {
+                    this.ui.addLog("再挑戦します...", "#fff");
+                    this.retry(false); // 通常リトライ
+                });
+
+                // 2. 全回復して再挑戦（救済）
+                const fullHealBtn = createBtn("全回復して再挑戦", "#2ecc71", () => { // 緑色
+                    this.ui.addLog("力を取り戻して再挑戦！", "#fff");
+                    this.retry(true); // ★全回復リトライ
+                });
+
+                // 3. タイトルへ
+                const titleBtn = createBtn("タイトルへ戻る", "#7f8c8d", () => { // グレー
+                    this.cleanup();
+                    location.reload(); 
+                });
+
+                btnContainer.appendChild(retryBtn);
+                btnContainer.appendChild(fullHealBtn);
+                btnContainer.appendChild(titleBtn);
+            }
+
         }, 1000); 
+    }
+    
+    /**
+     * バトルを最初からやり直す
+     * @param {boolean} isFullHeal - trueならHP/MPを全回復状態で始める
+     */
+    retry(isFullHeal = false) {
+        // 1. パーティのステータスを戦闘開始前に戻す
+        this.state.party.forEach((p, i) => {
+            if (this.backupData.partyState[i]) {
+                p._hp = this.backupData.partyState[i].hp;
+                p._mp = this.backupData.partyState[i].mp;
+                p.is_dead = (p._hp <= 0);
+                p.clear_all_buffs();
+            }
+        });
+
+        // 助っ人などがいたら外す
+        if (this.state.party.length > this.backupData.partyState.length) {
+            this.state.party.splice(this.backupData.partyState.length);
+        }
+
+        // ★追加: 全回復モードなら、ここで回復させる
+        if (isFullHeal) {
+            this.state.party.forEach(p => {
+                p.revive(p.max_hp);
+                p.add_mp(p.max_mp);
+            });
+            this.ui.addLog("体力を全回復して再挑戦！", "#2ecc71");
+        } else {
+            this.ui.addLog("戦闘開始時の状態で再挑戦！", "#e67e22");
+        }
+
+        // 2. アイテムの数を戻す
+        for (const key in this.backupData.inventoryState) {
+            if (this.ui.inventory[key]) {
+                this.ui.inventory[key].count = this.backupData.inventoryState[key].count;
+            }
+        }
+        
+        // 3. UIのリセット
+        const overlay = document.getElementById('result-overlay');
+        if (overlay) overlay.style.display = 'none';
+        
+        this.cleanupRetry();
+
+        // 4. バトル再セットアップ
+        this.setupBattle(
+            this.state.party, 
+            this.ui.inventory, 
+            this.backupData.enemyType, 
+            this.backupData.bgmType
+        );
+    }
+    
+    // リトライ用のお掃除メソッド（BGMは止めない）
+    cleanupRetry() {
+        this.isProcessing = false;
+        
+        // エフェクト削除
+        const blizzard = document.getElementById('active-blizzard');
+        if (blizzard) blizzard.remove();
+        
+        const enemyArea = document.getElementById('enemy-area');
+        if (enemyArea) { 
+            enemyArea.style.position = ''; 
+            enemyArea.style.overflow = ''; 
+        }
+        
+        document.querySelectorAll('.enemy-img').forEach(img => {
+            img.classList.remove('sway-slow', 'flash-rapid', 'shake-target', 'violent-shake');
+        });
+        
+        document.body.classList.remove('screen-shake');
+        const wrapper = document.getElementById('game-wrapper');
+        if (wrapper) wrapper.classList.remove('screen-shake');
     }
 }

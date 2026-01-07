@@ -1,3 +1,4 @@
+import { GodCat } from './entities.js';
 export class BattleDirector {
     constructor(ui, music, effects, party, enemies) {
         this.ui = ui;
@@ -357,6 +358,96 @@ export class BattleDirector {
         this.ui.addLog("猛吹雪が吹き荒れる！", "#00d2ff");
         await new Promise(r => setTimeout(r, 1000));
     }
+    
+    // battle_director.js
+
+    /**
+     * 絶望の全滅と、奇跡の復活劇（ざぼち降臨）
+     */
+    async playDespairAndRevival(party) {
+        await new Promise(r => setTimeout(r, 1000));
+        this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", "#ff0000");
+        this.music.playDragon_voice();
+        await new Promise(r => setTimeout(r, 1500));
+        this.music.stopBGM();
+
+        const redFlash = document.createElement('div');
+        redFlash.className = 'flash-red';
+        document.body.appendChild(redFlash);
+        document.body.classList.add('screen-shake');
+        await new Promise(r => setTimeout(r, 200));
+
+        party.forEach((p, i) => {
+            p._hp = 0; p.is_dead = true;
+            const hpText = document.getElementById(`p${i}-hp-text`);
+            const hpBar  = document.getElementById(`p${i}-hp-bar`);
+            const card   = document.getElementById(`card-${i}`);
+            if (hpText) hpText.innerText = `HP: 0 / ${p.max_hp}`;
+            if (hpBar)  hpBar.style.width = "0%";
+            if (card)   card.style.opacity = "0.5";
+        });
+
+        await new Promise(r => setTimeout(r, 1000));
+        document.body.classList.remove('screen-shake');
+        redFlash.remove();
+
+        this.ui.addLog("パーティは全滅した...", "#7f8c8d");
+        await new Promise(r => setTimeout(r, 2000));
+        this.ui.addLog("もうだめかと思ったその時...", "#ffffff");
+        this.music.playBGM('boss2');
+        await new Promise(r => setTimeout(r, 2000));
+        
+        
+        // --- シーン3: ざぼち登場 ---
+        // ★セリフ変更（猫語尾に！）
+        this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", "#f1c40f");
+        await new Promise(r => setTimeout(r, 1500));
+        // 黄金の光
+        const goldFlash = document.createElement('div');
+        goldFlash.className = 'flash-gold';
+        document.body.appendChild(goldFlash);
+
+        // ★追加：イラスト表示！
+        // ※画像パスは実際のファイル名に合わせてください（例: ./resource/zabochi.png）
+        const zabochiImg = document.createElement('img');
+        zabochiImg.src = './resource/zabochi.webp'; 
+        zabochiImg.className = 'zabochi-appear';   // CSSで作ったクラス
+        document.body.appendChild(zabochiImg);
+
+        // 光っている間に回復！
+        await new Promise(r => setTimeout(r, 1000));
+        
+        party.forEach((p, i) => {
+            p.revive(p.max_hp); p.add_mp(p.max_mp);
+            const hpText = document.getElementById(`p${i}-hp-text`);
+            const hpBar  = document.getElementById(`p${i}-hp-bar`);
+            const card   = document.getElementById(`card-${i}`);
+            if (hpText) hpText.innerText = `HP: ${p.max_hp} / ${p.max_hp}`;
+            if (hpBar)  hpBar.style.width = "100%";
+            if (card)   card.style.opacity = "1";
+        });
+
+        // ★ログ変更
+        this.music.playHeal();
+        this.ui.addLog("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", "#f1c40f");
+        this.ui.addLog("味方全員のHP・MPが全回復！", "#f1c40f");
+        
+        const hasZabochi = party.some(m => m instanceof GodCat);
+        if (!hasZabochi) {
+            const zabochi = new GodCat();
+            zabochi.resetActionValue(); // 行動順の計算に参加させる
+            party.push(zabochi);
+            
+            this.ui.addLog("ざぼちが共闘してくれる！", "#f1c40f");
+        }
+        // イラストのアニメーションが終わるまで少し待つ
+        await new Promise(r => setTimeout(r, 2500)); 
+        
+        // 後片付け
+        goldFlash.remove();
+        zabochiImg.remove();
+    }
+    
 
     // --- アイテム演出 ---
 
