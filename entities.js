@@ -182,16 +182,16 @@ export class Slime extends Entity {
      * @param {boolean} isKing - 王様かどうか
      * @param {string} name - 名前（省略可）
      */
-    constructor(isKing = false, name = 'プリン') {
+    constructor(isKing = false, name = 'クラゲ') {
         console.log(`スライム生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
             // キングスライムの設定
-            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_pudding.webp');
+            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_jellyfish.webp');
             this.isKing = true;
             this.isBoss = true;
         } else {
             // 通常スライムの設定
-            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/pudding.webp');
+            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/jellyfish.webp');
             this.isKing = false;
         }
     }
@@ -200,7 +200,7 @@ export class Slime extends Entity {
 // 初期配置用に KingSlime クラスも用意しておく
 export class KingSlime extends Slime {
     constructor() {
-        super(true, "キングプリン");
+        super(true, "キングクラゲ");
     }
 }
 

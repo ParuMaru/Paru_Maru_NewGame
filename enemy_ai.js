@@ -161,8 +161,8 @@ export class EnemyAI {
         // ------------------------------------------
         // 4. 通常スライム（他の条件に当てはまらない場合で、名前がスライム系）
         // ------------------------------------------
-        else if (!enemy.enemyType && enemy.name.includes('プリン')) {
-            // 30%で「カラメルソース」
+        else if (!enemy.enemyType && enemy.name.includes('クラゲ')) {
+            // 30%で「触手」
             if (Math.random() < 0.3) {
                 const target = party[Math.floor(Math.random() * party.length)];
                 return {

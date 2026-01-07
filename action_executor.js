@@ -214,9 +214,9 @@ export class ActionExecutor {
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
         this.enemies.splice(enemyIndex, 1, 
-            new Slime(false, 'プリンA'), 
-            new Slime(false, 'プリンB'), 
-            new Slime(false, 'プリンC')
+            new Slime(false, 'クラゲA'), 
+            new Slime(false, 'クラゲB'), 
+            new Slime(false, 'クラゲC')
         );
         this.director.ui.refreshEnemyGraphics(this.enemies);
         this.director.showSplittingAppear(enemyIndex);

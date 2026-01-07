@@ -37,11 +37,11 @@ export class BattleManager {
         }
         else {
             if (rnd < 0.33) {
-                this.state.enemies.push(new Slime(false, "プリンA"));
-                this.state.enemies.push(new Slime(false, "プリンB"));
+                this.state.enemies.push(new Slime(false, "クラゲA"));
+                this.state.enemies.push(new Slime(false, "クラゲB"));
             } else if(rnd < 0.66) {
                 this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new Slime(false, "はぐれプリン"));
+                this.state.enemies.push(new Slime(false, "はぐれクラゲ"));
             }else{
                 this.state.enemies.push(new Goblin("ゴブリンA"));
                 this.state.enemies.push(new Goblin("ゴブリンB"));
