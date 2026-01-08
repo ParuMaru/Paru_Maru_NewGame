@@ -58,7 +58,7 @@ export class GameManager {
 
     /**
      * バトル開始処理
-     * @param {string} enemyType - 敵の種類 ('Jellyfish', 'dragon' etc)
+     * @param {string} enemyType - 敵の種類 ('cragen', 'dragon' etc)
      * @param {string} bgmType - BGMの種類 ('normal', 'elite', 'boss')
      */
     startBattle(enemyType, bgmType = null) {

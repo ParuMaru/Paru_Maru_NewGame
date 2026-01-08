@@ -187,40 +187,40 @@ export class GodCat extends Entity {
 }
 
 /**
- * クラゲ（Enemy）
+ * クラーゲン（Enemy）
  */
-export class Jellyfish extends Entity {
+export class cragen extends Entity {
     /**
      * コンストラクタを柔軟にする
      * @param {boolean} isKing - 王様かどうか
      * @param {string} name - 名前（省略可）
      */
-    constructor(isKing = false, name = 'クラゲ') {
-        console.log(`クラゲ生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
+    constructor(isKing = false, name = 'クラーゲン') {
+        console.log(`クラーゲン生成ログ: 名前=${name}, 王様フラグ=${isKing}`);
         if (isKing) {
-            // キングクラゲの設定
-            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_jellyfish.webp');
+            // キングクラーゲンの設定
+            super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_cragen.webp');
             this.isKing = true;
             this.isBoss = true;
         } else {
-            // 通常クラゲの設定
-            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/jellyfish.webp');
+            // 通常クラーゲンの設定
+            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/cragen.webp');
             this.isKing = false;
         }
     }
 }
 
-// 初期配置用に KingJellyfish クラスも用意しておく
-export class KingJellyfish extends Jellyfish {
+// 初期配置用に Kingcragen クラスも用意しておく
+export class Kingcragen extends cragen {
     constructor() {
-        super(true, "キングクラゲ");
+        super(true, "キングクラーゲン");
     }
 }
 
 // ゴブリン
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
-        // HP:450, ATK:65 (クラゲより攻撃的)
+        // HP:450, ATK:65 (クラーゲンより攻撃的)
         super(name, 450, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
     }

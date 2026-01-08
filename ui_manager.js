@@ -79,11 +79,11 @@ export class UIManager {
             if (chara.job === 'hero') img.src = './resource/hero_icon.webp'; // 
             else if (chara.job === 'wizard') img.src = './resource/wizard_icon.webp';
             else if (chara.job === 'healer') img.src = './resource/healer_icon.webp';
-            else img.src = chara.img || './resource/Jellyfish.webp'; // 敵は持ってるimgを使う
+            else img.src = chara.img || './resource/cragen.webp'; // 敵は持ってるimgを使う
 
             // ※もし味方の画像を用意していない場合は、job名で分岐して仮画像を出してください
             // img.src が 404 になると見栄えが悪いのでエラーハンドリング
-            img.onerror = () => { img.src = './resource/Jellyfish.webp'; };
+            img.onerror = () => { img.src = './resource/cragen.webp'; };
 
             // 行動値 (Action Value) バッジ
             const avBadge = document.createElement('div');
@@ -325,7 +325,7 @@ export class UIManager {
             hpBox.appendChild(hpBar);
 
             const img = document.createElement('img');
-            img.src = enemy.img || './resource/Jellyfish.webp'; 
+            img.src = enemy.img || './resource/cragen.webp'; 
             img.className = 'enemy-img';
             
             unitDiv.appendChild(nameDiv);

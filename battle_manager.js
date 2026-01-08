@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { Jellyfish, KingJellyfish, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
+import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
@@ -38,7 +38,7 @@ export class BattleManager {
         
         const rnd = Math.random();
         
-        if (enemyType === 'king') this.state.enemies.push(new KingJellyfish());
+        if (enemyType === 'king') this.state.enemies.push(new Kingcragen());
         else if (enemyType === 'dragon') this.state.enemies.push(new IceDragon());
         else if (enemyType === 'shadow') {
             this.state.enemies.push(new ShadowHero());
@@ -47,11 +47,11 @@ export class BattleManager {
         }
         else {
             if (rnd < 0.33) {
-                this.state.enemies.push(new Jellyfish(false, "クラゲA"));
-                this.state.enemies.push(new Jellyfish(false, "クラゲB"));
+                this.state.enemies.push(new cragen(false, "クラーゲンA"));
+                this.state.enemies.push(new cragen(false, "クラーゲンB"));
             } else if(rnd < 0.66) {
                 this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new Jellyfish(false, "はぐれクラゲ"));
+                this.state.enemies.push(new cragen(false, "はぐれクラーゲン"));
             }else{
                 this.state.enemies.push(new Goblin("ゴブリンA"));
                 this.state.enemies.push(new Goblin("ゴブリンB"));

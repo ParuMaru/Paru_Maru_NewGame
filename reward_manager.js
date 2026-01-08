@@ -34,7 +34,7 @@ export class RewardManager {
         this.container.style.display = 'flex'; 
 
         let rewards;
-        // ★追加: 中ボス（キングクラゲ or 影のパーティ）なら専用報酬
+        // ★追加: 中ボス（キングクラーゲン or 影のパーティ）なら専用報酬
         if (enemyType === 'king' || enemyType === 'shadow') {
             rewards = this.generateEliteRewards();
         } else {

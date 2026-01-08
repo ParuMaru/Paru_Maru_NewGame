@@ -167,7 +167,7 @@ export class EnemyAI {
         }
 
         // ------------------------------------------
-        // 3. キングクラゲの行動
+        // 3. キングクラーゲンの行動
         // ------------------------------------------
         if (enemy.isKing) {
             // 30%で全体攻撃「のしかかり」
@@ -181,9 +181,9 @@ export class EnemyAI {
         } 
         
         // ------------------------------------------
-        // 4. 通常クラゲ（他の条件に当てはまらない場合で、名前がクラゲ系（クラゲ））
+        // 4. 通常クラーゲン（他の条件に当てはまらない場合で、名前がクラーゲン系（クラーゲン））
         // ------------------------------------------
-        else if (!enemy.enemyType && enemy.name.includes('クラゲ')) {
+        else if (!enemy.enemyType && enemy.name.includes('クラーゲン')) {
             // 30%で「触手」
             if (Math.random() < 0.3) {
                 const target = party[Math.floor(Math.random() * party.length)];

@@ -1,4 +1,4 @@
-import { Hero, Wizard, Healer, Jellyfish, KingJellyfish } from './entities.js';
+import { Hero, Wizard, Healer, cragen, Kingcragen } from './entities.js';
 
 export class BattleState {
     constructor() {

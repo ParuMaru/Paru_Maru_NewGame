@@ -284,7 +284,7 @@ export class MapManager {
         this.pathHistory[node.floor] = node.index;
 
         if (node.type === 'battle') {
-            const type = Math.random() < 0.6 ? 'Jellyfish' : 'goblin';
+            const type = Math.random() < 0.6 ? 'cragen' : 'goblin';
             this.game.startBattle(type,'normal');
         } 
         else if (node.type === 'elite') {

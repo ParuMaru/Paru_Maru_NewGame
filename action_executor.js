@@ -1,6 +1,6 @@
 import { BattleCalculator } from './battle_calculator.js';
 import { BattleDirector } from './battle_director.js'; 
-import { Jellyfish } from './entities.js';
+import { cragen } from './entities.js';
 import { GameConfig } from './game_config.js';
 
 export class ActionExecutor {
@@ -214,9 +214,9 @@ export class ActionExecutor {
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
         this.enemies.splice(enemyIndex, 1, 
-            new Jellyfish(false, 'クラゲA'), 
-            new Jellyfish(false, 'クラゲB'), 
-            new Jellyfish(false, 'クラゲC')
+            new cragen(false, 'クラーゲンA'), 
+            new cragen(false, 'クラーゲンB'), 
+            new cragen(false, 'クラーゲンC')
         );
         this.director.ui.refreshEnemyGraphics(this.enemies);
         this.director.showSplittingAppear(enemyIndex);
