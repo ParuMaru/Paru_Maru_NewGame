@@ -2,11 +2,11 @@
 
 /* マップ画面 */
 #map-screen {
-    position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    max-width: 600px;
     /* 単色の代わりに画像を指定 */
     background-image: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)), url("../resource/map_bg.jpg");
     background-size: cover;

@@ -45,7 +45,7 @@
     .enemy-unit.dragon-size { transform: translateY(-50px); margin-bottom: 0; }
     .dragon-size .enemy-hp-container { width: 250px; height: 10px;transform: translateY(30px);}
     .dragon-size .enemy-label { font-size: 18px; margin-bottom: 2px; transform: translateY(30px);}
-    .dragon-size .enemy-status-container { top: -20px; }
+    .dragon-size .enemy-status-container { transform: translateY(35px) }
     
     /* 5. エンディング調整 */
     .ending-cat-img { width: 30%; min-width: 80px; margin-bottom: 5px; }
