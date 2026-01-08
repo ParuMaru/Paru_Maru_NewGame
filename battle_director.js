@@ -192,17 +192,42 @@ export class BattleDirector {
     
     // --- 分裂イベント演出 ---
 
+    // 震える演出
     async showSplittingTrigger(enemy) {
         this.ui.addLog(`${enemy.name}の体が震えだした...！`, "#ff00ff");
+        this.music.playBukubuku();
         
-        const targetId = this._getTargetId(enemy);
-        const el = document.getElementById(targetId);
-        if (el) {
-            const img = el.querySelector('img');
-            if (img) img.classList.add('splitting'); 
+        // 敵ユニット全体(enemy-unit)を取得
+        const targetId = this._getTargetId(enemy); 
+        const unitDiv = document.getElementById(targetId);
+        
+        if (unitDiv) {
+            // クラスを付け外ししてアニメーション再生
+            unitDiv.classList.remove('splitting');
+            void unitDiv.offsetWidth; // リフロー
+            unitDiv.classList.add('splitting'); 
+        }
+    }
+
+    // 登場演出
+    showSplittingAppear(startIndex) {
+        // startIndex=左, startIndex+2=右
+        const unitLeft = document.getElementById(`enemy-sprite-${startIndex}`);
+        const unitRight = document.getElementById(`enemy-sprite-${startIndex+2}`);
+
+        // 左側
+        if (unitLeft) {
+            unitLeft.classList.remove('appear-left'); 
+            void unitLeft.offsetWidth; 
+            unitLeft.classList.add('appear-left');
         }
 
-        this.music.playBukubuku();
+        // 右側
+        if (unitRight) {
+            unitRight.classList.remove('appear-right');
+            void unitRight.offsetWidth;
+            unitRight.classList.add('appear-right');
+        }
     }
 
     showSplittingTransform(oldName) {
@@ -211,11 +236,24 @@ export class BattleDirector {
     }
 
     showSplittingAppear(startIndex) {
-        const spriteA = document.getElementById(`enemy-sprite-${startIndex}`);
-        const spriteC = document.getElementById(`enemy-sprite-${startIndex+2}`);
+        // startIndex は「左」の敵、startIndex+1 は「真ん中」、startIndex+2 は「右」の敵
+        const spriteLeft = document.getElementById(`enemy-sprite-${startIndex}`);
+        const spriteRight = document.getElementById(`enemy-sprite-${startIndex+2}`);
 
-        if (spriteA) spriteA.classList.add('appear-right'); 
-        if (spriteC) spriteC.classList.add('appear-left');
+        // 左側の敵：中央から左へ飛び出す
+        if (spriteLeft) {
+            // アニメーションをリセットしてから適用
+            const unitLeft = spriteLeft.closest('.enemy-unit') || spriteLeft;
+            void spriteLeft.offsetWidth; // 強制リフロー
+            spriteLeft.classList.add('appear-left');
+        }
+
+        // 右側の敵：中央から右へ飛び出す
+        if (spriteRight) {
+            const unitRight = spriteRight.closest('.enemy-unit') || spriteRight;
+            void spriteRight.offsetWidth;
+            spriteRight.classList.add('appear-right');
+        }
     }
     
     // ★修正: 派手な合体開始演出

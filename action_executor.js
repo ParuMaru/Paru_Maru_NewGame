@@ -213,11 +213,18 @@ export class ActionExecutor {
         await new Promise(r => setTimeout(r, 2500)); 
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
-        this.enemies.splice(enemyIndex, 1, 
-            new cragen(false, 'クラーゲンA'), 
-            new cragen(false, 'クラーゲンB'), 
-            new cragen(false, 'クラーゲンC')
-        );
+            // 新しい個体を生成
+        const enemyA = new cragen(false, 'クラーゲンA');
+        const enemyB = new cragen(false, 'クラーゲンB');
+        const enemyC = new cragen(false, 'クラーゲンC');
+        
+        // 変数名に合わせたプロパティを付与（ui_managerで参照するため）
+        enemyA.isSplitLeft = true;
+        enemyC.isSplitRight = true;
+        
+        // 配列を入れ替え
+        this.enemies.splice(enemyIndex, 1, enemyA, enemyB, enemyC);
+        
         this.director.ui.refreshEnemyGraphics(this.enemies);
         this.director.showSplittingAppear(enemyIndex);
         await new Promise(r => setTimeout(r, 1000));

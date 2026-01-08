@@ -247,7 +247,6 @@ export class GameManager {
 
     onGameOver() {
         console.log("全滅...");
-        // ゲームオーバー時は3秒後にタイトルへ戻る
         setTimeout(() => location.reload(), 3000);
     }
 

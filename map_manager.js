@@ -39,7 +39,7 @@ export class MapManager {
         header.appendChild(title);
 
         const saveBtn = document.createElement('button');
-        saveBtn.innerText = "記録する";
+        saveBtn.innerText = "セーブ";
         Object.assign(saveBtn.style, {
             fontSize: '12px',
             padding: '5px 10px',
@@ -439,12 +439,12 @@ export class MapManager {
                         if (isHistoryPath) {
                             // 選んだ道：実線で見やすく
                             line.setAttribute("stroke", "#f1c40f"); 
-                            line.setAttribute("stroke-width", "4"); 
+                            line.setAttribute("stroke-width", "5"); 
                         } else {
                             // 選ばなかった道：薄い点線
-                            line.setAttribute("stroke", "rgba(255, 255, 255, 0.1)");
-                            line.setAttribute("stroke-width", "2");
-                            line.setAttribute("stroke-dasharray", "5,5"); 
+                            line.setAttribute("stroke", "rgba(255, 255, 255, 0.8)");
+                            line.setAttribute("stroke-width", "3");
+                            line.setAttribute("stroke-dasharray", "10,5"); 
                         }
                         
                         svg.appendChild(line);

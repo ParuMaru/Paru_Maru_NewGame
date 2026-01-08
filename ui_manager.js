@@ -291,6 +291,13 @@ export class UIManager {
             unitDiv.className = 'enemy-unit';
             unitDiv.id = `enemy-sprite-${index}`; 
             
+            // enemyオブジェクトが持つフラグに基づきCSSクラスを付与
+            if (enemy.isSplitLeft) {
+                unitDiv.classList.add('split-pos-left');
+            } else if (enemy.isSplitRight) {
+                unitDiv.classList.add('split-pos-right');
+            }
+            
             // DOM要素に敵データを埋め込む（クリック選択用）
             unitDiv._enemyRef = enemy;
 

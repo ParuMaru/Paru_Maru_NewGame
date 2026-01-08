@@ -31,7 +31,7 @@
 #map-scroll-area::-webkit-scrollbar { display: none; }
 
 .map-floor { display: flex; justify-content: center; gap: 30px; width: 100%; position: relative; }
-.map-node { width: 50px; height: 50px; border-radius: 50%; border: 3px solid #7f8c8d; background-color: #34495e; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #bdc3c7; cursor: default; position: relative; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2; }
+.map-node { width: 50px; height: 50px; border-radius: 50%; border: 3px solid #7f8c8d; background-color: #34495e; display: flex; justify-content: center; align-items: center; font-size: 24px; color: #bdc3c7; cursor: default; position: relative; transition: all 0.3s; box-shadow: 0 4px 6px rgba(0,0,0,0.3); z-index: 2; backdrop-filter: blur(2px);}
 .node-selectable { border-color: #f1c40f; background-color: #fff; cursor: pointer; animation: pulse-node 1.5s infinite; }
 .node-selectable:hover { transform: scale(1.2); box-shadow: 0 0 15px #f1c40f; }
 .node-cleared { border-color: #27ae60; background-color: #2ecc71; color: white; opacity: 0.7; }

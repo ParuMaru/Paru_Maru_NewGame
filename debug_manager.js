@@ -85,8 +85,7 @@ export class DebugManager {
 
         // --- 戦闘テスト ---
         this.addTitle("BATTLE TEST");
-        this.createBtn("⚔️ vs クラーゲン", "#bdc3c7", () => this.startBattle('cragen'));
-        this.createBtn("👹 vs ゴブリン", "#27ae60", () => this.startBattle('goblin'));
+        this.createBtn("⚔️ vs 雑魚戦", "#bdc3c7", () => this.startBattle('cragen'));
         this.createBtn("👑 vs キング", "#f1c40f", () => this.startBattle('king'));
         this.createBtn("👥 vs 影のパーティ", "#8e44ad", () => this.startBattle('shadow'));
         this.createBtn("🧊 vs 氷ドラゴン", "#00d2ff", () => this.startBattle('dragon'));
@@ -176,6 +175,7 @@ export class DebugManager {
             if(p.is_alive()) p.add_hp(1 - p.hp);
         });
         this.battleManager.ui.addLog("[DEBUG] 瀕死", "#e74c3c", true);
+        
     }
 
     MaxHPup() {
@@ -223,7 +223,7 @@ export class DebugManager {
 
     startBattle(type) {
         if (this.gameManager) {
-            this.battleManager.ui.addLog(`[DEBUG] ${type}戦を開始します`, "#fff");
+            this.battleManager.ui.addLog(`[DEBUG] 雑魚戦を開始します`, "#fff");
             this.gameManager.startBattle(type);
         } else {
             console.error("GameManagerが見つかりません。");
