@@ -298,21 +298,16 @@ export class MapManager {
             this.game.startBattle('dragon','boss'); 
         } 
         else if (node.type === 'rest') {
-            this.game.showMessage("焚き火で休憩した。全員蘇生＆HP・MPが大きく回復！(80%)");
-            
-            this.game.party.forEach(p => {
-                const healHp = Math.floor(p.max_hp * 0.8);
-                const healMp = Math.floor(p.max_mp * 0.8);
+            if (node.floor === 9) {
+                // コールバック関数として回復処理を渡す
+                this.game.startCampfireEvent(() => {
+                    this._processRest("決戦に備え、魂まで安らぐ休息をとった。\n全員完全回復！");
+                });
+            } else {
+                // 通常の休憩（ランダムで出た場合など）
+                this._processRest("焚き火で休憩した。全員蘇生＆HP・MPが大きく回復！");
+            }
 
-                if (!p.is_alive()) {
-                    p.revive(healHp);
-                } else {
-                    p.add_hp(healHp);
-                }
-                p.add_mp(healMp);
-                if (p.clear_all_buffs) p.clear_all_buffs();
-            });
-            this.render(); 
         } 
         else if (node.type === 'treasure') {
             const itemKeys = Object.keys(ItemData);
@@ -392,6 +387,32 @@ export class MapManager {
 
     closeFountain() {
         this.fountainOverlay.style.display = 'none';
+        this.render(); 
+    }
+    
+    /**
+     * ★追加: 休憩処理を共通化・メソッド化
+     * @param {string} message - 表示するメッセージ
+     */
+    _processRest(message) {
+        this.game.showMessage(message);
+        
+        this.game.party.forEach(p => {
+           
+            const healHp = p.max_hp; 
+            const healMp = p.max_mp;
+
+            if (!p.is_alive()) {
+                p.revive(healHp);
+            } else {
+                p.add_hp(healHp);
+            }
+            p.add_mp(healMp);
+            if (p.clear_all_buffs) p.clear_all_buffs();
+        });
+
+        // マップを再表示（イベント画面を閉じた後にマップに戻るため）
+        this.game.showMap(); 
         this.render(); 
     }
 

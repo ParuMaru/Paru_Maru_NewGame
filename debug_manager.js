@@ -94,6 +94,7 @@ export class DebugManager {
         this.addTitle("FLOOR JUMP");
         this.createBtn("🏢 4階へ (キング)", "#f39c12", () => this.jumpToFloor(3));
         this.createBtn("🏢 8階へ (影)", "#8e44ad", () => this.jumpToFloor(7));
+        this.createBtn("🏢 9階へ (焚火)", "#8e44ad", () => this.jumpToFloor(8));
         
         // ---システム機能 ---
         this.addTitle("SYSTEM");

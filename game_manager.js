@@ -174,6 +174,24 @@ export class GameManager {
             `;
             document.body.appendChild(endingScreen);
             
+            // --- ★追加: ざぼちを登場させる処理 ---
+            const zabochiImg = document.createElement('img');
+            zabochiImg.src = './resource/zabochi.webp'; // 画像パス
+            zabochiImg.className = 'ending-zabochi';    // CSSクラス
+
+            // ランダムな速さを決める (3秒〜6秒)
+            const duration = 3.0 + Math.random() * 3.0;
+            
+          // ★変更: 動きを「zabochi-run」に変更
+            // 出現(catFadeIn)した後、5秒後から駆け巡り(zabochi-run)開始
+            // duration（一周する時間）を 8〜12秒くらいにして、ゆっくり大きく動かす
+            const runDuration = 8.0 + Math.random() * 4.0;
+            
+            zabochiImg.style.animation = `catFadeIn 2s ease-out 3s forwards, zabochi-run ${runDuration.toFixed(2)}s ease-in-out 5s infinite`;
+           
+            endingScreen.appendChild(zabochiImg);
+            // ------------------------------------
+            
             // タイトルへ戻るボタンの設定
             const btn = document.getElementById('title-return-btn');
             if(btn) btn.onclick = () => location.reload();
@@ -251,7 +269,7 @@ export class GameManager {
     }
 
     hideAllScreens() {
-        const screens = ['game-wrapper', 'map-screen', 'reward-screen', 'ending-screen'];
+        const screens = ['game-wrapper', 'map-screen', 'reward-screen', 'ending-screen', 'story-overlay']; // ★story-overlayを追加
         screens.forEach(id => {
             const el = document.getElementById(id);
             if(el) el.style.display = 'none';
@@ -350,5 +368,77 @@ export class GameManager {
      */
     hasSaveData() {
         return localStorage.getItem('parm_rpg_save') !== null;
+    }
+    
+    /**
+     * ★追加: 焚き火会話イベントを開始する
+     * @param {Function} onFinished - イベント終了後に実行するコールバック（回復処理など）
+     */
+    startCampfireEvent(onFinished) {
+        // UI要素の取得
+        const overlay = document.getElementById('story-overlay');
+        const imgEl = document.getElementById('story-image');
+        const nameEl = document.getElementById('story-name');
+        const textEl = document.getElementById('story-text');
+        const skipBtn = document.getElementById('story-skip-btn');
+        const msgBox = overlay.querySelector('.story-message-box');
+
+        // ★設定: イベントで使用する画像パス
+        const eventImageSrc = './resource/campfire_event.jpg'; // ※適切な画像を用意してください
+        imgEl.src = eventImageSrc;
+
+        // ★設定: 会話スクリプト
+        // name: 話者名 (""ならナレーション), text: セリフ
+        const script = [
+            { name: "", text: "決戦の前夜、一行は焚き火を囲んでいた。" },
+            { name: "勇者ぱるむ", text: "いよいよ明日だね……。\nここまで長かったけど、みんなのおかげだよ。" },
+            { name: "魔法使いはな", text: "ふん、当然でしょ。\nあんた一人じゃ最初のゴブリンで死んでたわよ。" },
+            { name: "癒し手なつ", text: "まあまあ。\nでも、みんな本当に強くなったね。" },
+            { name: "勇者ぱるむ", text: "ありがとう。\n……よし、絶対に勝とう！ 世界を取り戻すんだ！" },
+            { name: "", text: "決意を新たに、体力を回復した。" }
+        ];
+
+        let currentIndex = 0;
+
+        // 画面表示
+        this.hideAllScreens();
+        overlay.style.display = 'flex';
+        
+        // 1ページ目を表示
+        const showPage = () => {
+            if (currentIndex >= script.length) {
+                endEvent();
+                return;
+            }
+            const data = script[currentIndex];
+            nameEl.innerText = data.name;
+            textEl.innerText = data.text;
+        };
+
+        // イベント終了処理
+        const endEvent = () => {
+            overlay.style.display = 'none';
+            // イベントリスナーの解除
+            msgBox.onclick = null;
+            skipBtn.onclick = null;
+            
+            // コールバック（回復処理＆マップ更新）を実行
+            if (onFinished) onFinished();
+        };
+
+        // クリックで次へ
+        msgBox.onclick = () => {
+            currentIndex++;
+            showPage();
+        };
+
+        // スキップボタン
+        skipBtn.onclick = (e) => {
+            e.stopPropagation(); // メッセージ送りを防ぐ
+            endEvent();
+        };
+
+        // 開始
+        showPage();
     }
 }

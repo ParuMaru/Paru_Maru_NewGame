@@ -33,7 +33,7 @@ body {
    タイトル画面（Title Screen）
    ========================================= */
 #title-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed; top: 0; width: 100%; height: 100%; max-width : 600px;
     background-size: 100% auto; background-repeat: no-repeat; background-position: center center;
     background-color: #000; 
     
@@ -92,10 +92,103 @@ body {
 @keyframes msg-pop { 0% { transform: translate(-50%, 20px) scale(0.9); opacity: 0; } 100% { transform: translate(-50%, 0) scale(1); opacity: 1; } }
 
 /* =========================================
+   ★追加: 会話イベント画面 (Story Overlay)
+   ========================================= */
+#story-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 2500; /* マップ(500)や報酬画面(600)より上、エンディング(3000)より下 */
+    background-color: black;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* 下揃え */
+    align-items: center;
+}
+
+/* 一枚絵（背景） */
+#story-image {
+    position: absolute;
+    top: 0; 
+    width: 100%; height: 100%;
+    max-width : 600px;
+    object-fit: cover; /* 画面いっぱいに表示 */
+    opacity: 0;
+    animation: fadeIn 1s forwards;
+}
+
+/* メッセージウィンドウ */
+.story-message-box {
+    position: relative;
+    width: 90%;
+    max-width: 800px;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #fff;
+    border-radius: 10px;
+    margin-bottom: 30px; /* 下からの距離 */
+    padding: 20px;
+    box-sizing: border-box;
+    z-index: 10;
+    animation: slideUp 0.5s ease-out;
+    cursor: pointer; /* クリックで進む */
+}
+
+/* 話者名 */
+.story-name {
+    font-size: 20px;
+    font-weight: bold;
+    color: #f1c40f;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #555;
+    display: inline-block;
+    padding-bottom: 2px;
+}
+
+/* 本文 */
+.story-text {
+    font-size: 16px;
+    color: #fff;
+    line-height: 1.6;
+}
+
+/* 送りアイコン（点滅） */
+.story-next-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 20px;
+    color: #f1c40f;
+    animation: blink 1s infinite;
+}
+
+/* SKIPボタン */
+#story-skip-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: auto;
+    padding: 5px 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid #fff;
+    font-size: 12px;
+    z-index: 20;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(50px); opacity: 0; }
+    to   { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* =========================================
    エンディング画面
    ========================================= */
 #ending-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: fixed; top: 0; width: 100%; height: 100%; max-width : 600px;
     background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url("../resource/ending_bg.jpg");
     background-size: 100% auto; background-position: center; background-repeat: no-repeat;
     display: none; flex-direction: column; justify-content: flex-start; align-items: center;
@@ -132,3 +225,45 @@ body {
 }
 .close-modal:hover { color: #fff; text-decoration: none; }
 @keyframes zoomIn { from {transform:scale(0.8); opacity:0;} to {transform:scale(1); opacity:1;} }
+
+/* ざぼちのランダム浮遊アニメーション */
+@keyframes random-float {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(10px, -15px) rotate(5deg); }
+    50%  { transform: translate(-5px, -25px) rotate(-3deg); }
+    75%  { transform: translate(5px, -10px) rotate(2deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* ★修正1: これがないと画像が透明なままで表示されません */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+/* ★修正2: 画面内を自由に駆け巡るアニメーション */
+/* translate(X, Y) で移動します。vwは画面幅、vhは画面高さの単位です */
+@keyframes zabochi-run {
+    0%   { transform: translate(0, 0) scale(1, 1); }
+    10%  { transform: translate(-40vw, -20vh) scale(1, 1); }  /* 左上へ */
+    25%  { transform: translate(-80vw, 10vh) scale(1, 1); }   /* さらに左下へ */
+    40%  { transform: translate(-20vw, -50vh) scale(-1, 1); } /* 右上へ（反転） */
+    55%  { transform: translate(-60vw, -10vh) scale(-1, 1); } /* 真ん中左へ */
+    70%  { transform: translate(-10vw, -40vh) scale(1, 1); }  /* 右上へ（戻る） */
+    85%  { transform: translate(-50vw, 20vh) scale(1, 1); }   /* 左下へ */
+    100% { transform: translate(0, 0) scale(1, 1); }          /* 定位置へ */
+}
+
+/* ざぼち本体のスタイルも調整（基準位置を右下に） */
+.ending-zabochi {
+    position: fixed;
+    bottom: 10%;     /* 少し下げる */
+    right: 10%;
+    width: 120px;
+    height: auto;
+    z-index: 3500;
+    opacity: 0;
+    pointer-events: none;
+    filter: drop-shadow(0 0 10px gold);
+}
+
