@@ -348,7 +348,7 @@ export class MapManager {
         drinkBtn.style.display = 'none';
         leaveBtn.innerText = "戻る";
 
-        if (Math.random() < 0.7) {
+        if (Math.random() < 0.8) {
             const stats = [
                 { key: 'max_hp', name: '最大HP', val: 50 },
                 { key: 'max_mp', name: '最大MP', val: 50 },

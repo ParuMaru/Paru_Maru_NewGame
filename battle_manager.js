@@ -156,7 +156,8 @@ export class BattleManager {
             
             // ★重要: ここで確実に毒のターンを減らす
             actor.debuffs.poison--;
-
+            
+            actor.add_hp(-poisonDmg);
             this.ui.addLog(`> ${actor.name}は毒で ${poisonDmg} のダメージ！`, "#9b59b6");
             
             // ターン切れなら削除

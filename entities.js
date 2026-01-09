@@ -204,7 +204,7 @@ export class cragen extends Entity {
             this.isBoss = true;
         } else {
             // 通常クラーゲンの設定
-            super(name, 300, 0, 45, 25, 30, 20, 110, 20, './resource/cragen.webp');
+            super(name, 250, 0, 45, 25, 30, 20, 110, 20, './resource/cragen.webp');
             this.isKing = false;
         }
     }
@@ -220,8 +220,8 @@ export class Kingcragen extends cragen {
 // ゴブリン
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
-        // HP:450, ATK:65 (クラーゲンより攻撃的)
-        super(name, 450, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
+        // HP:300, ATK:65 (クラーゲンより攻撃的)
+        super(name, 300, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
     }
 }
