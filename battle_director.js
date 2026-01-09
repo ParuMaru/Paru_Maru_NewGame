@@ -6,6 +6,9 @@ export class BattleDirector {
         this.effects = effects;
         this.party = party;
         this.enemies = enemies;
+        
+        const img = new Image();
+        img.src = './resource/zabochi.webp';
     }
 
     /**
@@ -209,26 +212,6 @@ export class BattleDirector {
         }
     }
 
-    // 登場演出
-    showSplittingAppear(startIndex) {
-        // startIndex=左, startIndex+2=右
-        const unitLeft = document.getElementById(`enemy-sprite-${startIndex}`);
-        const unitRight = document.getElementById(`enemy-sprite-${startIndex+2}`);
-
-        // 左側
-        if (unitLeft) {
-            unitLeft.classList.remove('appear-left'); 
-            void unitLeft.offsetWidth; 
-            unitLeft.classList.add('appear-left');
-        }
-
-        // 右側
-        if (unitRight) {
-            unitRight.classList.remove('appear-right');
-            void unitRight.offsetWidth;
-            unitRight.classList.add('appear-right');
-        }
-    }
 
     showSplittingTransform(oldName) {
         this.ui.addLog(`${oldName}は3匹に分裂した！`, "#ff00ff");

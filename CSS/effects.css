@@ -329,7 +329,7 @@
 
 /* 3. 神猫ざぼち降臨 */
 .zabochi-appear {
-    position: fixed;
+    position: fixed !important;
     top: 50%; left: 50%;
     transform: translate(-50%, -50%);
     max-width: 60%; 

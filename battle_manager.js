@@ -166,7 +166,7 @@ export class BattleManager {
             }
 
             // 描画更新: 毒で死んだ場合の画像更新なども含めて行う
-            this.ui.refreshEnemyGraphics(this.state.enemies); 
+            //this.ui.refreshEnemyGraphics(this.state.enemies); 
             // その後にアイコン（数値）を更新する
             this.updateUI();
             
@@ -175,7 +175,9 @@ export class BattleManager {
 
             // 毒で倒れた場合
             if (!actor.is_alive()) {
-                this.ui.addLog(`${actor.name}は力尽きた...`, "#e74c3c");
+                this.ui.addLog(`${actor.name}は 毒に蝕まれ、力尽きた...`, "#e74c3c");
+                const targetId = this.executor.director._getTargetId(actor);
+                this.executor.director._checkDeath(actor, targetId);
                 this.nextTurn();
                 return; // ここで処理を抜ける
             }
