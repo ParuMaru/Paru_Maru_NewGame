@@ -12,36 +12,46 @@ export class ActionExecutor {
     }
 
     async execute(actor, target, action) {
-        if (action.type === 'attack') {
-            await this._executeAttack(actor, target);
-        } else if (action.type === 'skill') {
-            await this._executeSkill(actor, target, action.detail);
-        } else if (action.type === 'item') {
-            await this._executeItem(actor, target, action.detail);
-        }
-        
-        this.director.refreshStatus();
+    if (action.type === 'attack') {
+        // ★変更: 第3引数に action を渡す
+        await this._executeAttack(actor, target, action);
+    } else if (action.type === 'skill') {
+        await this._executeSkill(actor, target, action.detail);
+    } else if (action.type === 'item') {
+        await this._executeItem(actor, target, action.detail);
     }
 
-    async _executeAttack(actor, target) {
-        const isMagicUser = this.director.showAttackStart(actor);
-        const targets = Array.isArray(target) ? target : [target];
-        
-        // ★追加: レリックリストを取得
-        const relics = this.gameManager ? this.gameManager.relics : [];
+    this.director.refreshStatus();
+}
 
-        targets.forEach(originalTarget => {
-            if (!originalTarget.is_alive()) return;
+    // ★変更: 第3引数 action を受け取る
+async _executeAttack(actor, target, action = null) {
+    const isMagicUser = this.director.showAttackStart(actor);
+    const targets = Array.isArray(target) ? target : [target];
+    const relics = this.gameManager ? this.gameManager.relics : [];
 
-            const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
-            
-            // ★修正: calculateDamage の第4引数に relics を渡す
-            let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null, relics);
-            
-            if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
+    // ★追加: タイミング倍率を取得（敵の攻撃やactionがない場合は 1.0）
+    const multiplier = (action && action.timingResult) ? action.timingResult.multiplier : 1.0;
 
-            finalTarget.add_hp(-damage);
-            this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
+    targets.forEach(originalTarget => {
+        if (!originalTarget.is_alive()) return;
+
+        const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
+
+        let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null, relics);
+
+        // ★追加: ここで倍率をかける！
+        damage = Math.floor(damage * multiplier);
+        // 1未満にならないように補正
+        damage = Math.max(1, damage);
+
+        if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
+
+        finalTarget.add_hp(-damage);
+
+        // 演出にクリティカル情報を渡す（PERFECTならクリティカル演出にしてもいいかも？）
+        const isPerfect = (action && action.timingResult && action.timingResult.type === 'perfect');
+        this.director.showPhysicalHit(finalTarget, damage, isCritical || isPerfect, isMagicUser);
             
             // ----------------------------------------------------
             // ★追加: 【吸血のマント】攻撃時にHP回復

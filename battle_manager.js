@@ -8,6 +8,7 @@ import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
 import { RelicData } from './relics.js';
+import { TimingGauge } from './timing_gauge.js';
 
 export class BattleManager {
     constructor(gameManager) {
@@ -603,11 +604,33 @@ export class BattleManager {
                 return;
             }
         }
+        
+        // ====================================================
+        // ★追加: プレイヤーの「通常攻撃」ならタイミングゲージ発動！
+        // ====================================================
+        if (action.type === 'attack') {
+            const gauge = new TimingGauge();
+            // ゲージを開始し、結果を待つ (await)
+            const result = await gauge.start();
+            
+            // 結果を action にくっつけて Executor に渡す
+            action.timingResult = result;
+            
+            // ログ出し（デバッグ用、あとで消してもOK）
+            if (result.type === 'perfect') {
+                this.ui.addLog("⚡ PERFECT TIMING! ⚡", "#f1c40f");
+            } else if (result.type === 'miss') {
+                this.ui.addLog("タイミングが合わなかった...", "#7f8c8d");
+            }
+        }
+        // ====================================================
 
         await this.executor.execute(actor, action.target, action);
         await this.processTurnEnd(actor);
         this.nextTurn();
     }
+    
+    
     
     cleanup() {
         if (this.bgm) this.bgm.stopBGM(); 
