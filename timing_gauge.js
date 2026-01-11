@@ -65,12 +65,12 @@ export class TimingGauge {
 
         document.body.appendChild(this.overlay);
 
-        // クリックイベント
-        const handler = (e) => {
-            e.stopPropagation(); // 裏側のクリック防止
+       // 【修正後】ポインターダウン（触れた瞬間に即反応！）
+        this.overlay.addEventListener('pointerdown', (e) => {
+            e.preventDefault(); // タッチした時の画面スクロールや拡大などの誤動作をブロック
+            e.stopPropagation();
             this.stop();
-        };
-        this.overlay.addEventListener('click', handler);
+        }, { once: true }); // 一回押したら終わり
         
         // スペースキー対応
         const keyHandler = (e) => {
@@ -127,11 +127,9 @@ export class TimingGauge {
         // キーイベント削除
         document.removeEventListener('keydown', this.keyHandler);
 
-        // 判定ロジック
-        // 0.40 〜 0.60 が成功ゾーン
-        const isSuccess = (this.currentPos >= 0.40 && this.currentPos <= 0.60);
-        // 0.48 〜 0.52 がパーフェクト（クリティカル）
-        const isPerfect = (this.currentPos >= 0.48 && this.currentPos <= 0.52);
+        // （成功±15%、パーフェクト±4%）
+        const isSuccess = (this.currentPos >= 0.35 && this.currentPos <= 0.65);
+        const isPerfect = (this.currentPos >= 0.46 && this.currentPos <= 0.54);
 
         let result = { multiplier: 0.8, type: 'miss' }; // 基本は失敗（威力ダウン）
 
