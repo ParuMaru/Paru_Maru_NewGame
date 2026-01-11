@@ -4,10 +4,11 @@ import { cragen } from './entities.js';
 import { GameConfig } from './game_config.js';
 
 export class ActionExecutor {
-    constructor(ui, music, effects, enemies, party) {
+    constructor(ui, music, effects, enemies, party,gameManager) {
         this.director = new BattleDirector(ui, music, effects, party, enemies);
         this.enemies = enemies;
         this.party = party;
+        this.gameManager = gameManager;
     }
 
     async execute(actor, target, action) {
@@ -25,17 +26,36 @@ export class ActionExecutor {
     async _executeAttack(actor, target) {
         const isMagicUser = this.director.showAttackStart(actor);
         const targets = Array.isArray(target) ? target : [target];
+        
+        // ★追加: レリックリストを取得
+        const relics = this.gameManager ? this.gameManager.relics : [];
 
         targets.forEach(originalTarget => {
             if (!originalTarget.is_alive()) return;
 
             const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
             
-            let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null);
-            if (isCovered) damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE); 
+            // ★修正: calculateDamage の第4引数に relics を渡す
+            let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null, relics);
+            
+            if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
 
             finalTarget.add_hp(-damage);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
+            
+            // ----------------------------------------------------
+            // ★追加: 【吸血のマント】攻撃時にHP回復
+            // 条件: 攻撃者が味方 && 「vampire_cape」を持っている
+            // ----------------------------------------------------
+            if (actor.job && relics.includes('vampire_cape')) {
+                const drainAmount = Math.ceil(damage * GameConfig.RELIC.VAMPIRE_DRAIN_RATE); // ダメージの10%
+                if (drainAmount > 0) {
+                    actor.add_hp(drainAmount);
+                    // 回復演出（ログはうるさいので出さなくてもOK、数字だけ出す）
+                    this.director.effects.damagePopup(drainAmount, this.director._getTargetId(actor), GameConfig.COLORS.HEAL_HP);
+                }
+            }
+            
             // ヒーラーの攻撃なら「毒」を付与
             if (actor.job === 'healer' && finalTarget.is_alive()) {
                 if (!finalTarget.debuffs.poison) {
@@ -67,7 +87,7 @@ export class ActionExecutor {
                     
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
-                    if (isCovered) damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE);
+                    if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
 
                     finalTarget.add_hp(-damage);
                     
@@ -90,7 +110,7 @@ export class ActionExecutor {
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
                     if (isCovered) {
-                        damage = Math.floor(damage * GameConfig.COVER_DAMAGE_RATE);
+                        damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
                     }
 
                     finalTarget.add_hp(-damage);

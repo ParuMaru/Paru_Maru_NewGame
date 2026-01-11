@@ -279,7 +279,7 @@ export class BattleBGM {
 
         if (this.nextNoteIndex >= this.allNotes.length && this.allNotes.length > 0) {
             const lastNoteTime = this.allNotes[this.allNotes.length - 1].time;
-            if (currentTime > lastNoteTime + 2.0) {
+            if (currentTime > lastNoteTime + 0.25) {
                 this.nextNoteIndex = 0;
                 this.startTime = this.ctx.currentTime;
             }

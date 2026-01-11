@@ -4,12 +4,11 @@ export class MapManager {
     constructor(gameManager) {
         this.game = gameManager;
         this.container = null;
-        this.fountainOverlay = null; 
+        this.eventOverlay = null; 
         this.mapData = []; 
         this.currentFloor = -1; 
         this.currentNodeIndex = -1;
         
-        // 選択したルートの履歴 { floor: index }
         this.pathHistory = {}; 
 
         // 全11階層
@@ -17,7 +16,7 @@ export class MapManager {
         this.NODES_PER_FLOOR = [1, 3, 4, 3, 2, 3, 4, 3, 1, 1, 1]; 
         
         this.initUI();
-        this.initFountainUI(); 
+        this.initEventUI(); // 汎用イベント画面の初期化
     }
 
     initUI() {
@@ -38,26 +37,20 @@ export class MapManager {
         title.innerText = "🗺️ 冒険の地図";
         header.appendChild(title);
 
+        // セーブボタン
         const saveBtn = document.createElement('button');
         saveBtn.innerText = "セーブ";
         Object.assign(saveBtn.style, {
-            fontSize: '12px',
-            padding: '5px 10px',
-            background: '#27ae60',
-            border: 'none',
-            borderRadius: '4px',
-            color: 'white',
-            cursor: 'pointer',
-            width: 'auto',
-            height: 'auto'
+            fontSize: '12px', padding: '5px 10px', background: '#27ae60',
+            border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer',
+            width: 'auto', height: 'auto'
         });
-        
         saveBtn.onclick = (e) => {
             e.stopPropagation();
             this.game.saveGame();
         };
-
         header.appendChild(saveBtn);
+        
         this.container.appendChild(header);
 
         this.scrollArea = document.createElement('div');
@@ -71,32 +64,291 @@ export class MapManager {
         document.body.appendChild(this.container);
     }
 
-    initFountainUI() {
-        this.fountainOverlay = document.createElement('div');
-        this.fountainOverlay.id = 'fountain-overlay';
-        
-        this.fountainOverlay.innerHTML = `
-            <div class="fountain-box">
-                <div class="fountain-icon">⛲</div>
-                <div class="fountain-title">怪しい泉</div>
-                <div class="fountain-desc">
-                    神秘的なオーラを放つ泉がある...<br>
-                    一口飲んでみますか？<br>
-                    <span style="font-size:12px; color:#bdc3c7;">良いことが起こるかも！？</span>
-                </div>
-                <div class="fountain-buttons">
-                    <button class="fountain-btn btn-drink" id="btn-drink">飲む</button>
-                    <button class="fountain-btn btn-leave" id="btn-leave">立ち去る</button>
-                </div>
-                <div class="fountain-result" id="fountain-result"></div>
-            </div>
-        `;
-        document.body.appendChild(this.fountainOverlay);
+    // ★汎用イベントモーダルを作成（泉・宝箱・キャンプ共通）
+    initEventUI() {
+        if (document.getElementById('event-overlay')) return;
 
-        document.getElementById('btn-drink').onclick = () => this.handleDrink();
-        document.getElementById('btn-leave').onclick = () => this.closeFountain();
+        const overlay = document.createElement('div');
+        overlay.id = 'event-overlay';
+        
+        // オーバーレイのスタイル（画面全体を覆う）
+        Object.assign(overlay.style, {
+            position: 'fixed', top: 0, left: 0, width: '100%', height: '100%',
+            backgroundColor: 'rgba(0, 0, 0, 0.85)',
+            display: 'none', flexDirection: 'column',
+            justifyContent: 'center', alignItems: 'center',
+            zIndex: 2000, color: 'white', backdropFilter: 'blur(2px)'
+        });
+
+        // コンテンツボックス
+        const content = document.createElement('div');
+        content.className = 'fountain-box'; // 既存のCSSクラス(map.css)を流用
+        // スタイル微調整（map.cssがない場合用）
+        Object.assign(content.style, {
+            width: '90%', maxWidth: '400px', padding: '30px',
+            background: 'linear-gradient(135deg, #2c3e50, #1a252f)',
+            border: '3px solid #3498db', borderRadius: '15px',
+            textAlign: 'center', boxShadow: '0 0 30px rgba(52, 152, 219, 0.3)'
+        });
+        
+        this.eventContent = content; // 中身を書き換えるために保存
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        this.eventOverlay = overlay;
     }
 
+    // --- イベント表示用ヘルパー ---
+    showEvent({ title, icon, desc, mainBtnText, onMainAction, closeBtnText = "立ち去る" }) {
+        this.eventContent.innerHTML = "";
+
+        // アイコン
+        const iconDiv = document.createElement('div');
+        iconDiv.innerText = icon;
+        iconDiv.style.fontSize = "60px";
+        iconDiv.style.marginBottom = "20px";
+        this.eventContent.appendChild(iconDiv);
+
+        // タイトル
+        const titleDiv = document.createElement('div');
+        titleDiv.innerText = title;
+        titleDiv.style.fontSize = "24px";
+        titleDiv.style.fontWeight = "bold";
+        titleDiv.style.color = "#3498db";
+        titleDiv.style.marginBottom = "15px";
+        this.eventContent.appendChild(titleDiv);
+
+        // 説明文
+        const descDiv = document.createElement('div');
+        descDiv.innerHTML = desc;
+        descDiv.style.fontSize = "14px";
+        descDiv.style.lineHeight = "1.6";
+        descDiv.style.marginBottom = "30px";
+        descDiv.style.color = "#ecf0f1";
+        this.eventContent.appendChild(descDiv);
+
+        // 結果表示エリア（最初は空）
+        const resultDiv = document.createElement('div');
+        resultDiv.id = 'event-result';
+        resultDiv.style.marginBottom = "20px";
+        resultDiv.style.minHeight = "24px";
+        resultDiv.style.fontWeight = "bold";
+        this.eventContent.appendChild(resultDiv);
+
+        // ボタンエリア
+        const btnArea = document.createElement('div');
+        btnArea.style.display = "flex";
+        btnArea.style.justifyContent = "center";
+        btnArea.style.gap = "15px";
+
+        // メインボタン（飲む、開ける、休む）
+        if (onMainAction) {
+            const mainBtn = document.createElement('button');
+            mainBtn.innerText = mainBtnText;
+            mainBtn.className = "fountain-btn btn-drink"; // map.css流用
+            mainBtn.onclick = () => {
+                // ボタンを隠してアクション実行
+                mainBtn.style.display = 'none';
+                closeBtn.innerText = "戻る";
+                onMainAction(resultDiv); // 結果表示エリアを渡す
+            };
+            btnArea.appendChild(mainBtn);
+        }
+
+        // 閉じるボタン
+        const closeBtn = document.createElement('button');
+        closeBtn.innerText = closeBtnText;
+        closeBtn.className = "fountain-btn btn-leave"; // map.css流用
+        closeBtn.onclick = () => {
+            this.eventOverlay.style.display = 'none';
+            this.render(); // マップ再描画
+        };
+        btnArea.appendChild(closeBtn);
+
+        this.eventContent.appendChild(btnArea);
+        this.eventOverlay.style.display = 'flex';
+    }
+
+    // ====================================================
+    //  各マス選択時の処理
+    // ====================================================
+
+    onNodeSelect(node) {
+        this.currentFloor = node.floor;
+        this.currentNodeIndex = node.index;
+        this.pathHistory[node.floor] = node.index;
+        this.render();
+
+        // 300ms待ってからイベント開始（移動アニメーション用）
+        setTimeout(() => {
+            if (node.type === 'battle') {
+                const type = Math.random() < 0.6 ? 'cragen' : 'goblin';
+                this.game.startBattle(type, 'normal');
+            } 
+            else if (node.type === 'elite') {
+                if (node.floor === 8) this.game.startBattle('shadow', 'elite'); 
+                else this.game.startBattle('king', 'elite');
+            } 
+            else if (node.type === 'boss') {
+                this.game.startBattle('dragon', 'boss'); 
+            }
+            // ★変更: 宝箱イベント
+            else if (node.type === 'treasure') {
+                this.showChestEvent();
+            }
+            // ★変更: 休憩イベント
+            else if (node.type === 'rest') {
+                if (node.floor === 9) {
+                    // 9階の特別会話イベント
+                    this.game.startCampfireEvent(() => {
+                        this._processRest("決戦に備え、魂まで安らぐ休息をとった。\n全員完全回復！");
+                    });
+                } else {
+                    // 通常の休憩所（汎用UI使用）
+                    this.showCampEvent();
+                }
+            }
+            // ★変更: 泉イベント（ロジックは維持）
+            else if (node.type === 'fountain') {
+                this.showFountainEvent();
+            }
+            else {
+                this.game.showMessage("何もなかった...");
+            }
+        }, 300);
+    }
+
+    // --- 宝箱イベント（強化版） ---
+    showChestEvent() {
+        this.showEvent({
+            title: "宝箱を発見！",
+            icon: "🎁",
+            desc: "ダンジョンの隅に古びた宝箱が置かれている。<br>中身は何だろうか？",
+            mainBtnText: "開ける",
+            onMainAction: (resultDiv) => {
+                // ★報酬強化ロジック
+                // 1. ポーション (2~3個)
+                const potionCount = Math.floor(Math.random() * 2) + 2;
+                // 2. エーテル (1~2個)
+                const etherCount = Math.floor(Math.random() * 2) + 1;
+                
+                const items = [
+                    { id: 'potion', count: potionCount },
+                    { id: 'ether', count: etherCount }
+                ];
+
+                // 3. レア枠 (10%でフェニックスの尾)
+                if (Math.random() < 0.1) {
+                    items.push({ id: 'phoenix', count: 1 });
+                }
+
+                // インベントリに追加
+                let msg = "";
+                items.forEach(item => {
+                    if (this.game.inventory[item.id]) {
+                        this.game.inventory[item.id].count += item.count;
+                    } else if (ItemData[item.id]) {
+                        this.game.inventory[item.id] = { ...ItemData[item.id], count: item.count };
+                    }
+                    
+                    if (ItemData[item.id]) {
+                        msg += `<div>${ItemData[item.id].name} x${item.count}</div>`;
+                    }
+                });
+
+                resultDiv.innerHTML = `<span style="color:#f1c40f;">${msg}</span> を手に入れた！`;
+                this.game.showMessage("アイテムを獲得しました！");
+            }
+        });
+    }
+
+    // --- 休憩イベント（演出強化） ---
+    showCampEvent() {
+        this.showEvent({
+            title: "安らぎの焚き火",
+            icon: "🔥",
+            desc: "安全な場所を見つけた。<br>焚き火を囲んで休息すれば、<br>体力と魔力を全回復できそうだ。",
+            mainBtnText: "休息する",
+            onMainAction: (resultDiv) => {
+                // 全回復処理
+                this.game.party.forEach(p => {
+                    p.revive(p.max_hp);
+                    p.add_hp(p.max_hp);
+                    p.add_mp(p.max_mp);
+                    if(p.clear_all_buffs) p.clear_all_buffs();
+                });
+
+                resultDiv.innerHTML = `<span style="color:#2ecc71;">パーティ全員が全回復しました！</span>`;
+                this.game.showMessage("体力が全回復した！");
+            }
+        });
+    }
+
+    // --- 泉イベント（ロジックは元のまま移植） ---
+    showFountainEvent() {
+        this.showEvent({
+            title: "不思議な泉",
+            icon: "⛲",
+            desc: "神秘的なオーラを放つ泉がある...<br>一口飲んでみますか？<br><span style='font-size:12px; color:#bdc3c7;'>良いことが起こるかも！？</span>",
+            mainBtnText: "飲む",
+            onMainAction: (resultDiv) => {
+                
+                // ★ここです！元のロジックをそのまま適用しています
+                if (Math.random() < 0.8) {
+                    // 80%でステータスアップ
+                    const stats = [
+                        { key: 'max_hp', name: '最大HP', val: 50 },
+                        { key: 'max_mp', name: '最大MP', val: 50 },
+                        { key: 'atk',    name: '攻撃力', val: 5 },
+                        { key: 'def',    name: '防御力', val: 5 },
+                        { key: 'matk',   name: '魔力',   val: 5 },
+                    ];
+                    const boost = stats[Math.floor(Math.random() * stats.length)];
+
+                    this.game.showMessage(`泉の力で、全員の${boost.name}が ${boost.val} 上がった！`);
+                    
+                    this.game.party.forEach(p => {
+                        if(p.is_alive()) { 
+                            if(typeof p[boost.key] !== 'undefined') {
+                                p[boost.key] += boost.val;
+                                // 最大値が増えたら現在値も回復
+                                if(boost.key === 'max_hp') p.add_hp(boost.val);
+                                if(boost.key === 'max_mp') p.add_mp(boost.val);
+                            }
+                        }
+                    });
+                    resultDiv.innerHTML = `✨ 不思議な力が宿る... <br>(${boost.name} +${boost.val})`;
+                    resultDiv.className = "result-good"; // map.cssのスタイル適用
+                } else {
+                    // 20%で毒（ダメージ）
+                    this.game.showMessage("うっ...！ 毒の水だった！(HP30%ダメージ)");
+                    this.game.party.forEach(p => {
+                        if(p.is_alive()) {
+                            const dmg = Math.floor(p.max_hp * 0.3);
+                            p.add_hp(-dmg);
+                        }
+                    });
+                    resultDiv.innerHTML = "☠️ ぐはっ... 毒だ！ <br>(HP3割減少)";
+                    resultDiv.className = "result-bad";
+                }
+            }
+        });
+    }
+
+    // 9階の特別イベントなどからの復帰用
+    _processRest(message) {
+        this.game.showMessage(message);
+        this.game.party.forEach(p => {
+            p.revive(p.max_hp);
+            p.add_hp(p.max_hp);
+            p.add_mp(p.max_mp);
+            if(p.clear_all_buffs) p.clear_all_buffs();
+        });
+        this.game.showMap(); 
+        this.render(); 
+    }
+
+    // --- マップ生成・描画（変更なし） ---
+    
     generateMap() {
         this.mapData = [];
         this.currentFloor = -1;
@@ -119,7 +371,7 @@ export class MapManager {
                 else {
                     const rand = Math.random();
                     if (rand < 0.1) { type = 'rest'; icon = '⛺'; }
-                    else if (rand < 0.2) { type = 'treasure'; icon = '🎁'; }
+                    else if (rand < 0.2) { type = 'treasure'; icon = '🎁'; } // icon変更
                     else if (rand < 0.3) { type = 'fountain'; icon = '⛲'; }
                     else { type = 'battle'; icon = '⚔️'; }
                 }
@@ -133,27 +385,20 @@ export class MapManager {
         this.connectNodes();
     }
     
-    // ★追加: 距離が自然かどうか判定するヘルパー
+    // 距離判定ヘルパー
     isNatural(nodeIndex, nodeCount, targetIndex, targetCount) {
-        // どちらかが1個しかなければ、絶対につながる必要があるためOK
         if (nodeCount <= 1 || targetCount <= 1) return true;
-
         const posA = nodeIndex / (nodeCount - 1);
         const posB = targetIndex / (targetCount - 1);
-        
-        // ズレが 35% 以内ならOKとする（この数値を小さくするとより垂直な線のみになる）
         return Math.abs(posA - posB) <= 0.35;
     }
 
-    // ★修正: 距離ベースの接続ロジック
     connectNodes() {
         for (let f = 0; f < this.FLOOR_COUNT - 1; f++) {
             const currentFloor = this.mapData[f];
             const nextFloor = this.mapData[f + 1];
 
-            // 1. 下から上への接続
             currentFloor.forEach(node => {
-                // 距離的に自然な（近い）候補だけをリストアップ
                 let candidates = nextFloor.filter(nextNode => {
                     return this.isNatural(
                         node.index, currentFloor.length, 
@@ -161,7 +406,6 @@ export class MapManager {
                     );
                 });
 
-                // 救済処置: 候補が0個なら一番近いものを強制的に選ぶ
                 if (candidates.length === 0) {
                     const myPos = node.index / (currentFloor.length - 1 || 1);
                     const closest = nextFloor.reduce((prev, curr) => {
@@ -172,14 +416,10 @@ export class MapManager {
                     candidates = [closest];
                 }
 
-                // --- 1本目の接続（必須） ---
                 const target1 = candidates[Math.floor(Math.random() * candidates.length)];
                 this._link(node, target1);
                 
-                // --- ★ここを追加: 2本目の接続（確率で分岐！） ---
-                // 条件: 候補が複数あって、かつ 30% の確率
                 if (candidates.length > 1 && Math.random() < 0.3) {
-                    // すでに選んだ target1 以外の候補から選ぶ
                     const remaining = candidates.filter(c => c !== target1);
                     if (remaining.length > 0) {
                         const target2 = remaining[Math.floor(Math.random() * remaining.length)];
@@ -188,10 +428,8 @@ export class MapManager {
                 }
             });
 
-            // 2. 上から下への逆チェック（親がいない子の救済）
             nextFloor.forEach(nextNode => {
                 if (nextNode.children.length === 0) {
-                    // 一番近い親とつなぐ
                     const myPos = nextNode.index / (nextFloor.length - 1 || 1);
                     const closestParent = currentFloor.reduce((prev, curr) => {
                         const prevPos = prev.index / (currentFloor.length - 1 || 1);
@@ -205,13 +443,13 @@ export class MapManager {
     }
 
     _link(lowerNode, upperNode) {
-        // 重複防止
         if (!lowerNode.parents.includes(upperNode.index)) {
             lowerNode.parents.push(upperNode.index);
             upperNode.children.push(lowerNode.index);
         }
     }
     
+    // ★メソッド名は render() のまま（GameManagerからの呼び出しに対応）
     render() {
         if (this.mapData.length === 0) this.generateMap();
 
@@ -261,14 +499,10 @@ export class MapManager {
 
     getNodeStatus(floor, index) {
         if (floor < this.currentFloor) {
-            if (this.pathHistory[floor] === index) {
-                return 'cleared';
-            }
+            if (this.pathHistory[floor] === index) return 'cleared';
             return 'locked'; 
         }
-
         if (floor === this.currentFloor && index === this.currentNodeIndex) return 'cleared'; 
-        
         if (floor === this.currentFloor + 1) {
             if (this.currentFloor === -1) return 'selectable';
             const currentNode = this.mapData[this.currentFloor][this.currentNodeIndex];
@@ -277,157 +511,15 @@ export class MapManager {
         return 'locked';
     }
 
-    onNodeSelect(node) {
-        this.currentFloor = node.floor;
-        this.currentNodeIndex = node.index;
-        
-        this.pathHistory[node.floor] = node.index;
-
-        if (node.type === 'battle') {
-            const type = Math.random() < 0.6 ? 'cragen' : 'goblin';
-            this.game.startBattle(type,'normal');
-        } 
-        else if (node.type === 'elite') {
-            if (node.floor === 8) {
-                this.game.startBattle('shadow', 'elite'); 
-            } else {
-                this.game.startBattle('king', 'elite');
-            }
-        } 
-        else if (node.type === 'boss') {
-            this.game.startBattle('dragon','boss'); 
-        } 
-        else if (node.type === 'rest') {
-            if (node.floor === 9) {
-                // コールバック関数として回復処理を渡す
-                this.game.startCampfireEvent(() => {
-                    this._processRest("決戦に備え、魂まで安らぐ休息をとった。\n全員完全回復！");
-                });
-            } else {
-                // 通常の休憩（ランダムで出た場合など）
-                this._processRest("焚き火で休憩した。全員蘇生＆HP・MPが大きく回復！");
-            }
-
-        } 
-        else if (node.type === 'treasure') {
-            const itemKeys = Object.keys(ItemData);
-            const randomKey = itemKeys[Math.floor(Math.random() * itemKeys.length)];
-            const item = ItemData[randomKey];
-
-            if (!this.game.inventory[randomKey]) {
-                this.game.inventory[randomKey] = { ...item, count: 1 };
-            } else {
-                this.game.inventory[randomKey].count++;
-            }
-            this.game.showMessage(`宝箱だ！ ${item.name} を手に入れた！`);
-            this.render();
-        }
-        else if (node.type === 'fountain') {
-            this.showFountain();
-        }
-        else {
-            this.game.showMessage("何もなかった...");
-            this.render();
-        }
-    }
-
-    showFountain() {
-        document.getElementById('fountain-result').innerText = "";
-        document.getElementById('fountain-result').className = "fountain-result";
-        document.getElementById('btn-drink').style.display = 'inline-block';
-        document.getElementById('btn-leave').innerText = "立ち去る";
-        
-        this.fountainOverlay.style.display = 'flex';
-    }
-
-    handleDrink() {
-        const resultDiv = document.getElementById('fountain-result');
-        const drinkBtn = document.getElementById('btn-drink');
-        const leaveBtn = document.getElementById('btn-leave');
-
-        drinkBtn.style.display = 'none';
-        leaveBtn.innerText = "戻る";
-
-        if (Math.random() < 0.8) {
-            const stats = [
-                { key: 'max_hp', name: '最大HP', val: 50 },
-                { key: 'max_mp', name: '最大MP', val: 50 },
-                { key: 'atk',    name: '攻撃力', val: 5 },
-                { key: 'def',    name: '防御力', val: 5 },
-                { key: 'matk',   name: '魔力',   val: 5 },
-            ];
-            const boost = stats[Math.floor(Math.random() * stats.length)];
-
-            this.game.showMessage(`泉の力で、全員の${boost.name}が ${boost.val} 上がった！`);
-            this.game.party.forEach(p => {
-                if(p.is_alive()) { 
-                    if(typeof p[boost.key] !== 'undefined') {
-                        p[boost.key] += boost.val;
-                        if(boost.key === 'max_hp') p.add_hp(boost.val);
-                        if(boost.key === 'max_mp') p.add_mp(boost.val);
-                    }
-                }
-            });
-            resultDiv.innerText = `✨ 不思議な力が宿る... (${boost.name} +${boost.val})`;
-            resultDiv.className = "fountain-result result-good";
-        } else {
-            this.game.showMessage("うっ...！ 毒の水だった！(HP30%ダメージ)");
-            this.game.party.forEach(p => {
-                if(p.is_alive()) {
-                    const dmg = Math.floor(p.max_hp * 0.3);
-                    p.add_hp(-dmg);
-                }
-            });
-            resultDiv.innerText = "☠️ ぐはっ... 毒だ！ (HP3割減少)";
-            resultDiv.className = "fountain-result result-bad";
-        }
-        
-        this.render();
-    }
-
-    closeFountain() {
-        this.fountainOverlay.style.display = 'none';
-        this.render(); 
-    }
-    
-    /**
-     * ★追加: 休憩処理を共通化・メソッド化
-     * @param {string} message - 表示するメッセージ
-     */
-    _processRest(message) {
-        this.game.showMessage(message);
-        
-        this.game.party.forEach(p => {
-           
-            const healHp = p.max_hp; 
-            const healMp = p.max_mp;
-
-            if (!p.is_alive()) {
-                p.revive(healHp);
-            } else {
-                p.add_hp(healHp);
-            }
-            p.add_mp(healMp);
-            if (p.clear_all_buffs) p.clear_all_buffs();
-        });
-
-        // マップを再表示（イベント画面を閉じた後にマップに戻るため）
-        this.game.showMap(); 
-        this.render(); 
-    }
-
     drawLines() {
         const svg = this.svgLayer;
         svg.setAttribute('width', this.scrollArea.scrollWidth);
         svg.setAttribute('height', this.scrollArea.scrollHeight);
         
-        while (svg.lastChild) {
-            svg.removeChild(svg.lastChild);
-        }
+        while (svg.lastChild) svg.removeChild(svg.lastChild);
 
         const currentRect = this.container.getBoundingClientRect();
         const scale = currentRect.width ? (currentRect.width / this.container.offsetWidth) : 1.0;
-        
         const containerRect = this.scrollArea.getBoundingClientRect();
         const scrollTop = this.scrollArea.scrollTop;
 
@@ -443,7 +535,6 @@ export class MapManager {
                         
                         const x1 = (startRect.left - containerRect.left) / scale + (startRect.width / scale) / 2;
                         const y1 = (startRect.top - containerRect.top) / scale + (startRect.height / scale) / 2 + scrollTop;
-                        
                         const x2 = (endRect.left - containerRect.left) / scale + (endRect.width / scale) / 2;
                         const y2 = (endRect.top - containerRect.top) / scale + (endRect.height / scale) / 2 + scrollTop;
 
@@ -453,21 +544,17 @@ export class MapManager {
                         line.setAttribute("x2", x2); 
                         line.setAttribute("y2", y2);
                         
-                        // 自分が選んだルート（履歴にある点同士の接続）かどうか
                         const isHistoryPath = (this.pathHistory[node.floor] === node.index) && 
                                               (this.pathHistory[node.floor + 1] === parentIndex);
 
                         if (isHistoryPath) {
-                            // 選んだ道：実線で見やすく
                             line.setAttribute("stroke", "#f1c40f"); 
                             line.setAttribute("stroke-width", "5"); 
                         } else {
-                            // 選ばなかった道：薄い点線
                             line.setAttribute("stroke", "rgba(255, 255, 255, 0.8)");
                             line.setAttribute("stroke-width", "3");
                             line.setAttribute("stroke-dasharray", "10,5"); 
                         }
-                        
                         svg.appendChild(line);
                     }
                 });

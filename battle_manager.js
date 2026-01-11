@@ -7,6 +7,7 @@ import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer,Shad
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
+import { RelicData } from './relics.js';
 
 export class BattleManager {
     constructor(gameManager) {
@@ -15,7 +16,7 @@ export class BattleManager {
         this.bgm = new BattleBGM();
         this.effects = new EffectManager();
         this.state = new BattleState();
-        this.executor = new ActionExecutor(this.ui, this.bgm, this.effects, this.state.enemies, this.state.party);
+        this.executor = new ActionExecutor(this.ui, this.bgm, this.effects, this.state.enemies, this.state.party, this.gameManager);
         this.ai = new EnemyAI();
         this.isProcessing = false;
         this.currentActor = null;
@@ -64,7 +65,48 @@ export class BattleManager {
         this.executor.director.enemies = this.state.enemies;
 
         this.state.initBattleAV();
-//        this.state.calculateTurnOrder();
+        
+        
+        if (this.ui.updateRelicBar) {
+            this.ui.updateRelicBar(this.gameManager.relics);
+        }
+        
+        // ----------------------------------------------------
+        // ★追加: レリックの発動チェック
+        // ----------------------------------------------------
+        this.gameManager.relics.forEach(relicId => {
+            const relic = RelicData[relicId];
+            if (!relic) return;
+
+            // タイプが「戦闘開始時(battle_start)」なら発動
+            if (relic.type === 'battle_start') {
+                
+                // ログ表示
+                setTimeout(() => {
+                    this.ui.addLog(`[レリック] ${relic.name} が輝きだした！`, "#e67e22");
+                }, 500);
+
+                if (relic.effect === 'buff_atk') {
+                    // ムキムキ像: 全員攻撃UP
+                    this.state.party.forEach(p => { 
+                        if(p.is_alive()) p.buffs.atk_up = 3; 
+                    });
+                    // エフェクト（オレンジのフラッシュとか）
+                    setTimeout(() => this.effects.flash("rgba(255, 100, 0, 0.3)"), 800);
+                }
+                else if (relic.effect === 'buff_regen') {
+                    // 癒しのオーブ: 全員リジェネ
+                    this.state.party.forEach(p => { 
+                        if(p.is_alive()) {
+                            p.buffs.regen = 3; 
+                            p.regen_value = 0.1;
+                        }
+                    });
+                    setTimeout(() => this.effects.flash("rgba(0, 255, 100, 0.3)"), 800);
+                }
+            }
+        });
+        this.updateUI(); // バフアイコンを反映
 
         this.ui.addLog("---------- BATTLE START ----------", "#ffff00");
         this.bgm.initContext();

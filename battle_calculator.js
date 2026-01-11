@@ -1,30 +1,24 @@
-import { GameConfig } from './game_config.js';
+import { GameConfig } from './game_config.js'; // ★Configをインポート
 
 export class BattleCalculator {
     /**
      * ダメージ計算
-     * @param {Entity} actor - 行動者
-     * @param {Entity} target - 対象
-     * @param {object} skill - スキル情報（通常攻撃の場合はnull）
-     * @returns {object} { damage: number, isCritical: boolean, type: string }
      */
-    static calculateDamage(actor, target, skill = null) {
+    static calculateDamage(actor, target, skill = null,relics = []) {
         let damage = 0;
         let isCritical = false;
         let type = 'physical';
 
-        // スキル情報の正規化
         const isMagic = skill && skill.type === 'magic';
         const power = skill ? (skill.power || 1.0) : 1.0;
 
         if (isMagic) {
             type = 'magic';
-            // 魔法計算: 魔力 * 倍率 + 乱数(0~20)
+            // ★定数使用: 魔力 * 倍率 + 乱数(0~MAGIC_VARIANCE)
             const base = (actor.matk * power);
-            const variance = Math.floor(Math.random() * 21); 
+            const variance = Math.floor(Math.random() * GameConfig.BATTLE.MAGIC_VARIANCE); 
             damage = Math.floor(base + variance);
 
-            // バフ補正 (攻撃UP中は魔法も1.25倍という仕様を踏襲)
             if (actor.hasBuff('atk_up')) {
                 damage = Math.floor(damage * 1.25);
             }
@@ -33,18 +27,17 @@ export class BattleCalculator {
                 damage = Math.floor(damage * 0.7); 
             }
 
-            // 魔法防御 (MDEF / 3) で軽減
-            const reduction = Math.floor(target.mdef / 3);
+            // ★定数使用: MDEF / MDEF_REDUCTION_RATE
+            const reduction = Math.floor(target.mdef / GameConfig.BATTLE.MDEF_REDUCTION_RATE);
             damage = Math.max(1, damage - reduction);
 
         } else {
             type = 'physical';
-            // 物理計算: 攻撃力 * 倍率 * 乱数(0.9 ~ 1.1)
+            // ★定数使用: 物理乱数
             const base = (actor.atk * power);
-            const variance = 0.9 + Math.random() * 0.2;
+            const variance = GameConfig.BATTLE.PHYSICAL_VARIANCE_MIN + Math.random() * GameConfig.BATTLE.PHYSICAL_VARIANCE_RANGE;
             damage = Math.floor(base * variance);
 
-            // バフ補正
             if (actor.hasBuff('atk_up')) {
                 damage = Math.floor(damage * 1.25);
             }
@@ -53,17 +46,30 @@ export class BattleCalculator {
                 damage = Math.floor(damage * 0.7); 
             }
             
-            // クリティカル判定（GameConfigの値を使用）
-            if (Math.random() < GameConfig.CRITICAL_RATE) {
-                damage = Math.floor(damage * GameConfig.CRITICAL_DAMAGE);
+            // ★定数使用: クリティカル
+            if (Math.random() < GameConfig.BATTLE.CRITICAL_RATE) {
+                damage = Math.floor(damage * GameConfig.BATTLE.CRITICAL_DAMAGE);
                 isCritical = true;
             }
+            
+            
 
-            // 物理防御 (DEF / 2) で軽減
-            const reduction = Math.floor(target.def / 2);
+            // ★定数使用: DEF / DEF_REDUCTION_RATE
+            const reduction = Math.floor(target.def / GameConfig.BATTLE.DEF_REDUCTION_RATE);
             damage = Math.max(1, damage - reduction);
+            
+            // ----------------------------------------------------
+        // ★追加: 【竜のウロコ】物理ダメージ軽減
+        // 条件: 物理攻撃 && 受けるのが味方(jobあり) && レリック所持
+        // ----------------------------------------------------
+            if (type === 'physical' && target.job && relics.includes('dragon_scale')) {
+                damage = Math.floor(damage * GameConfig.RELIC.DRAGON_SCALE_CUT); // 10%カット
+                // console.log("竜のウロコ効果発動！");
+            }
         }
-
+        // これで「0ダメージ」や「マイナス」を防ぐ
+        damage = Math.max(1, damage);
+        
         return {
             damage: damage,
             isCritical: isCritical,
@@ -71,19 +77,16 @@ export class BattleCalculator {
         };
     }
     
-    
     /**
      * 毒ダメージ計算
-     * @param {Entity} target - 毒を受けているキャラ
      */
     static calculatePoisonDamage(target) {
-        // 最大HPの 3%
-        let damage = Math.floor(target.max_hp * 0.03);
+        // ★定数使用: 最大HPの POISON_DAMAGE_PERCENT
+        let damage = Math.floor(target.max_hp * GameConfig.BATTLE.POISON_DAMAGE_PERCENT);
         
-        // 上限キャップ (50)
-        damage = Math.min(damage, 50);
+        // ★定数使用: キャップ POISON_CAP
+        damage = Math.min(damage, GameConfig.BATTLE.POISON_CAP);
         
-        // 最低保証 (1)
         damage = Math.max(1, damage);
 
         return damage;
@@ -91,21 +94,17 @@ export class BattleCalculator {
 
     /**
      * 回復量計算
-     * @param {Entity} actor 
-     * @param {object} skill 
-     * @returns {object} { amount: number, isCritical: boolean }
      */
     static calculateHeal(actor, skill) {
-        // 基本回復力 * 倍率 * 乱数(0.9~1.1)
         const power = skill ? (skill.power || 1.0) : 1.0;
         const variance = 0.9 + Math.random() * 0.2;
         
         let amount = Math.floor(actor.rec * power * variance);
         let isCritical = false;
 
-        // クリティカル判定 (SUPER_HEAL_RATE)
-        if (Math.random() < GameConfig.SUPER_HEAL_RATE) {
-            amount = Math.floor(amount * GameConfig.SUPER_HEAL_MULT);
+        // ★定数使用: クリティカル回復
+        if (Math.random() < GameConfig.BATTLE.SUPER_HEAL_RATE) {
+            amount = Math.floor(amount * GameConfig.BATTLE.SUPER_HEAL_MULT);
             isCritical = true;
         }
 

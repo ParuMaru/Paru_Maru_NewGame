@@ -145,7 +145,7 @@ export class Entity {
 export class Hero extends Entity {
     constructor(name = "勇者") {
        　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
-        super(name, 280, 80, 75, 70, 20, 30, 105, 30);
+        super(name, 280, 80, 80, 65, 20, 30, 105, 30);
         this.job = "hero";
         this.skills = ["cover", "encourage"]; 
     }
@@ -204,7 +204,7 @@ export class cragen extends Entity {
             this.isBoss = true;
         } else {
             // 通常クラーゲンの設定
-            super(name, 250, 0, 45, 25, 30, 20, 110, 20, './resource/cragen.webp');
+            super(name, 250, 0, 40, 15, 30, 20, 130, 20, './resource/cragen.webp');
             this.isKing = false;
         }
     }
@@ -221,7 +221,7 @@ export class Kingcragen extends cragen {
 export class Goblin extends Entity {
     constructor(name = "ゴブリン") {
         // HP:300, ATK:65 (クラーゲンより攻撃的)
-        super(name, 300, 0, 65, 30, 10, 20, 100, 10, './resource/goblin.webp'); 
+        super(name, 300, 0, 40, 10, 10, 10, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
     }
 }

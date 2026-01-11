@@ -4,6 +4,7 @@ import { RewardManager } from './reward_manager.js';
 import { Hero, Wizard, Healer } from './entities.js';
 import { ItemData } from './items.js';
 import { DebugManager } from './debug_manager.js';
+import { RelicData } from './relics.js';
 
 export class GameManager {
     constructor() {
@@ -21,6 +22,12 @@ export class GameManager {
             phoenix:{ ...ItemData.phoenix },
             elixir: { ...ItemData.elixir }
         };
+        
+        // ★追加: 獲得したレリックIDリスト
+        this.relics = [];
+        
+        // テスト用：最初から1個持たせてみるならここに追加
+        //this.addRelic("vampire_cape");
 
         // 各マネージャーの初期化
         this.battleManager = new BattleManager(this); 
@@ -440,5 +447,27 @@ export class GameManager {
 
         // 開始
         showPage();
+    }
+    
+    // ★追加: レリック獲得メソッド
+    addRelic(relicId) {
+        if (!this.relics.includes(relicId) && RelicData[relicId]) {
+            this.relics.push(relicId);
+            console.log(`レリック獲得: ${RelicData[relicId].name}`);
+            
+            // ★追加: UIを更新して画面に出す
+            // BattleManager経由でUIにアクセス
+            if (this.battleManager && this.battleManager.ui) {
+                this.battleManager.ui.updateRelicBar(this.relics);
+            }
+            
+            // ログ出し
+            this.showMessage(`${RelicData[relicId].name} を手に入れた！`);
+        }
+    }
+    
+    // ★追加: レリックを持っているかチェック
+    hasRelic(relicId) {
+        return this.relics.includes(relicId);
     }
 }

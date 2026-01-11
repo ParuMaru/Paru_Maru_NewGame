@@ -20,7 +20,7 @@ export const SkillData = {
     tentacle:      {id: "tentacle",      name: "触手",     power: 1.7, type: "physical", target: "single", color: "#2ecc71"},
     
     //ゴブリン
-    smash:       {id: "smash",       name: "こんぼう強打", power: 1.7, type: "physical", target: "single"},
+    smash:       {id: "smash",       name: "ごぶりんぱんち", power: 1.7, type: "physical", target: "single"},
     
     //影
     shadow_slash:   {id: "shadow_slash", name: "シャドウスラッシュ", power: 2.0, type: "physical", target: "single", cost: 20, color: "#8e44ad"},

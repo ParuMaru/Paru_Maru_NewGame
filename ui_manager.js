@@ -1,5 +1,6 @@
 import { SkillData } from './skills.js';
 import { ItemData } from './items.js';
+import { RelicData } from './relics.js';
 
 export class UIManager {
     constructor() {
@@ -10,6 +11,7 @@ export class UIManager {
         this.currentActor = null; 
         this.inventory = null;
         this.initTurnOrderUI();
+        this.initRelicUI();
     }
     
     // ★追加: 画面左に行動順表示エリアを作る
@@ -366,5 +368,45 @@ export class UIManager {
                 activeCard.classList.add('active-member');
             }
         }
+    }
+    
+    // レリック置き場を作る
+    initRelicUI() {
+        const canvasArea = document.getElementById('canvas-area');
+        
+        // すでにあったら作らない
+        if (document.getElementById('relic-container')) return;
+
+        const container = document.createElement('div');
+        container.id = 'relic-container';
+        // 最初は空なので隠しておくか、そのまま表示しておく
+        canvasArea.appendChild(container);
+        this.relicContainer = container;
+    }
+
+    // レリックリストを受け取って描画更新
+    updateRelicBar(relicIdList) {
+        if (!this.relicContainer) return;
+        
+        this.relicContainer.innerHTML = ""; 
+
+        if (!relicIdList || relicIdList.length === 0) {
+            this.relicContainer.style.display = 'none';
+            return;
+        }
+        this.relicContainer.style.display = 'flex';
+
+        relicIdList.forEach(id => {
+            const data = RelicData[id];
+            if (!data) return;
+
+            const icon = document.createElement('div');
+            icon.className = 'relic-icon';
+            // アイコン文字（なければ💎）
+            icon.innerText = data.icon || "💎"; 
+            icon.title = `${data.name}\n${data.desc}`;
+            
+            this.relicContainer.appendChild(icon);
+        });
     }
 }
