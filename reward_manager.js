@@ -84,6 +84,7 @@ export class RewardManager {
      * フェーズ2: レリックの選択
      */
     showElitePhase2() {
+        this.isProcessing = false;
         // 画面を一度クリア
         this.cardArea.innerHTML = "";
         
