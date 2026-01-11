@@ -52,6 +52,7 @@ export class ActionExecutor {
                 if (drainAmount > 0) {
                     actor.add_hp(drainAmount);
                     // 回復演出（ログはうるさいので出さなくてもOK、数字だけ出す）
+                    this.director.ui.addLog(`> ${actor.name}はHPを${drainAmount}吸収した`, GameConfig.COLORS.HEAL_HP);
                     this.director.effects.damagePopup(drainAmount, this.director._getTargetId(actor), GameConfig.COLORS.HEAL_HP);
                 }
             }

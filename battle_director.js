@@ -58,7 +58,7 @@ export class BattleDirector {
 
     showSkillStart(actor, skill) {
         const logColor = actor.job ? GameConfig.COLORS.LOG_SKILL : GameConfig.COLORS.LOG_ATTACK;
-        this.ui.addLog(`${actor.name}は ${skill.name} を使った！`, logColor, true);
+        this.ui.addLog(`${actor.name}の ${skill.name} `, logColor, true);
     }
 
     showMagicEffect(actor, skill, targets) {
