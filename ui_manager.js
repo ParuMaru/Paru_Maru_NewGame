@@ -23,12 +23,13 @@ export class UIManager {
         const panel = document.createElement('div');
         panel.id = 'turn-order-panel';
         
-        // ラウンド表示
+
         const roundInfo = document.createElement('div');
         roundInfo.className = 'round-info';
         roundInfo.id = 'round-info-text';
-        roundInfo.innerText = "Round 1";
+        roundInfo.innerText = "▶ NEXT";
         panel.appendChild(roundInfo);
+
 
         // リスト本体
         const list = document.createElement('div');
@@ -45,8 +46,9 @@ export class UIManager {
         
         if (!listContainer) return;
 
-        // ラウンド表示更新
-        if (roundText) roundText.innerText = `Round ${currentRound}`;
+        // --- 変更: ラウンド表示更新をコメントアウト ---
+        // if (roundText) roundText.innerText = `Round ${currentRound}`;
+        // ------------------------------------------
 
         listContainer.innerHTML = ""; // 一旦クリア
 

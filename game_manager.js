@@ -120,7 +120,7 @@ export class GameManager {
                 } else {
                     console.error("RewardManagerが見つかりません");
                 }
-            }, 1000);
+            }, 500);
         }
     }
     
@@ -288,6 +288,8 @@ export class GameManager {
      */
     saveGame() {
         const saveData = {
+            //レリック
+            relics: this.relics,
             // 1. パーティ情報（ステータスやスキル）
             party: this.party.map(p => ({
                 job: p.job, 
@@ -333,6 +335,14 @@ export class GameManager {
 
         try {
             const saveData = JSON.parse(json);
+            
+            // ★追加: レリックの復元（データがない場合は空配列にする）
+            this.relics = saveData.relics || [];
+            
+            // ★追加: UI上のレリックバーも更新する
+            if (this.battleManager && this.battleManager.ui) {
+                this.battleManager.ui.updateRelicBar(this.relics);
+            }
 
             // 1. インベントリ復元
             this.inventory = saveData.inventory;

@@ -19,6 +19,8 @@ window.onload = () => {
     const toggleBtn = document.getElementById('size-toggle-btn');
     
     if (toggleBtn && sizeControl) {
+        sizeControl.classList.add('closed'); 
+        toggleBtn.innerText = '🔍';
         toggleBtn.addEventListener('click', () => {
             // 1. クラスを付け外しして、CSSで隠す/出すを切り替え
             sizeControl.classList.toggle('closed');

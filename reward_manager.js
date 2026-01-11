@@ -7,6 +7,7 @@ export class RewardManager {
         this.game = gameManager;
         this.container = null;
         this.cardArea = null;
+        this.isProcessing = false;
         this.initUI();
     }
 
@@ -35,6 +36,7 @@ export class RewardManager {
      * 報酬画面を表示するエントリポイント
      */
     showRewards(enemyType = null) {
+        this.isProcessing = false;
         this.container.style.display = 'flex'; 
         this.cardArea.innerHTML = ""; 
 
@@ -272,6 +274,9 @@ export class RewardManager {
         card.appendChild(desc);
 
         card.onclick = () => {
+            // ★追加: すでに処理中なら何もしない
+            if (this.isProcessing) return;
+            this.isProcessing = true;
             try {
                 this.applyReward(reward);
             } catch(e) {

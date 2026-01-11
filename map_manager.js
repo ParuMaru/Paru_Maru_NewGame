@@ -10,7 +10,8 @@ export class MapManager {
         this.currentNodeIndex = -1;
         
         this.pathHistory = {}; 
-
+        this.isMoving = false;
+        
         // 全11階層
         this.FLOOR_COUNT = 11; 
         this.NODES_PER_FLOOR = [1, 3, 4, 3, 2, 3, 4, 3, 1, 1, 1]; 
@@ -173,6 +174,10 @@ export class MapManager {
     // ====================================================
 
     onNodeSelect(node) {
+        // ★追加: 移動処理中なら何もしない（連打防止）
+        if (this.isMoving) return;
+        this.isMoving = true;
+        
         this.currentFloor = node.floor;
         this.currentNodeIndex = node.index;
         this.pathHistory[node.floor] = node.index;
@@ -214,6 +219,8 @@ export class MapManager {
             else {
                 this.game.showMessage("何もなかった...");
             }
+            // ★追加: 処理が終わったら（画面遷移したりイベントが出たりしたら）ロック解除
+            this.isMoving = false;
         }, 300);
     }
 
