@@ -29,7 +29,7 @@ export const RelicData = {
         id: "vampire_cape",
         name: "吸血のマント",
         icon: "🩸",
-        desc: "攻撃時、与えたダメージの10%を回復する",
+        desc: "攻撃時、与えたダメージの20%を回復する",
         type: "passive"
     }
 };
