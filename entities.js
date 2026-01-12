@@ -170,7 +170,7 @@ export class Wizard extends Entity {
     constructor(name = "魔法使い") {
         super(name, 200, 150, 20, 20, 70, 50, 95, 40);
         this.job = "wizard";
-        this.skills = ["fire", "fira", "meteor", "blizzard", "blizzara", "meditation"];
+        this.skills = ["fire", "fira",  "blizzard", "blizzara", "meteor", "meditation"];
     }
 }
 

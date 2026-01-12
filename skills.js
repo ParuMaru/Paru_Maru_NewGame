@@ -8,8 +8,8 @@ export const SkillData = {
     fire:   { id: "fire",   name: "ファイア", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire" },
     fira:   { id: "fira",   name: "ファイラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all",    color: "#e74c3c", attackTag: "fire" },
     meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire" },
-    blizzard: { id: "blizzard", name: "ブリザド", menu: "magic", cost: 25, power: 1.4, type: "magic", target: "single", color: "#3498db", attackTag: "ice" },
-    blizzara: { id: "blizzara", name: "ブリザラ", menu: "magic", cost: 38, power: 1.0, type: "magic", target: "all", color: "#3498db", attackTag: "ice" },
+    blizzard: { id: "blizzard", name: "ブリザド", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#3498db", attackTag: "ice" },
+    blizzara: { id: "blizzara", name: "ブリザラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all", color: "#3498db", attackTag: "ice" },
     meditation: { id: "meditation", name: "瞑想", menu: "main", cost: 0, value: 30, type: "mp_recovery", target: "self", color: "#9b59b6" },
 
     // --- 癒し手（Healer） ---
