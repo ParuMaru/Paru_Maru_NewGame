@@ -418,18 +418,7 @@ export class BattleBGM {
         return this.playSE('magic');
     }
     playDamage() {
-        if (!this.ctx) this.initContext();
-        const now = this.ctx.currentTime;
-        const osc = this.ctx.createOscillator();
-        const g = this.ctx.createGain();
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.linearRampToValueAtTime(40, now + 0.2); 
-        g.gain.setValueAtTime(0.1, now);
-        g.gain.linearRampToValueAtTime(0, now + 0.2);
-        osc.connect(g).connect(this.ctx.destination);
-        osc.start();
-        osc.stop(now + 0.2);
+        this.playSE('damage');
     }
     playWin(){this.playSE('win');}
     
