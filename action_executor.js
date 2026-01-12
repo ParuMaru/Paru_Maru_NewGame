@@ -18,6 +18,8 @@ export class ActionExecutor {
             await this._executeSkill(actor, target, action.detail);
         } else if (action.type === 'item') {
             await this._executeItem(actor, target, action.detail);
+        } else if (action.type === 'all_out') {
+            await this._executeAllOut(actor);
         }
         
         this.director.refreshStatus();
@@ -26,6 +28,7 @@ export class ActionExecutor {
     async _executeAttack(actor, target) {
         const isMagicUser = this.director.showAttackStart(actor);
         const targets = Array.isArray(target) ? target : [target];
+        const attackTag = this._getAttackTag(actor, null);
         
         // ★追加: レリックリストを取得
         const relics = this.gameManager ? this.gameManager.relics : [];
@@ -42,6 +45,7 @@ export class ActionExecutor {
 
             finalTarget.add_hp(-damage);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
+            this._applyWeaknessDown(finalTarget, attackTag);
             
             // ----------------------------------------------------
             // ★追加: 【吸血のマント】攻撃時にHP回復
@@ -83,6 +87,7 @@ export class ActionExecutor {
                 else if (skill.id === 'dragon_claw') this.director.music.playAttack(); 
                 else this.director.music.playAttack(); 
 
+                const physicalTag = this._getAttackTag(actor, skill);
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     
@@ -98,6 +103,7 @@ export class ActionExecutor {
                     else this.director.effects.slashEffect(targetId); 
 
                     this.director.showPhysicalHit(finalTarget, damage, isCritical, false);
+                    this._applyWeaknessDown(finalTarget, physicalTag);
                 });
                 this.director.music.playDamage();
                 break;
@@ -106,6 +112,7 @@ export class ActionExecutor {
                 // ★修正: actor を引数に追加
                 this.director.showMagicEffect(actor, skill, targets);
                 
+                const magicTag = this._getAttackTag(actor, skill);
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
@@ -116,6 +123,7 @@ export class ActionExecutor {
 
                     finalTarget.add_hp(-damage);
                     this.director.showMagicHit(finalTarget, damage);
+                    this._applyWeaknessDown(finalTarget, magicTag);
                     
                     if (skill.id === 'curse' && finalTarget.is_alive()) {
                         // 重複しないようにチェックして付与
@@ -186,6 +194,55 @@ export class ActionExecutor {
                 });
                 break;
         }
+    }
+
+    async _executeAllOut(actor) {
+        const targets = this.enemies.filter(enemy => enemy.is_alive());
+        if (targets.length === 0) return;
+
+        this.director.ui.addLog("総攻撃！", GameConfig.COLORS.LOG_IMPORTANT, true);
+        this.director.effects.flash("rgba(255, 215, 0, 0.5)");
+        this.director.music.playAttack();
+
+        const partyAttack = this.party
+            .filter(member => member.is_alive() && member.job)
+            .reduce((sum, member) => sum + member.atk, 0);
+        const baseDamage = Math.max(1, Math.floor(partyAttack * GameConfig.BATTLE.ALL_OUT_POWER));
+
+        targets.forEach(target => {
+            const reduction = Math.floor(target.def / GameConfig.BATTLE.DEF_REDUCTION_RATE);
+            const damage = Math.max(1, baseDamage - reduction);
+            target.add_hp(-damage);
+            this.director.showPhysicalHit(target, damage, false, false);
+            target.down = false;
+            target.downUsed = false;
+        });
+    }
+
+    _getAttackTag(actor, skill) {
+        if (skill && skill.attackTag) return skill.attackTag;
+        if (skill && (skill.type === 'physical' || skill.type === 'magic')) return "slash";
+
+        if (actor && actor.job === 'hero') return "slash";
+        return "slash";
+    }
+
+    _applyWeaknessDown(target, attackTag) {
+        if (!attackTag) return;
+        if (!target || !target.is_alive()) return;
+        if (target.job) return;
+        if (!target.weaknessTag) return;
+        if (target.downImmune) return;
+        if (target.downUsed) return;
+        if (attackTag !== target.weaknessTag) return;
+
+        target.down = true;
+        target.downUsed = true;
+        target.actionValue += GameConfig.BATTLE.DOWN_DELAY;
+
+        const targetId = this.director._getTargetId(target);
+        this.director.effects.damagePopup("DOWN", targetId, GameConfig.COLORS.LOG_IMPORTANT);
+        this.director.ui.addLog(`${target.name}はダウンした！`, GameConfig.COLORS.LOG_IMPORTANT);
     }
     
     _resolveCover(actor, originalTarget) {
