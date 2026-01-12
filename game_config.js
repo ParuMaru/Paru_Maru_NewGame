@@ -39,6 +39,7 @@ export const GameConfig = {
         SHAKE_LONG: 800,         // 長い振動 (咆哮など)
         FUSION_ANIM: 2200,       // 合体演出の溜め時間
         TRANSFORM_WAIT: 2000,    // 変身演出の待ち時間
+        ALL_OUT_ANIMATION: 500,  // 総攻撃演出の待ち時間
     },
 
     // --- 色設定 (ログやポップアップ用) ---

@@ -81,6 +81,10 @@ export class BattleDirector {
             this.music.playMagic();
             targets.forEach(t => this.effects.iceEffect(this._getTargetId(t)));
         }
+        else if (skill.id === 'blizzara') {
+            this.music.playMagic();
+            targets.forEach(t => this.effects.iceEffect(this._getTargetId(t)));
+        }
         else if (skill.id === 'ice_breath') {
             this.music.playBreath(); 
             this.effects.allIceEffect(targets); 
@@ -93,6 +97,16 @@ export class BattleDirector {
             this.music.playMagic();
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
             this.effects.flash("rgba(255, 240, 150, 0.5)");
+        }
+        else if (skill.id === 'holy') {
+            this.music.playMagic();
+            targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
+            this.effects.flash("rgba(255, 240, 150, 0.6)");
+        }
+        else if (skill.id === 'lava_spray') {
+            this.music.playMagicFire();
+            const targetIds = targets.map(t => this._getTargetId(t));
+            this.effects.allFireEffect(targetIds);
         }
         else if (skill.id === 'chaos_wave') {
             this.music.playMagicMeteor();

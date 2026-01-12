@@ -8,12 +8,14 @@ export const SkillData = {
     fira:   { id: "fira",   name: "ファイラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all",    color: "#d35400", attackTag: "fire" },
     meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#c0392b", attackTag: "fire" },
     blizzard: { id: "blizzard", name: "ブリザド", menu: "magic", cost: 25, power: 1.4, type: "magic", target: "single", color: "#00bcd4", attackTag: "ice" },
+    blizzara: { id: "blizzara", name: "ブリザラ", menu: "magic", cost: 40, power: 0.95, type: "magic", target: "all", color: "#4fc3f7", attackTag: "ice" },
     meditation: { id: "meditation", name: "瞑想", menu: "main", cost: 0, value: 30, type: "mp_recovery", target: "self", color: "#9b59b6" },
 
     // --- 癒し手（Healer） ---
     heal:   { id: "heal",   name: "ケアル",   menu: "magic", cost: 15, power: 1.5, type: "heal", target: "single", color: "#2ecc71" },
     medica: { id: "medica", name: "メディカ", menu: "magic", cost: 30, power: 1.2, type: "heal", target: "all",    color: "#27ae60" },
     holy_strike: { id: "holy_strike", name: "聖撃", menu: "magic", cost: 18, power: 1.2, type: "magic", target: "single", color: "#f1c40f", attackTag: "holy" },
+    holy: { id: "holy", name: "ホーリー", menu: "magic", cost: 45, power: 1.9, type: "magic", target: "all", color: "#f7e37a", attackTag: "holy" },
     prayer: { id: "prayer", name: "いのり",  menu: "main", cost: 0, value: 0.1, duration: 3, type: "regen", target: "all", color: "#8e44ad"},
     raise:  { id: "raise",  name: "レイズ",   menu: "magic", cost: 40, power: 0.5, type: "res",   target: "single", color: "#f1c40f" },
 
@@ -33,5 +35,9 @@ export const SkillData = {
     //ドラゴン
     ice_breath:     {id: "ice_breath", name: "こごえる吹雪",     power: 1.4, type: "magic",    target: "all", color: "#e74c3c", attackTag: "ice"},
     dragon_claw:    {id: "dragon_claw", name: "ドラゴンクロー", power: 1.7, type: "physical", target: "single", color: "#c0392b", attackTag: "slash"},
-    howling:        {id: "howling",     name: "竜の咆哮",     type: "buff",     target: "self",   color: "#f1c40f"}
+    howling:        {id: "howling",     name: "竜の咆哮",     type: "buff",     target: "self",   color: "#f1c40f"},
+
+    //ファイアゴーレム
+    lava_charge:    {id: "lava_charge", name: "溶岩を集める", type: "buff", target: "self", cost: 0, color: "#e67e22"},
+    lava_spray:     {id: "lava_spray", name: "溶岩撒き", power: 1.6, type: "magic", target: "all", cost: 0, color: "#e67e22", attackTag: "fire"}
 };

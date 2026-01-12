@@ -1,5 +1,7 @@
 /* battle.css - バトルUI・レイアウト */
 
+#game-wrapper { position: relative; }
+
 /* エリア共通設定 */
 #canvas-area, #log, #status-area, #command-area { width: 100%; max-width: none; margin: 0; border: none; border-radius: 0; box-sizing: border-box; }
 #log, #status-area { background-color: rgba(26, 37, 47, 0.9) !important; text-shadow: 1px 1px 0 #000; }
@@ -56,6 +58,131 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 #result-title { font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 10px gold; font-family: 'Press Start 2P', cursive; }
 .defeat-title { color: #e74c3c !important; text-shadow: 0 0 10px red !important; }
 .victory-title { color: #f1c40f !important; text-shadow: 0 0 10px orange !important; }
+
+/* =========================================
+   総攻撃チャンス / 演出
+   ========================================= */
+#allout-overlay {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 700;
+    pointer-events: none;
+    overflow: hidden;
+}
+#allout-overlay.is-active {
+    display: flex;
+    pointer-events: auto;
+}
+.allout-darken {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    opacity: 0;
+    animation: allout-darken 0.5s ease-out forwards;
+}
+.allout-wipe {
+    position: absolute;
+    width: 200%;
+    height: 45%;
+    background: linear-gradient(135deg, rgba(255, 227, 120, 0.9), rgba(255, 111, 60, 0.9));
+    transform: translate(-90%, 90%) rotate(-12deg);
+    opacity: 0.9;
+    animation: allout-wipe 0.5s ease-out forwards;
+    mix-blend-mode: screen;
+}
+.allout-logo {
+    position: relative;
+    font-size: 52px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
+    z-index: 2;
+    opacity: 0;
+    transform: translateY(10px) scale(0.9);
+    animation: allout-logo 0.5s ease-out forwards;
+}
+.allout-logo::before {
+    content: "";
+    position: absolute;
+    inset: -24px -32px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(255, 200, 80, 0.5);
+    z-index: -1;
+}
+.allout-logo.has-image {
+    font-size: 0;
+    width: 360px;
+    height: 120px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+@keyframes allout-darken {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+@keyframes allout-wipe {
+    0% { transform: translate(-90%, 90%) rotate(-12deg); }
+    100% { transform: translate(20%, -10%) rotate(-12deg); }
+}
+@keyframes allout-logo {
+    0% { opacity: 0; transform: translateY(12px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.allout-shake {
+    animation: allout-shake 0.5s ease-out;
+}
+@keyframes allout-shake {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-3px, 2px); }
+    50% { transform: translate(3px, -2px); }
+    75% { transform: translate(-2px, -1px); }
+    100% { transform: translate(0, 0); }
+}
+#allout-prompt {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 650;
+    background: rgba(0, 0, 0, 0.5);
+}
+#allout-prompt.is-active {
+    display: flex;
+}
+.allout-prompt-title {
+    font-size: 18px;
+    color: #f1c40f;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
+    margin-bottom: 12px;
+    font-weight: bold;
+}
+.allout-prompt-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+#allout-prompt .allout-prompt-box {
+    background: rgba(20, 30, 40, 0.9);
+    padding: 18px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    text-align: center;
+}
+#allout-prompt .allout-confirm {
+    background: #f39c12;
+}
+#allout-prompt .allout-cancel {
+    background: #7f8c8d;
+}
 
 #turn-order-panel { position: absolute; top: auto; bottom: 5px; left: 0; width: 100%; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 10px; z-index: 500; pointer-events: none; }
 .round-info { background: rgba(0, 0, 0, 0.7); color: #f1c40f; font-size: 12px; text-align: center; padding: 5px 10px; border-radius: 15px; border: 1px solid #f39c12; font-weight: bold; margin-bottom: 0; margin-left: 14px; height: fit-content; position: relative; z-index: 20; }

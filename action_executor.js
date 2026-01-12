@@ -180,6 +180,10 @@ export class ActionExecutor {
                     });
                     this.director.showBuff(targets, skill.name);
                 }
+                else if (skill.id === 'lava_charge') {
+                    actor.lavaCharging = true;
+                    this.director.ui.addLog(`${actor.name}は溶岩を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
+                }
                 break;
 
             case 'regen': 
@@ -197,6 +201,10 @@ export class ActionExecutor {
     }
 
     async _executeAllOut(actor) {
+        await this.executeAllOutAttack();
+    }
+
+    async executeAllOutAttack() {
         const targets = this.enemies.filter(enemy => enemy.is_alive());
         if (targets.length === 0) return;
 
@@ -221,9 +229,10 @@ export class ActionExecutor {
 
     _getAttackTag(actor, skill) {
         if (skill && skill.attackTag) return skill.attackTag;
-        if (skill && (skill.type === 'physical' || skill.type === 'magic')) return "slash";
+        if (skill && (skill.type === 'physical' || skill.type === 'magic')) return null;
 
         if (actor && actor.job === 'hero') return "slash";
+        if (actor && actor.job === 'wizard') return null;
         return "slash";
     }
 
@@ -233,6 +242,7 @@ export class ActionExecutor {
         if (target.job) return;
         if (!target.weaknessTag) return;
         if (target.downImmune) return;
+        if (target.down) return;
         if (target.downUsed) return;
         if (attackTag !== target.weaknessTag) return;
 
@@ -295,6 +305,19 @@ export class ActionExecutor {
         const enemyA = new cragen(false, 'クラーゲンA');
         const enemyB = new cragen(false, 'クラーゲンB');
         const enemyC = new cragen(false, 'クラーゲンC');
+
+        const boostStats = (unit) => {
+            unit.max_hp = Math.floor(unit.max_hp * 1.15);
+            unit._hp = unit.max_hp;
+            unit.atk = Math.floor(unit.atk * 1.1);
+            unit.def = Math.floor(unit.def * 1.1);
+            unit.spd = Math.floor(unit.spd * 1.1);
+        };
+
+        [enemyA, enemyB, enemyC].forEach(boostStats);
+        enemyA.weaknessTag = "slash";
+        enemyB.weaknessTag = "fire";
+        enemyC.weaknessTag = "holy";
         
         // 変数名に合わせたプロパティを付与（ui_managerで参照するため）
         enemyA.isSplitLeft = true;

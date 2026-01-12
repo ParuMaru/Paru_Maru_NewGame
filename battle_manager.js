@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer,ShadowLord, IceDragon } from './entities.js'; 
+import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
@@ -21,6 +21,8 @@ export class BattleManager {
         this.ai = new EnemyAI();
         this.isProcessing = false;
         this.currentActor = null;
+        this.allOutPrompted = false;
+        this.wasAllDown = false;
         this.bgm.initAndLoad(); 
     }
 
@@ -35,6 +37,8 @@ export class BattleManager {
         //バフ削除
         party.forEach(p => p.clear_all_buffs());
         this.isShadowFused = false;
+        this.allOutPrompted = false;
+        this.wasAllDown = false;
         
         this.state.party = party;
         this.ui.setInventory(inventory);   
@@ -58,15 +62,26 @@ export class BattleManager {
             this.state.enemies.push(holyCragen);
         }
         else {
-            if (rnd < 0.33) {
+            if (rnd < 0.6) {
+                const holyCragen = new cragen(false, "クラーゲンC");
+                holyCragen.weaknessTag = "holy";
+                this.state.enemies.push(new Goblin("ゴブリンA"));
+                this.state.enemies.push(new cragen(false, "クラーゲンB"));
+                this.state.enemies.push(holyCragen);
+            } else if (rnd < 0.9) {
+                const guardGoblin = new Goblin("護衛ゴブリン");
+                const cragenA = new cragen(false, "クラーゲンA");
+                this.state.enemies.push(new FireGolem());
+                this.state.enemies.push(guardGoblin);
+                this.state.enemies.push(cragenA);
+            } else {
+                const toughGoblin = new Goblin("強化ゴブリン");
+                toughGoblin.max_hp = Math.floor(toughGoblin.max_hp * 1.25);
+                toughGoblin._hp = toughGoblin.max_hp;
+                toughGoblin.def = Math.floor(toughGoblin.def * 1.2);
+                this.state.enemies.push(toughGoblin);
                 this.state.enemies.push(new cragen(false, "クラーゲンA"));
                 this.state.enemies.push(new cragen(false, "クラーゲンB"));
-            } else if(rnd < 0.66) {
-                this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new cragen(false, "はぐれクラーゲン"));
-            }else{
-                this.state.enemies.push(new Goblin("ゴブリンA"));
-                this.state.enemies.push(new Goblin("ゴブリンB"));
             }
         }
 
@@ -163,6 +178,10 @@ export class BattleManager {
             this.processEndGame();
             return;
         }
+
+        if (!this.areAllEnemiesDown()) {
+            this.resetAllOutState();
+        }
         
         
         const actor = this.state.advanceTimeAndGetActor();
@@ -249,6 +268,7 @@ export class BattleManager {
             this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
             actor.down = false;
             actor.downUsed = false;
+            if (actor.lavaCharging) actor.lavaCharging = false;
             this.updateUI();
             await new Promise(r => setTimeout(r, 600));
             await this.processTurnEnd(actor);
@@ -333,16 +353,10 @@ export class BattleManager {
         }
     }
 
-    canAllOutAttack() {
-        const aliveEnemies = this.state.getAliveEnemies();
-        return aliveEnemies.length > 0 && aliveEnemies.every(enemy => enemy.down);
-    }
-
     showCommandMenu(actor) {
         this.ui.showCommands(
             actor,
-            (act) => this.handlePlayerAction(actor, act),
-            { allOutAvailable: this.canAllOutAttack() }
+            (act) => this.handlePlayerAction(actor, act)
         );
     }
     
@@ -652,8 +666,48 @@ export class BattleManager {
         }
 
         await this.executor.execute(actor, action.target, action);
+        await this.handleAllOutChance();
         await this.processTurnEnd(actor);
         this.nextTurn();
+    }
+
+    areAllEnemiesDown() {
+        const aliveEnemies = this.state.getAliveEnemies();
+        return aliveEnemies.length > 0 && aliveEnemies.every(enemy => enemy.down);
+    }
+
+    resetAllOutState() {
+        this.wasAllDown = false;
+        this.allOutPrompted = false;
+    }
+
+    async handleAllOutChance() {
+        const allDown = this.areAllEnemiesDown();
+        if (!allDown) {
+            this.resetAllOutState();
+            return;
+        }
+
+        if (this.wasAllDown || this.allOutPrompted) return;
+
+        this.wasAllDown = true;
+        this.allOutPrompted = true;
+
+        const doAllOut = await this.ui.showAllOutPrompt();
+        if (!doAllOut) {
+            this.ui.addLog("総攻撃を見送った！", GameConfig.COLORS.LOG_SYSTEM);
+            this.state.getAliveEnemies().forEach(enemy => {
+                enemy.down = false;
+                enemy.downUsed = false;
+            });
+            this.resetAllOutState();
+            this.updateUI();
+            return;
+        }
+
+        await this.ui.playAllOutAnimation();
+        await this.executor.executeAllOutAttack();
+        this.updateUI();
     }
     
     cleanup() {

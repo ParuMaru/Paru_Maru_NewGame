@@ -1,6 +1,7 @@
 import { SkillData } from './skills.js';
 import { ItemData } from './items.js';
 import { RelicData } from './relics.js';
+import { GameConfig } from './game_config.js';
 
 export class UIManager {
     constructor() {
@@ -12,6 +13,7 @@ export class UIManager {
         this.inventory = null;
         this.initTurnOrderUI();
         this.initRelicUI();
+        this.initAllOutUI();
     }
     
     // ★追加: 画面左に行動順表示エリアを作る
@@ -159,11 +161,83 @@ export class UIManager {
             }
         });
 
-        if (this.commandOptions.allOutAvailable) {
-            this._createButton("総攻撃", "#f39c12", () => onSelect({ type: 'all_out' }));
-        }
-
         this._createButton("どうぐ", "#d35400", () => this.showItemMenu(onSelect));
+    }
+
+    initAllOutUI() {
+        if (document.getElementById('allout-overlay')) return;
+
+        const wrapper = document.getElementById('game-wrapper') || document.body;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'allout-overlay';
+        overlay.innerHTML = `
+            <div class="allout-darken"></div>
+            <div class="allout-wipe"></div>
+            <div class="allout-logo">総攻撃！</div>
+        `;
+        wrapper.appendChild(overlay);
+
+        const prompt = document.createElement('div');
+        prompt.id = 'allout-prompt';
+        prompt.innerHTML = `
+            <div class="allout-prompt-box">
+                <div class="allout-prompt-title">総攻撃チャンス！</div>
+                <div class="allout-prompt-buttons">
+                    <button class="allout-confirm">総攻撃する</button>
+                    <button class="allout-cancel">しない</button>
+                </div>
+            </div>
+        `;
+        wrapper.appendChild(prompt);
+    }
+
+    showAllOutPrompt() {
+        return new Promise(resolve => {
+            const prompt = document.getElementById('allout-prompt');
+            if (!prompt) {
+                resolve(false);
+                return;
+            }
+
+            const confirmBtn = prompt.querySelector('.allout-confirm');
+            const cancelBtn = prompt.querySelector('.allout-cancel');
+
+            const cleanup = (result) => {
+                prompt.classList.remove('is-active');
+                confirmBtn.onclick = null;
+                cancelBtn.onclick = null;
+                resolve(result);
+            };
+
+            confirmBtn.onclick = () => cleanup(true);
+            cancelBtn.onclick = () => cleanup(false);
+
+            prompt.classList.add('is-active');
+        });
+    }
+
+    playAllOutAnimation() {
+        return new Promise(resolve => {
+            const overlay = document.getElementById('allout-overlay');
+            if (!overlay) {
+                resolve();
+                return;
+            }
+
+            overlay.classList.remove('is-active');
+            void overlay.offsetWidth;
+            overlay.classList.add('is-active');
+
+            const animDuration = GameConfig.TIME.ALL_OUT_ANIMATION || 450;
+            const shakeTarget = document.getElementById('game-wrapper');
+            if (shakeTarget) shakeTarget.classList.add('allout-shake');
+            setTimeout(() => resolve(), animDuration);
+            setTimeout(() => overlay.classList.remove('is-active'), animDuration + 200);
+            setTimeout(() => {
+                if (shakeTarget) shakeTarget.classList.remove('allout-shake');
+            }, animDuration + 200);
+        });
     }
 
     showSubMenu(menuType, onSelect) {

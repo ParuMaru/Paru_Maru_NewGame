@@ -164,7 +164,7 @@ export class Wizard extends Entity {
     constructor(name = "魔法使い") {
         super(name, 200, 150, 20, 20, 70, 50, 95, 40);
         this.job = "wizard";
-        this.skills = ["fire", "fira", "meteor", "blizzard", "meditation"];
+        this.skills = ["fire", "fira", "meteor", "blizzard", "blizzara", "meditation"];
     }
 }
 
@@ -175,7 +175,7 @@ export class Healer extends Entity {
     constructor(name = "癒し手") {
         super(name, 220, 150, 25, 25, 30, 60, 90, 90);
         this.job = "healer";
-        this.skills = ["heal", "medica", "holy_strike", "prayer", "raise"];
+        this.skills = ["heal", "medica", "holy_strike", "holy", "prayer", "raise"];
     }
 }
 
@@ -268,6 +268,15 @@ export class ShadowHealer extends Entity {
     }
 }
 
+// ★追加：影のミニオン（通常戦闘向け）
+export class ShadowMinion extends Entity {
+    constructor() {
+        super("影の眷属", 260, 200, 40, 25, 25, 25, 95, 0, './resource/shadow_wizard.webp');
+        this.enemyType = "shadow_minion";
+        this.weaknessTag = "holy";
+    }
+}
+
 // ★追加：合体後のボス「影の支配者」
 export class ShadowLord extends Entity {
     constructor() {
@@ -305,5 +314,16 @@ export class IceDragon extends Entity {
         this.actionCount = 2;
 
         return true;
+    }
+}
+
+// ★追加：ファイアゴーレム（氷弱点）
+export class FireGolem extends Entity {
+    constructor() {
+        super("ファイアゴーレム", 650, 0, 75, 75, 25, 15, 65, 0, './resource/fire_golem.webp');
+        this.enemyType = "fire_golem";
+        this.weaknessTag = "ice";
+        this.skills = ["lava_spray"];
+        this.lavaCharging = false;
     }
 }
