@@ -31,11 +31,8 @@
 .enemy-unit.dragon-size .enemy-info {
     max-width: min(320px, 80vw);
 }
-.enemy-unit.dragon-size .enemy-img {
-    transform: translateY(clamp(-18px, -2.5vh, -10px));
-}
-.enemy-unit.shadow-aura .enemy-img {
-    transform: translateY(clamp(-12px, -2vh, -6px));
+.enemy-unit.boss-lift {
+    transform: translateY(clamp(-30px, -4vh, -20px));
 }
 
 /* =========================================
@@ -77,11 +74,51 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 #despair-overlay.is-active {
     animation: despair-flash 0.35s ease-out forwards;
+    pointer-events: auto;
 }
 @keyframes despair-flash {
     0% { opacity: 0; }
     45% { opacity: 0.85; }
     100% { opacity: 0.55; }
+}
+#despair-blizzard {
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 320;
+    background: rgba(210, 235, 255, 0.25);
+    backdrop-filter: blur(2px);
+}
+#despair-blizzard::before,
+#despair-blizzard::after {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background-image:
+        radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
+        radial-gradient(circle, rgba(230, 245, 255, 0.55) 0 2px, transparent 3px);
+    background-size: 40px 40px, 70px 70px;
+    animation: blizzard-drift 1.6s linear infinite;
+    filter: blur(0.4px);
+    opacity: 0;
+}
+#despair-blizzard::after {
+    background-size: 28px 28px, 60px 60px;
+    animation-duration: 1.2s;
+}
+#despair-blizzard.is-active {
+    opacity: 1;
+    transition: opacity 0.45s ease-out;
+    pointer-events: auto;
+}
+#despair-blizzard.is-active::before,
+#despair-blizzard.is-active::after {
+    opacity: 0.95;
+}
+@keyframes blizzard-drift {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(-6%, 12%); }
 }
 #result-title { font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 10px gold; font-family: 'Press Start 2P', cursive; }
 .defeat-title { color: #e74c3c !important; text-shadow: 0 0 10px red !important; }

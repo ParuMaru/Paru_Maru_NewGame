@@ -429,6 +429,9 @@ export class UIManager {
                     unitDiv.classList.add('king-size');
                 }
             }
+            if (enemy.enemyType === 'ice_dragon' || enemy.enemyType === 'shadow_lord') {
+                unitDiv.classList.add('boss-lift');
+            }
             
             //  影シリーズの場合、特別なクラスを付与
             if (enemy.enemyType && enemy.enemyType.startsWith('shadow')) {

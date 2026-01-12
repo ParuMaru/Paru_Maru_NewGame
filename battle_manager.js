@@ -23,6 +23,7 @@ export class BattleManager {
         this.currentActor = null;
         this.allOutPrompted = false;
         this.wasAllDown = false;
+        this.lastAction = null;
         this.bgm.initAndLoad(); 
     }
 
@@ -45,6 +46,7 @@ export class BattleManager {
         this.isShadowFused = false;
         this.allOutPrompted = false;
         this.wasAllDown = false;
+        this.lastAction = null;
         
         this.state.party = party;
         this.ui.setInventory(inventory);   
@@ -505,6 +507,7 @@ export class BattleManager {
             const targets = targetableParty.length > 0 ? targetableParty : this.state.getAliveParty();
 
             let action = this.ai.think(enemy, targets, this.state.getAliveEnemies());
+            this._recordLastAction(enemy, action);
             await this.executor.execute(enemy, action.target, action);
             this.updateUI();
         }
@@ -724,10 +727,24 @@ export class BattleManager {
             }
         }
 
+        this._recordLastAction(actor, action);
         await this.executor.execute(actor, action.target, action);
         await this.handleAllOutChance();
         await this.processTurnEnd(actor);
         this.nextTurn();
+    }
+
+    _recordLastAction(actor, action) {
+        this.lastAction = { actor, action };
+    }
+
+    _isAbsoluteZeroAction(action) {
+        if (!action || action.type !== 'skill') return false;
+        const detail = action.detail;
+        if (!detail) return false;
+        return detail.id === 'absolute_zero'
+            || detail.id === 'absolute-zero'
+            || detail.name === '絶対零度';
     }
 
     areAllEnemiesDown() {
@@ -778,6 +795,8 @@ export class BattleManager {
 
         const despairOverlay = document.getElementById('despair-overlay');
         if (despairOverlay) despairOverlay.classList.remove('is-active');
+        const blizzardOverlay = document.getElementById('despair-blizzard');
+        if (blizzardOverlay) blizzardOverlay.classList.remove('is-active');
 
         // 戦闘終了時リセット
         // ★追加: 吹雪エフェクトが残っていたら消す
@@ -813,8 +832,18 @@ export class BattleManager {
             this.ui.addLog("全滅した...", "#e74c3c");
             const isAwakenedBoss = this.state.enemies.some(enemy => enemy.isBoss && enemy.isBerserk);
             if (isAwakenedBoss) {
-                const despairOverlay = document.getElementById('despair-overlay');
-                if (despairOverlay) despairOverlay.classList.add('is-active');
+                const didAbsoluteZero = this.lastAction
+                    && this.lastAction.actor
+                    && this.lastAction.actor.isBoss
+                    && this.lastAction.actor.isBerserk
+                    && this._isAbsoluteZeroAction(this.lastAction.action);
+                if (didAbsoluteZero) {
+                    const blizzardOverlay = document.getElementById('despair-blizzard');
+                    if (blizzardOverlay) blizzardOverlay.classList.add('is-active');
+                } else {
+                    const despairOverlay = document.getElementById('despair-overlay');
+                    if (despairOverlay) despairOverlay.classList.add('is-active');
+                }
             }
         }
 

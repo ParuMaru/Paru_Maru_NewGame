@@ -48,11 +48,11 @@
     .dragon-size .enemy-label { font-size: 18px; margin-bottom: 2px; transform: translateY(30px); }
     .dragon-size .enemy-info { transform: translateY(30px); }
     .dragon-size .enemy-status-container { transform: translateY(35px) }
-    .enemy-unit.dragon-size .enemy-img {
-        transform: translateY(clamp(-10px, -1.2vh, -6px));
+    .enemy-unit.boss-lift {
+        transform: translateY(clamp(-16px, -2vh, -10px));
     }
-    .enemy-unit.shadow-aura .enemy-img {
-        transform: translateY(clamp(-8px, -1vh, -4px));
+    .enemy-unit.dragon-size.boss-lift {
+        transform: translateY(clamp(-22px, -2.6vh, -14px));
     }
     
     /* 5. エンディング調整 */
