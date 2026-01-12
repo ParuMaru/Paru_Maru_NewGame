@@ -17,6 +17,15 @@ export class ActionExecutor {
         }
     }
 
+    _playAttackHitSe(attackTag) {
+        if (!attackTag) return;
+        if (attackTag === 'slash') {
+            this.director.music.playAttack();
+            return;
+        }
+        this.director.music.playElementHit(attackTag);
+    }
+
     async execute(actor, target, action) {
         if (action.type === 'attack') {
             await this._executeAttack(actor, target);
@@ -50,15 +59,17 @@ export class ActionExecutor {
             
             if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
 
+            if (!hitSoundPlayed) {
+                const hitSoundTag = attackTag || (isMagicUser ? 'magic' : 'slash');
+                this._playAttackHitSe(hitSoundTag);
+                hitSoundPlayed = true;
+            }
+
             const prevHp = finalTarget.hp;
             finalTarget.add_hp(-damage);
             this._playDamageSeIfHpReduced(finalTarget, prevHp);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
             this._applyWeaknessDown(finalTarget, attackTag);
-            if (!hitSoundPlayed) {
-                this.director.music.playElementHit(attackTag);
-                hitSoundPlayed = true;
-            }
             
             // ----------------------------------------------------
             // ★追加: 【吸血のマント】攻撃時にHP回復
@@ -96,8 +107,6 @@ export class ActionExecutor {
         switch (skill.type) {
             case 'physical': 
                 if (skill.id === 'tentacle') this.director.music.playPoison(); 
-                else if (skill.id === 'dragon_claw') this.director.music.playAttack(); 
-                else this.director.music.playAttack(); 
 
                 const physicalTag = this._getAttackTag(actor, skill);
                 let physicalSoundPlayed = false;
@@ -107,6 +116,11 @@ export class ActionExecutor {
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
                     if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
+
+                    if (!physicalSoundPlayed) {
+                        this._playAttackHitSe(physicalTag || 'slash');
+                        physicalSoundPlayed = true;
+                    }
 
                     const prevHp = finalTarget.hp;
                     finalTarget.add_hp(-damage);
@@ -119,10 +133,6 @@ export class ActionExecutor {
 
                     this.director.showPhysicalHit(finalTarget, damage, isCritical, false);
                     this._applyWeaknessDown(finalTarget, physicalTag);
-                    if (!physicalSoundPlayed) {
-                        this.director.music.playElementHit(physicalTag);
-                        physicalSoundPlayed = true;
-                    }
                 });
                 break;
                 
@@ -140,15 +150,16 @@ export class ActionExecutor {
                         damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
                     }
 
+                    if (!magicSoundPlayed) {
+                        this._playAttackHitSe(magicTag || 'magic');
+                        magicSoundPlayed = true;
+                    }
+
                     const prevHp = finalTarget.hp;
                     finalTarget.add_hp(-damage);
                     this._playDamageSeIfHpReduced(finalTarget, prevHp);
                     this.director.showMagicHit(finalTarget, damage);
                     this._applyWeaknessDown(finalTarget, magicTag);
-                    if (!magicSoundPlayed) {
-                        this.director.music.playElementHit(magicTag);
-                        magicSoundPlayed = true;
-                    }
                     
                     if (skill.id === 'curse' && finalTarget.is_alive()) {
                         // 重複しないようにチェックして付与
@@ -245,7 +256,7 @@ export class ActionExecutor {
 
         this.director.ui.addLog("トリニティアタック！", GameConfig.COLORS.LOG_IMPORTANT, true);
         this.director.effects.flash("rgba(255, 215, 0, 0.5)");
-        this.director.music.playAttack();
+        let hitSoundPlayed = false;
 
         const partyAttack = this.party
             .filter(member => member.is_alive() && member.job)
@@ -255,6 +266,11 @@ export class ActionExecutor {
         targets.forEach(target => {
             const reduction = Math.floor(target.def / GameConfig.BATTLE.DEF_REDUCTION_RATE);
             const damage = Math.max(1, baseDamage - reduction);
+            if (!hitSoundPlayed) {
+                this._playAttackHitSe('slash');
+                hitSoundPlayed = true;
+            }
+
             const prevHp = target.hp;
             target.add_hp(-damage);
             this._playDamageSeIfHpReduced(target, prevHp);
