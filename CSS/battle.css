@@ -65,7 +65,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 #allout-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.75);
     display: none;
     align-items: center;
     justify-content: center;
@@ -77,31 +76,74 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: flex;
     pointer-events: auto;
 }
+.allout-darken {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    opacity: 0;
+    animation: allout-darken 0.5s ease-out forwards;
+}
 .allout-wipe {
     position: absolute;
-    width: 160%;
-    height: 40%;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 120, 0, 0.9));
-    transform: translate(-80%, 80%) rotate(-12deg);
-    animation: allout-wipe 0.45s ease-out forwards;
+    width: 200%;
+    height: 45%;
+    background: linear-gradient(135deg, rgba(255, 227, 120, 0.9), rgba(255, 111, 60, 0.9));
+    transform: translate(-90%, 90%) rotate(-12deg);
+    opacity: 0.9;
+    animation: allout-wipe 0.5s ease-out forwards;
+    mix-blend-mode: screen;
 }
-.allout-text {
+.allout-logo {
     position: relative;
-    font-size: 42px;
-    font-weight: bold;
+    font-size: 52px;
+    font-weight: 800;
     color: #fff;
-    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
-    letter-spacing: 4px;
-    z-index: 1;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.9), 0 0 4px rgba(0, 0, 0, 0.8);
+    z-index: 2;
     opacity: 0;
-    transform: scale(0.9);
-    animation: allout-text 0.45s ease-out forwards;
+    transform: translateY(10px) scale(0.9);
+    animation: allout-logo 0.5s ease-out forwards;
+}
+.allout-logo::before {
+    content: "";
+    position: absolute;
+    inset: -24px -32px;
+    border-radius: 18px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 25px rgba(255, 200, 80, 0.5);
+    z-index: -1;
+}
+.allout-logo.has-image {
+    font-size: 0;
+    width: 360px;
+    height: 120px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+@keyframes allout-darken {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
 }
 @keyframes allout-wipe {
-    to { transform: translate(0, 0) rotate(-12deg); }
+    0% { transform: translate(-90%, 90%) rotate(-12deg); }
+    100% { transform: translate(20%, -10%) rotate(-12deg); }
 }
-@keyframes allout-text {
-    to { opacity: 1; transform: scale(1.05); }
+@keyframes allout-logo {
+    0% { opacity: 0; transform: translateY(12px) scale(0.9); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.allout-shake {
+    animation: allout-shake 0.5s ease-out;
+}
+@keyframes allout-shake {
+    0% { transform: translate(0, 0); }
+    25% { transform: translate(-3px, 2px); }
+    50% { transform: translate(3px, -2px); }
+    75% { transform: translate(-2px, -1px); }
+    100% { transform: translate(0, 0); }
 }
 #allout-prompt {
     position: absolute;

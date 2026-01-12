@@ -15,7 +15,7 @@ export const SkillData = {
     heal:   { id: "heal",   name: "ケアル",   menu: "magic", cost: 15, power: 1.5, type: "heal", target: "single", color: "#2ecc71" },
     medica: { id: "medica", name: "メディカ", menu: "magic", cost: 30, power: 1.2, type: "heal", target: "all",    color: "#27ae60" },
     holy_strike: { id: "holy_strike", name: "聖撃", menu: "magic", cost: 18, power: 1.2, type: "magic", target: "single", color: "#f1c40f", attackTag: "holy" },
-    holy: { id: "holy", name: "ホーリー", menu: "magic", cost: 45, power: 1.9, type: "magic", target: "single", color: "#f7e37a", attackTag: "holy" },
+    holy: { id: "holy", name: "ホーリー", menu: "magic", cost: 45, power: 1.9, type: "magic", target: "all", color: "#f7e37a", attackTag: "holy" },
     prayer: { id: "prayer", name: "いのり",  menu: "main", cost: 0, value: 0.1, duration: 3, type: "regen", target: "all", color: "#8e44ad"},
     raise:  { id: "raise",  name: "レイズ",   menu: "magic", cost: 40, power: 0.5, type: "res",   target: "single", color: "#f1c40f" },
 
@@ -38,5 +38,6 @@ export const SkillData = {
     howling:        {id: "howling",     name: "竜の咆哮",     type: "buff",     target: "self",   color: "#f1c40f"},
 
     //ファイアゴーレム
+    lava_charge:    {id: "lava_charge", name: "溶岩を集める", type: "buff", target: "self", cost: 0, color: "#e67e22"},
     lava_spray:     {id: "lava_spray", name: "溶岩撒き", power: 1.6, type: "magic", target: "all", cost: 0, color: "#e67e22", attackTag: "fire"}
 };
