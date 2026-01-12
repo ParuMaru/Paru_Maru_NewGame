@@ -31,6 +31,8 @@ export class BattleManager {
             enemyType: enemyType,
             bgmType: bgmType
         };
+        //バフ削除
+        party.forEach(p => p.clear_all_buffs());
         this.isShadowFused = false;
         
         this.state.party = party;
