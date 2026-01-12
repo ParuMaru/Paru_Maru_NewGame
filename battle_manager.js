@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, ShadowMinion, FireGolem } from './entities.js'; 
+import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
@@ -62,21 +62,26 @@ export class BattleManager {
             this.state.enemies.push(holyCragen);
         }
         else {
-            if (rnd < 0.2) {
+            if (rnd < 0.6) {
+                const holyCragen = new cragen(false, "クラーゲンC");
+                holyCragen.weaknessTag = "holy";
+                this.state.enemies.push(new Goblin("ゴブリンA"));
+                this.state.enemies.push(new cragen(false, "クラーゲンB"));
+                this.state.enemies.push(holyCragen);
+            } else if (rnd < 0.9) {
+                const guardGoblin = new Goblin("護衛ゴブリン");
+                const cragenA = new cragen(false, "クラーゲンA");
+                this.state.enemies.push(new FireGolem());
+                this.state.enemies.push(guardGoblin);
+                this.state.enemies.push(cragenA);
+            } else {
+                const toughGoblin = new Goblin("強化ゴブリン");
+                toughGoblin.max_hp = Math.floor(toughGoblin.max_hp * 1.25);
+                toughGoblin._hp = toughGoblin.max_hp;
+                toughGoblin.def = Math.floor(toughGoblin.def * 1.2);
+                this.state.enemies.push(toughGoblin);
                 this.state.enemies.push(new cragen(false, "クラーゲンA"));
                 this.state.enemies.push(new cragen(false, "クラーゲンB"));
-            } else if(rnd < 0.4) {
-                this.state.enemies.push(new Goblin("はぐれゴブリン"));
-                this.state.enemies.push(new cragen(false, "はぐれクラーゲン"));
-            } else if (rnd < 0.6) {
-                this.state.enemies.push(new Goblin("ゴブリンA"));
-                this.state.enemies.push(new Goblin("ゴブリンB"));
-            } else if (rnd < 0.8) {
-                this.state.enemies.push(new FireGolem());
-                this.state.enemies.push(new Goblin("護衛ゴブリン"));
-            } else {
-                this.state.enemies.push(new ShadowMinion());
-                this.state.enemies.push(new cragen(false, "シャドウクラーゲン"));
             }
         }
 
@@ -263,6 +268,7 @@ export class BattleManager {
             this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
             actor.down = false;
             actor.downUsed = false;
+            if (actor.lavaCharging) actor.lavaCharging = false;
             this.updateUI();
             await new Promise(r => setTimeout(r, 600));
             await this.processTurnEnd(actor);

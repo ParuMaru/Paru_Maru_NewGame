@@ -73,11 +73,19 @@ export class EnemyAI {
         // 2. ファイアゴーレムの行動 (fire_golem)
         // ------------------------------------------
         if (enemy.enemyType === 'fire_golem') {
-            if (Math.random() < 0.6) {
+            if (enemy.lavaCharging) {
+                enemy.lavaCharging = false;
                 return {
                     type: 'skill',
                     target: party,
                     detail: SkillData.lava_spray
+                };
+            }
+            if (Math.random() < 0.75) {
+                return {
+                    type: 'skill',
+                    target: enemy,
+                    detail: SkillData.lava_charge
                 };
             }
         }

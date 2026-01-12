@@ -180,6 +180,10 @@ export class ActionExecutor {
                     });
                     this.director.showBuff(targets, skill.name);
                 }
+                else if (skill.id === 'lava_charge') {
+                    actor.lavaCharging = true;
+                    this.director.ui.addLog(`${actor.name}は溶岩を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
+                }
                 break;
 
             case 'regen': 
@@ -298,9 +302,9 @@ export class ActionExecutor {
         this.director.showSplittingTransform(enemy.name);
         enemy.add_hp(-9999); 
             // 新しい個体を生成
-        const enemyA = new cragen(false, 'キング分身(斬)');
-        const enemyB = new cragen(false, 'キング分身(炎)');
-        const enemyC = new cragen(false, 'キング分身(聖)');
+        const enemyA = new cragen(false, 'クラーゲンA');
+        const enemyB = new cragen(false, 'クラーゲンB');
+        const enemyC = new cragen(false, 'クラーゲンC');
 
         const boostStats = (unit) => {
             unit.max_hp = Math.floor(unit.max_hp * 1.15);
