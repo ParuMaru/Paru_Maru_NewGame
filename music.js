@@ -61,7 +61,6 @@ export class BattleBGM {
             'cover': './resource/cover.mp3',
             'splited': './resource/splited.mp3',
             'bukubuku': './resource/bukubuku.mp3',
-            'damage': './resource/damage.mp3',
             'poison': './resource/poison.mp3',
             'breath': './resource/breath.mp3',
             'dragon_voice':'./resource/dragon_voice.mp3',
@@ -418,7 +417,7 @@ export class BattleBGM {
         return this.playSE('magic');
     }
     playDamage() {
-        this.playSE('damage');
+        return;
     }
     playWin(){this.playSE('win');}
     
