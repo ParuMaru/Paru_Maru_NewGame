@@ -11,6 +11,12 @@ export class ActionExecutor {
         this.gameManager = gameManager;
     }
 
+    _playDamageSeIfHpReduced(target, prevHp) {
+        if (prevHp > target.hp) {
+            this.director.music.playDamage();
+        }
+    }
+
     async execute(actor, target, action) {
         if (action.type === 'attack') {
             await this._executeAttack(actor, target);
@@ -44,7 +50,9 @@ export class ActionExecutor {
             
             if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
 
+            const prevHp = finalTarget.hp;
             finalTarget.add_hp(-damage);
+            this._playDamageSeIfHpReduced(finalTarget, prevHp);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
             this._applyWeaknessDown(finalTarget, attackTag);
             if (!hitSoundPlayed) {
@@ -74,8 +82,6 @@ export class ActionExecutor {
                 finalTarget.debuffs.poison = 3;
             }
         });
-
-        this.director.music.playDamage(); 
     }
 
     async _executeSkill(actor, target, skill) {
@@ -102,7 +108,9 @@ export class ActionExecutor {
                     let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
                     if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
 
+                    const prevHp = finalTarget.hp;
                     finalTarget.add_hp(-damage);
+                    this._playDamageSeIfHpReduced(finalTarget, prevHp);
                     
                     const targetId = this.director._getTargetId(finalTarget); 
                     if (skill.id === 'dragon_claw') this.director.effects.clawEffect(targetId);
@@ -116,7 +124,6 @@ export class ActionExecutor {
                         physicalSoundPlayed = true;
                     }
                 });
-                this.director.music.playDamage();
                 break;
                 
             case 'magic':
@@ -133,7 +140,9 @@ export class ActionExecutor {
                         damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
                     }
 
+                    const prevHp = finalTarget.hp;
                     finalTarget.add_hp(-damage);
+                    this._playDamageSeIfHpReduced(finalTarget, prevHp);
                     this.director.showMagicHit(finalTarget, damage);
                     this._applyWeaknessDown(finalTarget, magicTag);
                     if (!magicSoundPlayed) {
@@ -154,7 +163,6 @@ export class ActionExecutor {
                         this.director.ui.addLog(`${finalTarget.name}は呪いに蝕まれた！`, "#7f8c8d");
                     }
                 });
-                this.director.music.playDamage();
                 break;
                 
             case 'heal':
@@ -247,7 +255,9 @@ export class ActionExecutor {
         targets.forEach(target => {
             const reduction = Math.floor(target.def / GameConfig.BATTLE.DEF_REDUCTION_RATE);
             const damage = Math.max(1, baseDamage - reduction);
+            const prevHp = target.hp;
             target.add_hp(-damage);
+            this._playDamageSeIfHpReduced(target, prevHp);
             this.director.showPhysicalHit(target, damage, false, false);
             target.down = false;
             target.downUsed = false;

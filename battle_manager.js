@@ -26,6 +26,12 @@ export class BattleManager {
         this.bgm.initAndLoad(); 
     }
 
+    _playDamageSeIfHpReduced(target, prevHp) {
+        if (prevHp > target.hp) {
+            this.bgm.playDamage();
+        }
+    }
+
     setupBattle(party, inventory, enemyType, bgmType = null) {
         // ★追加: リトライ用に、戦闘開始時点のデータを保存しておく
         this.backupData = {
@@ -227,7 +233,9 @@ export class BattleManager {
             // ★重要: ここで確実に毒のターンを減らす
             actor.debuffs.poison--;
             
+            const prevHp = actor.hp;
             actor.add_hp(-poisonDmg);
+            this._playDamageSeIfHpReduced(actor, prevHp);
             this.ui.addLog(`> ${actor.name}は毒で ${poisonDmg} のダメージ！`, "#9b59b6");
             
             // ターン切れなら削除
@@ -324,7 +332,9 @@ export class BattleManager {
 
         if (actor.debuffs && actor.debuffs.curse > 0) {
             const curseDmg = Math.max(1, Math.floor(actor.max_hp * GameConfig.BATTLE.CURSE_POISON_PERCENT));
+            const prevHp = actor.hp;
             actor.add_hp(-curseDmg);
+            this._playDamageSeIfHpReduced(actor, prevHp);
             this.ui.addLog(`> ${actor.name}は呪いで ${curseDmg} のダメージ！`, "#7f8c8d");
             this.updateUI();
             await new Promise(r => setTimeout(r, 600));
