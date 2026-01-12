@@ -48,6 +48,7 @@ export class BattleDirector {
         overlay.classList.remove('blizzard--whiteout', 'blizzard--normal');
         overlay.classList.add(`blizzard--${mode}`);
         overlay.classList.add('is-active');
+        this._setLogWhiteout(mode === 'whiteout');
     }
 
     _showFullscreenBlizzard(mode = 'whiteout') {
@@ -57,15 +58,23 @@ export class BattleDirector {
         overlay.classList.add(`blizzard--${mode}`);
         overlay.classList.remove('is-active');
         requestAnimationFrame(() => overlay.classList.add('is-active'));
+        this._setLogWhiteout(mode === 'whiteout');
     }
 
     _hideFullscreenBlizzard() {
         const overlay = document.getElementById('despair-blizzard');
         if (!overlay) return;
         overlay.classList.remove('is-active', 'blizzard--whiteout', 'blizzard--normal');
+        this._setLogWhiteout(false);
         const removeOverlay = () => overlay.remove();
         overlay.addEventListener('transitionend', removeOverlay, { once: true });
         setTimeout(removeOverlay, 600);
+    }
+
+    _setLogWhiteout(isActive) {
+        const log = document.getElementById('log');
+        if (!log) return;
+        log.classList.toggle('log-whiteout', isActive);
     }
 
     // --- 攻撃系の演出 ---

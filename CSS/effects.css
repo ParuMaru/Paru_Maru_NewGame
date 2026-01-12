@@ -90,11 +90,13 @@
 /* ボス巨大化・画像調整 */
 .king-size .enemy-img { width: 200px; filter: drop-shadow(0 0 15px rgba(16, 0, 192, 0.83)); }
 .king-size .enemy-hp-container { width: 180px; }
+.king-size .enemy-break-container { width: 180px; margin-left: auto; margin-right: auto; }
 .king-size .enemy-label { font-size: 20px; color: #f1c40f; }
 
 .enemy-unit.dragon-size { transform: translateY(-20px); z-index: 5; }
 .dragon-size .enemy-img { width: 100%; max-width: 300px; height: auto; filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 15px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 30px rgba(0, 210, 255, 0.6)) brightness(1.1); animation: dragonFloating 4s ease-in-out infinite; }
 .dragon-size .enemy-hp-container { width: 90%; max-width: 320px; height: 12px; border: 2px solid #000000; background: #000; box-shadow: 0 0 10px rgba(0, 210, 255, 0.5); margin-left: auto; margin-right: auto; }
+.dragon-size .enemy-break-container { width: 90%; max-width: 320px; margin-left: auto; margin-right: auto; }
 .dragon-size .enemy-label { font-size: min(26px, 6vw); font-weight: 900; color: #e0ffff; text-shadow: 0 0 10px #0055ff, 0 0 20px #00d2ff; margin-bottom: 8px; }
 .dragon-size .enemy-status-container { top: -30px; }
 @keyframes dragonFloating { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-15px) scale(1.02); } }
