@@ -8,6 +8,7 @@ import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
 import { RelicData } from './relics.js';
+import { GameConfig } from './game_config.js';
 
 export class BattleManager {
     constructor(gameManager) {
@@ -47,6 +48,14 @@ export class BattleManager {
             this.state.enemies.push(new ShadowHero());
             this.state.enemies.push(new ShadowWizard());
             this.state.enemies.push(new ShadowHealer());
+        }
+        else if (enemyType === 'weakness_test') {
+            const iceGoblin = new Goblin("弱点ゴブリン(氷)");
+            iceGoblin.weaknessTag = "ice";
+            const holyCragen = new cragen(false, "弱点クラーゲン(聖)");
+            holyCragen.weaknessTag = "holy";
+            this.state.enemies.push(iceGoblin);
+            this.state.enemies.push(holyCragen);
         }
         else {
             if (rnd < 0.33) {
@@ -236,8 +245,19 @@ export class BattleManager {
         
         this.updateUI();
 
+        if (!actor.job && actor.down && actor.is_alive()) {
+            this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
+            actor.down = false;
+            actor.downUsed = false;
+            this.updateUI();
+            await new Promise(r => setTimeout(r, 600));
+            await this.processTurnEnd(actor);
+            this.nextTurn();
+            return;
+        }
+
         if (actor.job) {
-            this.ui.showCommands(actor, (act) => this.handlePlayerAction(actor, act));
+            this.showCommandMenu(actor);
         } else {
             this.handleEnemyTurn(actor);
         }
@@ -312,6 +332,19 @@ export class BattleManager {
             }
         }
     }
+
+    canAllOutAttack() {
+        const aliveEnemies = this.state.getAliveEnemies();
+        return aliveEnemies.length > 0 && aliveEnemies.every(enemy => enemy.down);
+    }
+
+    showCommandMenu(actor) {
+        this.ui.showCommands(
+            actor,
+            (act) => this.handlePlayerAction(actor, act),
+            { allOutAvailable: this.canAllOutAttack() }
+        );
+    }
     
     async handlePlayerAction(actor, action) {
         if (this.isProcessing) return;
@@ -342,7 +375,7 @@ export class BattleManager {
                         action.target = selectedTarget;
                         this._startExecute(actor, action);
                     },
-                    () => this.ui.showCommands(actor, (act) => this.handlePlayerAction(actor, act))
+                    () => this.showCommandMenu(actor)
                 );
             }
             return;
@@ -355,7 +388,7 @@ export class BattleManager {
                     action.target = selectedTarget;
                     this._startExecute(actor, action);
                 },
-                () => this.ui.showCommands(actor, (act) => this.handlePlayerAction(actor, act))
+                () => this.showCommandMenu(actor)
             );
             return;
         }
@@ -570,6 +603,16 @@ export class BattleManager {
             if (enemy.debuffs && enemy.debuffs.atk_down) badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${enemy.debuffs.atk_down}</span></div>`;
 
             badgeContainer.innerHTML = badgesHTML;
+
+            const weaknessLabel = unitDiv.querySelector('.enemy-weakness');
+            if (weaknessLabel) {
+                weaknessLabel.innerText = this.ui.getWeaknessLabel(enemy.weaknessTag);
+            }
+
+            const downLabel = unitDiv.querySelector('.enemy-down');
+            if (downLabel) {
+                downLabel.style.display = enemy.down ? 'inline-flex' : 'none';
+            }
         });
 
         // --- 3. 行動順リストの更新 ---
@@ -585,7 +628,9 @@ export class BattleManager {
         this.ui.commandContainer.innerHTML = "";
 
         if (!action.target) {
-            if (action.detail && action.detail.target === 'all') {
+            if (action.type === 'all_out') {
+                action.target = this.state.getAliveEnemies();
+            } else if (action.detail && action.detail.target === 'all') {
                 action.target = this.state.getAliveEnemies();
             } else {
                 action.target = this.state.getAliveEnemies()[0];

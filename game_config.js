@@ -17,6 +17,9 @@ export const GameConfig = {
         POISON_CAP: 50,               // 毒ダメージ上限
         
         COVER_DAMAGE_RATE: 0.5,       // かばう時のダメージ軽減率
+
+        DOWN_DELAY: 60,               // 弱点ダウン時の行動値遅延量
+        ALL_OUT_POWER: 1.2,           // 総攻撃ダメージ倍率（合計ATKに掛ける）
     },
 
     // --- 敵のロジック用 ---

@@ -275,6 +275,23 @@ export class EffectManager {
         this.flash("rgba(0, 200, 255, 0.6)");
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
+
+    iceEffect(targetId) {
+        const target = document.getElementById(targetId);
+        if (!target) return;
+
+        const anchor = target.tagName === 'IMG' ? target.parentElement : target;
+        if (!anchor) return;
+
+        const ice = document.createElement('div');
+        ice.className = 'ice-pillar';
+        anchor.appendChild(ice);
+
+        this.flash("rgba(0, 200, 255, 0.4)");
+        setTimeout(() => {
+            if (ice.parentNode) ice.parentNode.removeChild(ice);
+        }, 800);
+    }
     
     clawEffect(targetId) {
         this.slashEffect(targetId);
