@@ -182,7 +182,7 @@ export class UIManager {
             <div class="allout-prompt-box">
                 <div class="allout-prompt-title">トリニティアタックのチャンス！</div>
                 <div class="allout-prompt-buttons">
-                    <button class="allout-confirm">トリニティアタックする</button>
+                    <button class="allout-confirm">トリニティアタック</button>
                     <button class="allout-cancel">しない</button>
                 </div>
             </div>
@@ -360,9 +360,7 @@ export class UIManager {
         btn.style.backgroundColor = enabled ? color : "#333";
         const textColor = enabled ? this._getButtonTextColor(color) : "#777";
         btn.style.color = textColor;
-        btn.style.textShadow = enabled
-            ? (textColor === "#111" ? "0 1px 1px rgba(255,255,255,0.35)" : "0 1px 1px rgba(0,0,0,0.6)")
-            : "none";
+        btn.style.textShadow = enabled ? (textColor === "#111" ? "0 1px 1px rgba(255,255,255,0.35)" : "0 1px 1px rgba(0,0,0,0.6)"): "none";
         btn.disabled = !enabled;
         btn.onclick = action;
         this.commandContainer.appendChild(btn);
