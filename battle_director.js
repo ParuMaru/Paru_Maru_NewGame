@@ -77,6 +77,10 @@ export class BattleDirector {
             this.music.playMagicMeteor();
             targets.forEach(t => this.effects.meteorEffect(this._getTargetId(t)));
         }
+        else if (skill.id === 'blizzard') {
+            this.music.playMagic();
+            targets.forEach(t => this.effects.iceEffect(this._getTargetId(t)));
+        }
         else if (skill.id === 'ice_breath') {
             this.music.playBreath(); 
             this.effects.allIceEffect(targets); 
@@ -84,6 +88,11 @@ export class BattleDirector {
         else if (skill.id === 'curse') {
             this.music.playPoison(); 
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
+        }
+        else if (skill.id === 'holy_strike') {
+            this.music.playMagic();
+            targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
+            this.effects.flash("rgba(255, 240, 150, 0.5)");
         }
         else if (skill.id === 'chaos_wave') {
             this.music.playMagicMeteor();

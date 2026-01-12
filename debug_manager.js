@@ -86,6 +86,7 @@ export class DebugManager {
         // --- 戦闘テスト ---
         this.addTitle("BATTLE TEST");
         this.createBtn("⚔️ vs 雑魚戦", "#bdc3c7", () => this.startBattle('cragen'));
+        this.createBtn("🎯 弱点テスト", "#f39c12", () => this.startBattle('weakness_test'));
         this.createBtn("👑 vs キング", "#f1c40f", () => this.startBattle('king'));
         this.createBtn("👥 vs 影のパーティ", "#8e44ad", () => this.startBattle('shadow'));
         this.createBtn("🧊 vs 氷ドラゴン", "#00d2ff", () => this.startBattle('dragon'));

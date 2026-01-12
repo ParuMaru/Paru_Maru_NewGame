@@ -40,6 +40,12 @@ export class Entity {
         this.debuffs = {}; // 不利な効果 { "poison": 4, "atk_down": 3 }
         this.is_dead = false;
         this.skills = []; // skills.js の ID文字列を格納
+
+        // --- 弱点/ダウン関連 ---
+        this.weaknessTag = null;
+        this.down = false;
+        this.downUsed = false;
+        this.downImmune = false;
     }
     
     // 行動値をリセット（再計算）するメソッド
@@ -158,7 +164,7 @@ export class Wizard extends Entity {
     constructor(name = "魔法使い") {
         super(name, 200, 150, 20, 20, 70, 50, 95, 40);
         this.job = "wizard";
-        this.skills = ["fire", "fira", "meteor", "meditation"];
+        this.skills = ["fire", "fira", "meteor", "blizzard", "meditation"];
     }
 }
 
@@ -169,7 +175,7 @@ export class Healer extends Entity {
     constructor(name = "癒し手") {
         super(name, 220, 150, 25, 25, 30, 60, 90, 90);
         this.job = "healer";
-        this.skills = ["heal", "medica", "prayer", "raise"];
+        this.skills = ["heal", "medica", "holy_strike", "prayer", "raise"];
     }
 }
 
@@ -202,10 +208,12 @@ export class cragen extends Entity {
             super(name, 1000, 0, 70, 40, 40, 35, 80, 40, './resource/king_cragen.webp');
             this.isKing = true;
             this.isBoss = true;
+            this.downImmune = true;
         } else {
             // 通常クラーゲンの設定
             super(name, 250, 0, 40, 15, 30, 20, 130, 20, './resource/cragen.webp');
             this.isKing = false;
+            this.weaknessTag = "fire";
         }
     }
 }
@@ -223,6 +231,7 @@ export class Goblin extends Entity {
         // HP:300, ATK:65 (クラーゲンより攻撃的)
         super(name, 300, 0, 40, 10, 10, 10, 100, 10, './resource/goblin.webp'); 
         this.enemyType = "goblin";
+        this.weaknessTag = "slash";
     }
 }
 
@@ -233,6 +242,7 @@ export class ShadowHero extends Entity {
         super("影の勇者", 400, 500, 65, 40, 20, 30, 110, 0, './resource/shadow_hero.webp');
         this.enemyType = "shadow_hero"; 
         this.skills = ["encourage","shadow_slash"];
+        this.weaknessTag = "holy";
     }
 }
 
@@ -243,6 +253,7 @@ export class ShadowWizard extends Entity {
         super("影の魔導師", 300, 500, 20, 20, 40, 50, 100, 0, './resource/shadow_wizard.webp');
         this.enemyType = "shadow_wizard"; 
         this.skills = ["fire", "fira","dark_meteor"];
+        this.weaknessTag = "holy";
     }
 }
 
@@ -253,6 +264,7 @@ export class ShadowHealer extends Entity {
         super("影の僧侶", 350, 500, 30, 30, 40, 40, 90, 60, './resource/shadow_healer.webp');
         this.enemyType = "shadow_healer";
         this.skills = ["heal", "medica","curse"];
+        this.weaknessTag = "holy";
     }
 }
 
@@ -264,6 +276,7 @@ export class ShadowLord extends Entity {
         this.enemyType = "shadow_lord"; 
         this.skills = ["shadow_slash", "dark_meteor", "chaos_wave"];
         this.isBoss = true;
+        this.downImmune = true;
     }
 }
 
@@ -277,6 +290,7 @@ export class IceDragon extends Entity {
         this.isBoss = true;
         this.isBerserk = false; // 発狂フラグ
         this.actionCount = 1;
+        this.downImmune = true;
     }
     toBerserkMode() {
         if (this.isBerserk) return false; // すでに変身済みなら何もしない

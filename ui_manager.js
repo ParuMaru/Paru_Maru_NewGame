@@ -101,6 +101,16 @@ export class UIManager {
         });
     }
 
+    getWeaknessLabel(tag) {
+        const labelMap = {
+            fire: "炎",
+            ice: "氷",
+            holy: "聖",
+            slash: "斬"
+        };
+        return labelMap[tag] ? `弱点:${labelMap[tag]}` : "弱点:なし";
+    }
+
     setInventory(inventory) {
         this.inventory = inventory;
     }
@@ -119,8 +129,13 @@ export class UIManager {
         this.logElement.scrollTop = this.logElement.scrollHeight;
     }
 
-    showCommands(actor, onSelect) {
+    showCommands(actor, onSelect, options = null) {
         this.currentActor = actor;
+        if (options) {
+            this.commandOptions = options;
+        } else if (!this.commandOptions) {
+            this.commandOptions = {};
+        }
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = `▼ ${actor.name} の行動選択`; 
 
@@ -143,6 +158,10 @@ export class UIManager {
                 this._createButton("スキル", "#f1c40f", () => this.showSubMenu("skill", onSelect));
             }
         });
+
+        if (this.commandOptions.allOutAvailable) {
+            this._createButton("総攻撃", "#f39c12", () => onSelect({ type: 'all_out' }));
+        }
 
         this._createButton("どうぐ", "#d35400", () => this.showItemMenu(onSelect));
     }
@@ -174,7 +193,7 @@ export class UIManager {
             }
         });
 
-        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect));
+        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
 
     showItemMenu(onSelect) {
@@ -193,7 +212,7 @@ export class UIManager {
             );
         });
 
-        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect));
+        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
     
     /**
@@ -325,6 +344,21 @@ export class UIManager {
             nameDiv.className = 'enemy-label';
             nameDiv.innerText = enemy.name;
 
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'enemy-info';
+
+            const weaknessDiv = document.createElement('div');
+            weaknessDiv.className = 'enemy-weakness';
+            weaknessDiv.innerText = this.getWeaknessLabel(enemy.weaknessTag);
+
+            const downDiv = document.createElement('div');
+            downDiv.className = 'enemy-down';
+            downDiv.innerText = 'DOWN';
+            downDiv.style.display = enemy.down ? 'inline-flex' : 'none';
+
+            infoDiv.appendChild(weaknessDiv);
+            infoDiv.appendChild(downDiv);
+
             const hpBox = document.createElement('div');
             hpBox.className = 'enemy-hp-container';
             
@@ -340,6 +374,7 @@ export class UIManager {
             img.className = 'enemy-img';
             
             unitDiv.appendChild(nameDiv);
+            unitDiv.appendChild(infoDiv);
             unitDiv.appendChild(hpBox);
             unitDiv.appendChild(img);
 
