@@ -1,3 +1,5 @@
+import { GameConfig } from './game_config.js';
+
 /**
  * 全てのキャラクター（味方・敵）の基底クラス
  */
@@ -46,6 +48,10 @@ export class Entity {
         this.down = false;
         this.downUsed = false;
         this.downImmune = false;
+
+        // --- ボスの崩しゲージ ---
+        this.breakMax = 0;
+        this.breakGauge = 0;
     }
     
     // 行動値をリセット（再計算）するメソッド
@@ -209,6 +215,9 @@ export class cragen extends Entity {
             this.isKing = true;
             this.isBoss = true;
             this.downImmune = true;
+            this.weaknessTag = "fire";
+            this.breakMax = GameConfig.BATTLE.BOSS_BREAK_MAX;
+            this.breakGauge = this.breakMax;
         } else {
             // 通常クラーゲンの設定
             super(name, 250, 0, 40, 15, 30, 20, 130, 20, './resource/cragen.webp');
@@ -286,6 +295,9 @@ export class ShadowLord extends Entity {
         this.skills = ["shadow_slash", "dark_meteor", "chaos_wave"];
         this.isBoss = true;
         this.downImmune = true;
+        this.weaknessTag = "holy";
+        this.breakMax = GameConfig.BATTLE.BOSS_BREAK_MAX;
+        this.breakGauge = this.breakMax;
     }
 }
 
@@ -300,6 +312,9 @@ export class IceDragon extends Entity {
         this.isBerserk = false; // 発狂フラグ
         this.actionCount = 1;
         this.downImmune = true;
+        this.weaknessTag = "fire";
+        this.breakMax = GameConfig.BATTLE.BOSS_BREAK_MAX;
+        this.breakGauge = this.breakMax;
     }
     toBerserkMode() {
         if (this.isBerserk) return false; // すでに変身済みなら何もしない

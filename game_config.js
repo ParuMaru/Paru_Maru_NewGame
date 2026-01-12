@@ -22,6 +22,9 @@ export const GameConfig = {
 
         DOWN_DELAY: 60,               // 弱点ダウン時の行動値遅延量
         ALL_OUT_POWER: 1.2,           // トリニティアタックダメージ倍率（合計ATKに掛ける）
+        BOSS_BREAK_MAX: 100,          // ボス崩しゲージ最大値
+        BOSS_BREAK_WEAKNESS_DAMAGE: 30, // 弱点命中時のボス崩しゲージ減少量
+        BOSS_BREAK_OTHER_DAMAGE: 0,   // 弱点以外のボス崩しゲージ減少量
     },
 
     // --- 敵のロジック用 ---
