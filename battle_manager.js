@@ -749,6 +749,7 @@ export class BattleManager {
 
         if (this.wasAllDown || this.allOutPrompted) return;
 
+        this.ui.addLog("トリニティアタックのチャンス！", GameConfig.COLORS.LOG_IMPORTANT);
         this.bgm.playSpecialReady();
         this.wasAllDown = true;
         this.allOutPrompted = true;
@@ -774,6 +775,9 @@ export class BattleManager {
     cleanup() {
         if (this.bgm) this.bgm.stopBGM(); 
         this.isProcessing = false;
+
+        const despairOverlay = document.getElementById('despair-overlay');
+        if (despairOverlay) despairOverlay.classList.remove('is-active');
 
         // 戦闘終了時リセット
         // ★追加: 吹雪エフェクトが残っていたら消す
@@ -807,6 +811,11 @@ export class BattleManager {
             this.bgm.playWin(); 
         } else {
             this.ui.addLog("全滅した...", "#e74c3c");
+            const isAwakenedBoss = this.state.enemies.some(enemy => enemy.isBoss && enemy.isBerserk);
+            if (isAwakenedBoss) {
+                const despairOverlay = document.getElementById('despair-overlay');
+                if (despairOverlay) despairOverlay.classList.add('is-active');
+            }
         }
 
         setTimeout(() => {

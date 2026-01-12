@@ -463,8 +463,10 @@ export class UIManager {
             hpBar.style.width = `${hpPercent}%`;
 
             hpBox.appendChild(hpBar);
+
+            let breakBox = null;
             if (enemy.isBoss && enemy.breakMax) {
-                const breakBox = document.createElement('div');
+                breakBox = document.createElement('div');
                 breakBox.className = 'enemy-break-container';
 
                 const breakBar = document.createElement('div');
@@ -472,7 +474,6 @@ export class UIManager {
                 const breakPercent = (enemy.breakGauge / enemy.breakMax) * 100;
                 breakBar.style.width = `${breakPercent}%`;
                 breakBox.appendChild(breakBar);
-                unitDiv.appendChild(breakBox);
             }
 
             const img = document.createElement('img');
@@ -483,6 +484,9 @@ export class UIManager {
             unitDiv.appendChild(nameDiv);
             unitDiv.appendChild(infoDiv);
             unitDiv.appendChild(hpBox);
+            if (breakBox) {
+                unitDiv.appendChild(breakBox);
+            }
             unitDiv.appendChild(img);
 
             this.enemyContainer.appendChild(unitDiv);
