@@ -452,6 +452,17 @@ export class UIManager {
             hpBar.style.width = `${hpPercent}%`;
 
             hpBox.appendChild(hpBar);
+            if (enemy.isBoss && enemy.breakMax) {
+                const breakBox = document.createElement('div');
+                breakBox.className = 'enemy-break-container';
+
+                const breakBar = document.createElement('div');
+                breakBar.className = 'enemy-break-bar';
+                const breakPercent = (enemy.breakGauge / enemy.breakMax) * 100;
+                breakBar.style.width = `${breakPercent}%`;
+                breakBox.appendChild(breakBar);
+                unitDiv.appendChild(breakBox);
+            }
 
             const img = document.createElement('img');
             img.src = enemy.img || './resource/cragen.webp'; 
@@ -473,6 +484,11 @@ export class UIManager {
             if (hpBar) {
                 const hpPercent = Math.max(0, (enemy.hp / enemy.max_hp) * 100);
                 hpBar.style.width = `${hpPercent}%`;
+            }
+            const breakBar = document.querySelector(`#enemy-sprite-${index} .enemy-break-bar`);
+            if (breakBar && enemy.breakMax) {
+                const breakPercent = Math.max(0, (enemy.breakGauge / enemy.breakMax) * 100);
+                breakBar.style.width = `${breakPercent}%`;
             }
         });
     }

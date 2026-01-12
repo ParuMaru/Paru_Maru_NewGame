@@ -70,6 +70,7 @@ export class ActionExecutor {
             this._playDamageSeIfHpReduced(finalTarget, prevHp);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
             this._applyWeaknessDown(finalTarget, attackTag);
+            this._applyBossBreakDamage(finalTarget, attackTag);
             
             // ----------------------------------------------------
             // ★追加: 【吸血のマント】攻撃時にHP回復
@@ -133,6 +134,7 @@ export class ActionExecutor {
 
                     this.director.showPhysicalHit(finalTarget, damage, isCritical, false);
                     this._applyWeaknessDown(finalTarget, physicalTag);
+                    this._applyBossBreakDamage(finalTarget, physicalTag);
                 });
                 break;
                 
@@ -160,6 +162,7 @@ export class ActionExecutor {
                     this._playDamageSeIfHpReduced(finalTarget, prevHp);
                     this.director.showMagicHit(finalTarget, damage);
                     this._applyWeaknessDown(finalTarget, magicTag);
+                    this._applyBossBreakDamage(finalTarget, magicTag);
                     
                     if (skill.id === 'curse' && finalTarget.is_alive()) {
                         // 重複しないようにチェックして付与
@@ -272,11 +275,15 @@ export class ActionExecutor {
             }
 
             const prevHp = target.hp;
+            const wasDown = target.down;
             target.add_hp(-damage);
             this._playDamageSeIfHpReduced(target, prevHp);
             this.director.showPhysicalHit(target, damage, false, false);
             target.down = false;
             target.downUsed = false;
+            if (target.isBoss && wasDown && target.breakMax) {
+                target.breakGauge = target.breakMax;
+            }
         });
 
         this.director.refreshStatus();
@@ -309,6 +316,32 @@ export class ActionExecutor {
         const targetId = this.director._getTargetId(target);
         this.director.effects.damagePopup("DOWN", targetId, GameConfig.COLORS.LOG_IMPORTANT);
         this.director.ui.addLog(`${target.name}はダウンした！`, GameConfig.COLORS.LOG_IMPORTANT);
+    }
+
+    _applyBossBreakDamage(target, attackTag) {
+        if (!attackTag) return;
+        if (!target || !target.is_alive()) return;
+        if (!target.isBoss) return;
+        if (!target.breakMax) return;
+        if (target.down) return;
+
+        const isWeakness = target.weaknessTag && attackTag === target.weaknessTag;
+        const breakDamage = isWeakness
+            ? GameConfig.BATTLE.BOSS_BREAK_WEAKNESS_DAMAGE
+            : GameConfig.BATTLE.BOSS_BREAK_OTHER_DAMAGE;
+
+        if (breakDamage <= 0) return;
+
+        target.breakGauge = Math.max(0, target.breakGauge - breakDamage);
+        if (target.breakGauge > 0) return;
+
+        target.down = true;
+        target.downUsed = true;
+        target.actionValue += GameConfig.BATTLE.DOWN_DELAY;
+
+        const targetId = this.director._getTargetId(target);
+        this.director.effects.damagePopup("DOWN", targetId, GameConfig.COLORS.LOG_IMPORTANT);
+        this.director.ui.addLog(`${target.name}はブレイクした！`, GameConfig.COLORS.LOG_IMPORTANT);
     }
     
     _resolveCover(actor, originalTarget) {

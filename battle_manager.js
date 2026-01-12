@@ -271,16 +271,25 @@ export class BattleManager {
         this.updateUI();
 
         if (!actor.job && actor.down && actor.is_alive()) {
-            this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
-            actor.down = false;
-            actor.downUsed = false;
-            if (actor.lavaCharging) actor.lavaCharging = false;
-            if (actor.curseCharging) actor.curseCharging = false;
-            this.updateUI();
-            await new Promise(r => setTimeout(r, 600));
-            await this.processTurnEnd(actor);
-            this.nextTurn();
-            return;
+            if (actor.isBoss) {
+                this.ui.addLog(`${actor.name}は立ち上がった！`, GameConfig.COLORS.LOG_SYSTEM);
+                actor.down = false;
+                actor.downUsed = false;
+                if (actor.breakMax) actor.breakGauge = actor.breakMax;
+                this.updateUI();
+                await new Promise(r => setTimeout(r, 600));
+            } else {
+                this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
+                actor.down = false;
+                actor.downUsed = false;
+                if (actor.lavaCharging) actor.lavaCharging = false;
+                if (actor.curseCharging) actor.curseCharging = false;
+                this.updateUI();
+                await new Promise(r => setTimeout(r, 600));
+                await this.processTurnEnd(actor);
+                this.nextTurn();
+                return;
+            }
         }
 
         if (actor.job) {
@@ -670,6 +679,12 @@ export class BattleManager {
             const downLabel = unitDiv.querySelector('.enemy-down');
             if (downLabel) {
                 downLabel.style.display = enemy.down ? 'inline-flex' : 'none';
+            }
+
+            const breakBar = unitDiv.querySelector('.enemy-break-bar');
+            if (breakBar && enemy.breakMax) {
+                const breakPercent = Math.max(0, (enemy.breakGauge / enemy.breakMax) * 100);
+                breakBar.style.width = `${breakPercent}%`;
             }
         });
 
