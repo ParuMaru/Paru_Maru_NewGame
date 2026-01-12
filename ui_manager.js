@@ -172,9 +172,20 @@ export class UIManager {
         overlay.innerHTML = `
             <div class="allout-darken"></div>
             <div class="allout-wipe"></div>
+            <div class="allout-cutin">
+                <img src="./resource/trinity_attack.jpg" alt="トリニティアタック">
+            </div>
             <div class="allout-logo">トリニティアタック！</div>
         `;
         wrapper.appendChild(overlay);
+
+        const cutinImage = overlay.querySelector('.allout-cutin img');
+        if (cutinImage) {
+            cutinImage.onerror = () => {
+                const cutin = overlay.querySelector('.allout-cutin');
+                if (cutin) cutin.classList.add('is-missing');
+            };
+        }
 
         const prompt = document.createElement('div');
         prompt.id = 'allout-prompt';

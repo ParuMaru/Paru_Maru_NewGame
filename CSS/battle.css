@@ -82,6 +82,33 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     display: flex;
     pointer-events: auto;
 }
+.allout-cutin {
+    position: relative;
+    z-index: 3;
+    width: min(80vw, 720px);
+    max-height: 60vh;
+    opacity: 0;
+    transform: translateX(20%) scale(0.95);
+}
+.allout-cutin img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 215, 150, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+}
+.allout-cutin.is-missing {
+    display: none;
+}
+.allout-darken,
+.allout-wipe,
+.allout-logo {
+    pointer-events: none;
+}
+#allout-overlay.is-active .allout-cutin {
+    animation: allout-cutin 0.55s ease-out forwards;
+}
 .allout-darken {
     position: absolute;
     inset: 0;
@@ -140,6 +167,11 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 @keyframes allout-logo {
     0% { opacity: 0; transform: translateY(14px) scale(0.9); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes allout-cutin {
+    0% { opacity: 0; transform: translateX(30%) scale(0.9); }
+    50% { opacity: 1; transform: translateX(0) scale(1.05); }
+    100% { opacity: 0.9; transform: translateX(-4%) scale(1.02); }
 }
 .allout-shake {
     animation: allout-shake 0.5s ease-out;
