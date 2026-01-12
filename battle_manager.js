@@ -792,17 +792,8 @@ export class BattleManager {
     cleanup() {
         if (this.bgm) this.bgm.stopBGM(); 
         this.isProcessing = false;
+        this._cleanupBattleOverlays();
 
-        const despairOverlay = document.getElementById('despair-overlay');
-        if (despairOverlay) despairOverlay.classList.remove('is-active');
-        const blizzardOverlay = document.getElementById('despair-blizzard');
-        if (blizzardOverlay) blizzardOverlay.classList.remove('is-active');
-
-        // 戦闘終了時リセット
-        // ★追加: 吹雪エフェクトが残っていたら消す
-        const blizzard = document.getElementById('active-blizzard');
-        if (blizzard) blizzard.remove();
-        
         // 敵エリアのスタイルも戻しておく（念のため）
         const enemyArea = document.getElementById('canvas-area');
         if (enemyArea) {
@@ -820,7 +811,50 @@ export class BattleManager {
         if (wrapper) wrapper.classList.remove('screen-shake');
     }
 
+    _cleanupBattleOverlays() {
+        const overlayIds = [
+            'active-blizzard',
+            'flash-overlay',
+            'despair-blizzard'
+        ];
+        overlayIds.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        });
+
+        const overlayClasses = ['despair-overlay', 'allout-overlay', 'allout-prompt'];
+        overlayClasses.forEach((id) => {
+            const el = document.getElementById(id);
+            if (el) el.classList.remove('is-active');
+        });
+
+        document.querySelectorAll('.flash-red, .flash-gold, .zabochi-appear').forEach((el) => {
+            el.remove();
+        });
+
+        const log = document.getElementById('log');
+        if (log) log.classList.remove('log-whiteout');
+    }
+
+    _ensureDespairBlizzardOverlay() {
+        let overlay = document.getElementById('despair-blizzard');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'despair-blizzard';
+            overlay.className = 'blizzard-container';
+            overlay.innerHTML = `
+                <div class="snow-layer back"></div>
+                <div class="snow-layer middle"></div>
+                <div class="snow-layer front"></div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        return overlay;
+    }
+
     processEndGame() {
+        this.isProcessing = false;
+        this._cleanupBattleOverlays();
         this.updateUI(); 
 
         const win = this.state.checkVictory();
@@ -838,7 +872,7 @@ export class BattleManager {
                     && this.lastAction.actor.isBerserk
                     && this._isAbsoluteZeroAction(this.lastAction.action);
                 if (didAbsoluteZero) {
-                    const blizzardOverlay = document.getElementById('despair-blizzard');
+                    const blizzardOverlay = this._ensureDespairBlizzardOverlay();
                     if (blizzardOverlay) blizzardOverlay.classList.add('is-active');
                 } else {
                     const despairOverlay = document.getElementById('despair-overlay');
@@ -1003,10 +1037,7 @@ export class BattleManager {
     // リトライ用のお掃除メソッド（BGMは止めない）
     cleanupRetry() {
         this.isProcessing = false;
-        
-        // エフェクト削除
-        const blizzard = document.getElementById('active-blizzard');
-        if (blizzard) blizzard.remove();
+        this._cleanupBattleOverlays();
         
         const enemyArea = document.getElementById('enemy-area');
         if (enemyArea) { 

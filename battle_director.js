@@ -25,6 +25,58 @@ export class BattleDirector {
         }
     }
 
+    _ensureFullscreenBlizzardOverlay() {
+        if (!document || !document.body) return null;
+        let overlay = document.getElementById('despair-blizzard');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'despair-blizzard';
+            overlay.className = 'blizzard-container';
+            overlay.innerHTML = `
+                <div class="snow-layer back"></div>
+                <div class="snow-layer middle"></div>
+                <div class="snow-layer front"></div>
+            `;
+            document.body.appendChild(overlay);
+        }
+        return overlay;
+    }
+
+    _setFullscreenBlizzardMode(mode) {
+        const overlay = this._ensureFullscreenBlizzardOverlay();
+        if (!overlay) return;
+        overlay.classList.remove('blizzard--whiteout', 'blizzard--normal');
+        overlay.classList.add(`blizzard--${mode}`);
+        overlay.classList.add('is-active');
+        this._setLogWhiteout(mode === 'whiteout');
+    }
+
+    _showFullscreenBlizzard(mode = 'whiteout') {
+        const overlay = this._ensureFullscreenBlizzardOverlay();
+        if (!overlay) return;
+        overlay.classList.remove('blizzard--whiteout', 'blizzard--normal');
+        overlay.classList.add(`blizzard--${mode}`);
+        overlay.classList.remove('is-active');
+        requestAnimationFrame(() => overlay.classList.add('is-active'));
+        this._setLogWhiteout(mode === 'whiteout');
+    }
+
+    _hideFullscreenBlizzard() {
+        const overlay = document.getElementById('despair-blizzard');
+        if (!overlay) return;
+        overlay.classList.remove('is-active', 'blizzard--whiteout', 'blizzard--normal');
+        this._setLogWhiteout(false);
+        const removeOverlay = () => overlay.remove();
+        overlay.addEventListener('transitionend', removeOverlay, { once: true });
+        setTimeout(removeOverlay, 600);
+    }
+
+    _setLogWhiteout(isActive) {
+        const log = document.getElementById('log');
+        if (!log) return;
+        log.classList.toggle('log-whiteout', isActive);
+    }
+
     // --- 攻撃系の演出 ---
 
     showAttackStart(actor) {
@@ -292,6 +344,7 @@ export class BattleDirector {
         if (bossEl) {
             bossEl.classList.add('shadow-aura'); 
             bossEl.classList.add('king-size'); 
+            bossEl.classList.add('boss-lift');
             
             bossEl.style.animation = 'none';
             void bossEl.offsetHeight; 
@@ -328,6 +381,11 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, 300));
 
         this.ui.refreshEnemyGraphics(allEnemies);
+
+        const refreshedEnemyEl = document.getElementById(`enemy-sprite-${enemyIndex}`);
+        if (refreshedEnemyEl && enemy.enemyType === 'ice_dragon') {
+            refreshedEnemyEl.classList.add('boss-lift');
+        }
         
         flashOverlay.style.opacity = '0';
         setTimeout(() => flashOverlay.remove(), 500);
@@ -365,11 +423,9 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, 1500));
         this.music.stopBGM();
 
-        const redFlash = document.createElement('div');
-        redFlash.className = 'flash-red';
-        document.body.appendChild(redFlash);
+        this._showFullscreenBlizzard('whiteout');
         document.body.classList.add('screen-shake');
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 350));
 
         party.forEach((p, i) => {
             p._hp = 0;
@@ -387,12 +443,12 @@ export class BattleDirector {
 
         await new Promise(r => setTimeout(r, 1000));
         document.body.classList.remove('screen-shake');
-        redFlash.remove();
 
         this.ui.addLog("パーティは全滅した...", GameConfig.COLORS.LOG_DESPAIR);
         await new Promise(r => setTimeout(r, 2000));
         this.ui.addLog("もうだめかと思ったその時...", "#ffffff");
         this.music.playBGM('boss2');
+        this._setFullscreenBlizzardMode('normal');
         await new Promise(r => setTimeout(r, 2000));
         
         this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", GameConfig.COLORS.LOG_ATTACK);
