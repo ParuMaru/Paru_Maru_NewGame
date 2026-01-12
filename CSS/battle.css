@@ -32,7 +32,8 @@
     max-width: min(320px, 80vw);
 }
 .enemy-unit.boss-lift {
-    transform: translateY(clamp(-30px, -4vh, -20px));
+    position: relative;
+    top: clamp(-28px, -3.8vh, -14px);
 }
 
 /* =========================================
@@ -86,39 +87,27 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     inset: 0;
     opacity: 0;
     pointer-events: none;
-    z-index: 320;
-    background: rgba(210, 235, 255, 0.25);
-    backdrop-filter: blur(2px);
-}
-#despair-blizzard::before,
-#despair-blizzard::after {
-    content: "";
-    position: absolute;
-    inset: -20%;
-    background-image:
-        radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 1px, transparent 2px),
-        radial-gradient(circle, rgba(230, 245, 255, 0.55) 0 2px, transparent 3px);
-    background-size: 40px 40px, 70px 70px;
-    animation: blizzard-drift 1.6s linear infinite;
-    filter: blur(0.4px);
-    opacity: 0;
-}
-#despair-blizzard::after {
-    background-size: 28px 28px, 60px 60px;
-    animation-duration: 1.2s;
+    transition: opacity 0.45s ease-out, background-color 0.45s ease-out, filter 0.45s ease-out;
+    z-index: 2;
+    overflow: hidden;
 }
 #despair-blizzard.is-active {
     opacity: 1;
-    transition: opacity 0.45s ease-out;
-    pointer-events: auto;
 }
-#despair-blizzard.is-active::before,
-#despair-blizzard.is-active::after {
-    opacity: 0.95;
+#despair-blizzard.blizzard--whiteout {
+    z-index: 99999;
+    background-color: rgba(230, 245, 255, 0.85);
+    filter: blur(1.6px);
 }
-@keyframes blizzard-drift {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(-6%, 12%); }
+#despair-blizzard.blizzard--whiteout .snow-layer {
+    opacity: 1;
+    filter: blur(0.6px);
+}
+#despair-blizzard.blizzard--normal {
+    z-index: 2;
+    background-color: rgba(180, 220, 255, 0.12);
+    filter: blur(0.6px);
+    opacity: 0.6;
 }
 #result-title { font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 10px gold; font-family: 'Press Start 2P', cursive; }
 .defeat-title { color: #e74c3c !important; text-shadow: 0 0 10px red !important; }

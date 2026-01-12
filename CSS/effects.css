@@ -171,6 +171,14 @@
     animation: blizzard-storm 0.3s linear infinite; /* 高速で動かす */
 }
 
+.blizzard-container {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.45s ease-out;
+}
+
 @keyframes blizzard-storm {
     0%   { background-position: 0% 0%; }
     100% { background-position: -50% 50%; }
