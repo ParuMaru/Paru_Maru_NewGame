@@ -91,6 +91,27 @@ export class EnemyAI {
         }
 
         // ------------------------------------------
+        // 2.5. 怨霊の行動 (onryo)
+        // ------------------------------------------
+        if (enemy.enemyType === 'onryo') {
+            if (enemy.curseCharging) {
+                enemy.curseCharging = false;
+                return {
+                    type: 'skill',
+                    target: party,
+                    detail: SkillData.onryo_curse
+                };
+            }
+            if (Math.random() < 0.8) {
+                return {
+                    type: 'skill',
+                    target: enemy,
+                    detail: SkillData.curse_charge
+                };
+            }
+        }
+
+        // ------------------------------------------
         // 3. ゴブリンの行動 (goblin)
         // ------------------------------------------
         if (enemy.enemyType === 'goblin') {

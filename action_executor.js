@@ -29,6 +29,7 @@ export class ActionExecutor {
         const isMagicUser = this.director.showAttackStart(actor);
         const targets = Array.isArray(target) ? target : [target];
         const attackTag = this._getAttackTag(actor, null);
+        let hitSoundPlayed = false;
         
         // ★追加: レリックリストを取得
         const relics = this.gameManager ? this.gameManager.relics : [];
@@ -46,6 +47,10 @@ export class ActionExecutor {
             finalTarget.add_hp(-damage);
             this.director.showPhysicalHit(finalTarget, damage, isCritical, isMagicUser);
             this._applyWeaknessDown(finalTarget, attackTag);
+            if (!hitSoundPlayed) {
+                this.director.music.playElementHit(attackTag);
+                hitSoundPlayed = true;
+            }
             
             // ----------------------------------------------------
             // ★追加: 【吸血のマント】攻撃時にHP回復
@@ -69,6 +74,7 @@ export class ActionExecutor {
                 finalTarget.debuffs.poison = 3;
             }
         });
+
         this.director.music.playDamage(); 
     }
 
@@ -88,6 +94,7 @@ export class ActionExecutor {
                 else this.director.music.playAttack(); 
 
                 const physicalTag = this._getAttackTag(actor, skill);
+                let physicalSoundPlayed = false;
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     
@@ -104,6 +111,10 @@ export class ActionExecutor {
 
                     this.director.showPhysicalHit(finalTarget, damage, isCritical, false);
                     this._applyWeaknessDown(finalTarget, physicalTag);
+                    if (!physicalSoundPlayed) {
+                        this.director.music.playElementHit(physicalTag);
+                        physicalSoundPlayed = true;
+                    }
                 });
                 this.director.music.playDamage();
                 break;
@@ -113,6 +124,7 @@ export class ActionExecutor {
                 this.director.showMagicEffect(actor, skill, targets);
                 
                 const magicTag = this._getAttackTag(actor, skill);
+                let magicSoundPlayed = false;
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
@@ -124,6 +136,10 @@ export class ActionExecutor {
                     finalTarget.add_hp(-damage);
                     this.director.showMagicHit(finalTarget, damage);
                     this._applyWeaknessDown(finalTarget, magicTag);
+                    if (!magicSoundPlayed) {
+                        this.director.music.playElementHit(magicTag);
+                        magicSoundPlayed = true;
+                    }
                     
                     if (skill.id === 'curse' && finalTarget.is_alive()) {
                         // 重複しないようにチェックして付与
@@ -132,6 +148,10 @@ export class ActionExecutor {
                             // ログを出す（ui経由で）
                             this.director.ui.addLog(`${finalTarget.name}の攻撃力が下がった！`, "#7f8c8d");
                         }
+                    }
+                    if (skill.id === 'onryo_curse' && finalTarget.is_alive()) {
+                        finalTarget.debuffs.curse = 2;
+                        this.director.ui.addLog(`${finalTarget.name}は呪いに蝕まれた！`, "#7f8c8d");
                     }
                 });
                 this.director.music.playDamage();
@@ -184,6 +204,10 @@ export class ActionExecutor {
                     actor.lavaCharging = true;
                     this.director.ui.addLog(`${actor.name}は溶岩を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
                 }
+                else if (skill.id === 'curse_charge') {
+                    actor.curseCharging = true;
+                    this.director.ui.addLog(`${actor.name}は呪気を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
+                }
                 break;
 
             case 'regen': 
@@ -196,6 +220,9 @@ export class ActionExecutor {
                         this.director.effects.healEffect(tId);
                     }
                 });
+                if (actor.job === 'healer') {
+                    actor.buffs.mp_regen = 3;
+                }
                 break;
         }
     }
@@ -208,7 +235,7 @@ export class ActionExecutor {
         const targets = this.enemies.filter(enemy => enemy.is_alive());
         if (targets.length === 0) return;
 
-        this.director.ui.addLog("総攻撃！", GameConfig.COLORS.LOG_IMPORTANT, true);
+        this.director.ui.addLog("トリニティアタック！", GameConfig.COLORS.LOG_IMPORTANT, true);
         this.director.effects.flash("rgba(255, 215, 0, 0.5)");
         this.director.music.playAttack();
 
@@ -232,6 +259,7 @@ export class ActionExecutor {
         if (skill && (skill.type === 'physical' || skill.type === 'magic')) return null;
 
         if (actor && actor.job === 'hero') return "slash";
+        if (actor && actor.job === 'healer') return "holy";
         if (actor && actor.job === 'wizard') return null;
         return "slash";
     }
@@ -317,7 +345,7 @@ export class ActionExecutor {
         [enemyA, enemyB, enemyC].forEach(boostStats);
         enemyA.weaknessTag = "slash";
         enemyB.weaknessTag = "fire";
-        enemyC.weaknessTag = "holy";
+        enemyC.weaknessTag = "ice";
         
         // 変数名に合わせたプロパティを付与（ui_managerで参照するため）
         enemyA.isSplitLeft = true;

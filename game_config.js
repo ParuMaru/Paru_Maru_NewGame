@@ -15,11 +15,13 @@ export const GameConfig = {
         
         POISON_DAMAGE_PERCENT: 0.03,  // 毒ダメージ割合
         POISON_CAP: 50,               // 毒ダメージ上限
+        CURSE_POISON_PERCENT: 0.1,    // 呪いダメージ割合
+        MP_REGEN_VALUE: 9,            // いのりによるMP回復量
         
         COVER_DAMAGE_RATE: 0.5,       // かばう時のダメージ軽減率
 
         DOWN_DELAY: 60,               // 弱点ダウン時の行動値遅延量
-        ALL_OUT_POWER: 1.2,           // 総攻撃ダメージ倍率（合計ATKに掛ける）
+        ALL_OUT_POWER: 1.2,           // トリニティアタックダメージ倍率（合計ATKに掛ける）
     },
 
     // --- 敵のロジック用 ---
@@ -39,7 +41,7 @@ export const GameConfig = {
         SHAKE_LONG: 800,         // 長い振動 (咆哮など)
         FUSION_ANIM: 2200,       // 合体演出の溜め時間
         TRANSFORM_WAIT: 2000,    // 変身演出の待ち時間
-        ALL_OUT_ANIMATION: 500,  // 総攻撃演出の待ち時間
+        ALL_OUT_ANIMATION: 500,  // トリニティアタック演出の待ち時間
     },
 
     // --- 色設定 (ログやポップアップ用) ---

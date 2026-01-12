@@ -148,8 +148,6 @@ export class UIManager {
             if (!skill) return;
 
             let btnColor = skill.color;
-            if (actor.job === "wizard") btnColor = "#2980b9"; 
-            if (actor.job === "healer") btnColor = "#27ae60"; 
 
             if (skill.menu === "main") {
                 const mainColor = skill.id === "meditation" ? "#9b59b6" : "#8e44ad";
@@ -174,7 +172,7 @@ export class UIManager {
         overlay.innerHTML = `
             <div class="allout-darken"></div>
             <div class="allout-wipe"></div>
-            <div class="allout-logo">総攻撃！</div>
+            <div class="allout-logo">トリニティアタック！</div>
         `;
         wrapper.appendChild(overlay);
 
@@ -182,9 +180,9 @@ export class UIManager {
         prompt.id = 'allout-prompt';
         prompt.innerHTML = `
             <div class="allout-prompt-box">
-                <div class="allout-prompt-title">総攻撃チャンス！</div>
+                <div class="allout-prompt-title">トリニティアタックのチャンス！</div>
                 <div class="allout-prompt-buttons">
-                    <button class="allout-confirm">総攻撃する</button>
+                    <button class="allout-confirm">トリニティアタックする</button>
                     <button class="allout-cancel">しない</button>
                 </div>
             </div>
@@ -360,7 +358,11 @@ export class UIManager {
         btn.innerText = text;
         btn.className = "command-btn";
         btn.style.backgroundColor = enabled ? color : "#333";
-        btn.style.color = enabled ? "white" : "#777";
+        const textColor = enabled ? this._getButtonTextColor(color) : "#777";
+        btn.style.color = textColor;
+        btn.style.textShadow = enabled
+            ? (textColor === "#111" ? "0 1px 1px rgba(255,255,255,0.35)" : "0 1px 1px rgba(0,0,0,0.6)")
+            : "none";
         btn.disabled = !enabled;
         btn.onclick = action;
         this.commandContainer.appendChild(btn);
@@ -368,6 +370,16 @@ export class UIManager {
 
     _hasButton(text) {
         return Array.from(this.commandContainer.children).some(btn => btn.innerText === text);
+    }
+
+    _getButtonTextColor(color) {
+        if (!color || color[0] !== "#" || color.length < 7) return "#fff";
+        const hex = color.replace("#", "");
+        const r = parseInt(hex.substring(0, 2), 16);
+        const g = parseInt(hex.substring(2, 4), 16);
+        const b = parseInt(hex.substring(4, 6), 16);
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        return luminance > 0.7 ? "#111" : "#fff";
     }
 
     refreshEnemyGraphics(enemies) {
@@ -446,6 +458,7 @@ export class UIManager {
             const img = document.createElement('img');
             img.src = enemy.img || './resource/cragen.webp'; 
             img.className = 'enemy-img';
+            img.onerror = () => { img.src = './resource/cragen.webp'; };
             
             unitDiv.appendChild(nameDiv);
             unitDiv.appendChild(infoDiv);

@@ -23,7 +23,7 @@ export class BattleCalculator {
                 damage = Math.floor(damage * 1.25);
             }
             
-            if (actor.hasDebuff('atk_down')) {
+            if (actor.hasDebuff('atk_down') || actor.hasDebuff('curse')) {
                 damage = Math.floor(damage * 0.7); 
             }
 
@@ -42,7 +42,7 @@ export class BattleCalculator {
                 damage = Math.floor(damage * 1.25);
             }
 
-            if (actor.hasDebuff('atk_down')) {
+            if (actor.hasDebuff('atk_down') || actor.hasDebuff('curse')) {
                 damage = Math.floor(damage * 0.7); 
             }
             

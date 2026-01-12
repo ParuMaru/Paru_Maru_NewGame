@@ -52,6 +52,8 @@ export class BattleBGM {
             'slash': './resource/slash.mp3',
             'magic': './resource/magic.mp3',
             'fire': './resource/fire.mp3',
+            'ice': './resource/ice.mp3',
+            'holy': './resource/holy.mp3',
             'meteor': './resource/meteor.mp3',
             'heal': './resource/heal.mp3',
             'meditation': './resource/meditation.mp3',
@@ -63,7 +65,9 @@ export class BattleBGM {
             'poison': './resource/poison.mp3',
             'breath': './resource/breath.mp3',
             'dragon_voice':'./resource/dragon_voice.mp3',
-            'win': './resource/win.mp3'
+            'win': './resource/win.mp3',
+            'special_ready': './resource/special_ready.mp3',
+            'special': './resource/special.mp3'
         };
         
         this.victoryLoopTimer = null; 
@@ -405,6 +409,14 @@ export class BattleBGM {
     playPoison(){this.playSE('poison');}
     playBreath(){this.playSE('breath');}
     playDragon_voice(){this.playSE('dragon_voice');}
+    playSpecialReady() { this.playSE('special_ready'); }
+    playSpecial() { this.playSE('special'); }
+    playElementHit(tag) {
+        if (tag === 'holy') return this.playSE('holy');
+        if (tag === 'ice') return this.playSE('ice');
+        if (tag === 'fire') return this.playSE('fire');
+        return this.playSE('magic');
+    }
     playDamage() {
         if (!this.ctx) this.initContext();
         const now = this.ctx.currentTime;

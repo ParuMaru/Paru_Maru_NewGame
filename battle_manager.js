@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem } from './entities.js'; 
+import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem, Onryo } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
@@ -56,18 +56,23 @@ export class BattleManager {
         else if (enemyType === 'weakness_test') {
             const iceGoblin = new Goblin("弱点ゴブリン(氷)");
             iceGoblin.weaknessTag = "ice";
-            const holyCragen = new cragen(false, "弱点クラーゲン(聖)");
-            holyCragen.weaknessTag = "holy";
+            const holyOnryo = new Onryo("弱点怨霊(聖)");
             this.state.enemies.push(iceGoblin);
-            this.state.enemies.push(holyCragen);
+            this.state.enemies.push(holyOnryo);
         }
         else {
             if (rnd < 0.6) {
-                const holyCragen = new cragen(false, "クラーゲンC");
-                holyCragen.weaknessTag = "holy";
-                this.state.enemies.push(new Goblin("ゴブリンA"));
-                this.state.enemies.push(new cragen(false, "クラーゲンB"));
-                this.state.enemies.push(holyCragen);
+                const holyOnryo = new Onryo();
+                const slashGoblin = new Goblin("ゴブリンA");
+                const elementCragen = new cragen(false, "クラーゲンB");
+                if (Math.random() < 0.5) {
+                    elementCragen.weaknessTag = "fire";
+                } else {
+                    elementCragen.weaknessTag = "ice";
+                }
+                this.state.enemies.push(slashGoblin);
+                this.state.enemies.push(elementCragen);
+                this.state.enemies.push(holyOnryo);
             } else if (rnd < 0.9) {
                 const guardGoblin = new Goblin("護衛ゴブリン");
                 const cragenA = new cragen(false, "クラーゲンA");
@@ -76,12 +81,12 @@ export class BattleManager {
                 this.state.enemies.push(cragenA);
             } else {
                 const toughGoblin = new Goblin("強化ゴブリン");
-                toughGoblin.max_hp = Math.floor(toughGoblin.max_hp * 1.25);
+                toughGoblin.max_hp = Math.floor(toughGoblin.max_hp * 1.3);
                 toughGoblin._hp = toughGoblin.max_hp;
-                toughGoblin.def = Math.floor(toughGoblin.def * 1.2);
+                toughGoblin.def = Math.floor(toughGoblin.def * 1.25);
                 this.state.enemies.push(toughGoblin);
                 this.state.enemies.push(new cragen(false, "クラーゲンA"));
-                this.state.enemies.push(new cragen(false, "クラーゲンB"));
+                this.state.enemies.push(new Onryo());
             }
         }
 
@@ -269,6 +274,7 @@ export class BattleManager {
             actor.down = false;
             actor.downUsed = false;
             if (actor.lavaCharging) actor.lavaCharging = false;
+            if (actor.curseCharging) actor.curseCharging = false;
             this.updateUI();
             await new Promise(r => setTimeout(r, 600));
             await this.processTurnEnd(actor);
@@ -317,10 +323,30 @@ export class BattleManager {
     async processTurnEnd(actor) {
         if (!actor.is_alive()) return;
 
+        if (actor.buffs.mp_regen > 0) {
+            const mpRec = GameConfig.BATTLE.MP_REGEN_VALUE;
+            actor.add_mp(mpRec);
+            this.ui.addLog(`> ${actor.name}のMPが ${mpRec} 回復した(祈り)`, GameConfig.COLORS.HEAL_MP);
+        }
+
+        if (actor.debuffs && actor.debuffs.curse > 0) {
+            const curseDmg = Math.max(1, Math.floor(actor.max_hp * GameConfig.BATTLE.CURSE_POISON_PERCENT));
+            actor.add_hp(-curseDmg);
+            this.ui.addLog(`> ${actor.name}は呪いで ${curseDmg} のダメージ！`, "#7f8c8d");
+            this.updateUI();
+            await new Promise(r => setTimeout(r, 600));
+            if (!actor.is_alive()) {
+                this.ui.addLog(`${actor.name}は呪いに蝕まれ、力尽きた...`, "#e74c3c");
+                const targetId = this.executor.director._getTargetId(actor);
+                this.executor.director._checkDeath(actor, targetId);
+                return;
+            }
+        }
+
         const processBox = (box, typeName) => {
             for (const key in box) {
                 //  毒(poison)はターン開始時に処理済みなので、ここでは触らない あとで追記するかも
-                if (key === 'poison') continue;
+                if (key === 'poison' || key === 'curse' || key === 'mp_regen') continue;
 
                 if (box[key] > 0) {
                     box[key]--;
@@ -333,6 +359,19 @@ export class BattleManager {
                 }
             }
         };
+
+        if (actor.buffs.mp_regen > 0) {
+            actor.buffs.mp_regen--;
+            if (actor.buffs.mp_regen <= 0) delete actor.buffs.mp_regen;
+        }
+
+        if (actor.debuffs && actor.debuffs.curse > 0) {
+            actor.debuffs.curse--;
+            if (actor.debuffs.curse <= 0) {
+                delete actor.debuffs.curse;
+                this.ui.addLog(`${actor.name}の呪いが消えた`, "#bdc3c7");
+            }
+        }
 
         processBox(actor.buffs, "buff");
         processBox(actor.debuffs, "debuff");
@@ -591,6 +630,7 @@ export class BattleManager {
                     if (p.buffs.atk_up) badgesHTML += `<div class="status-badge badge-buff" title="攻撃UP">⚔️<span class="badge-num">${p.buffs.atk_up}</span></div>`;
                     if (p.debuffs && p.debuffs.atk_down) badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${p.debuffs.atk_down}</span></div>`;
                     if (p.debuffs && p.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${p.debuffs.poison}</span></div>`;
+                    if (p.debuffs && p.debuffs.curse) badgesHTML += `<div class="status-badge badge-debuff" title="呪い">🕯️<span class="badge-num">${p.debuffs.curse}</span></div>`;
                 }
                 badgeContainer.innerHTML = badgesHTML;
             }
@@ -615,6 +655,7 @@ export class BattleManager {
             if (enemy.buffs.regen) badgesHTML += `<div class="status-badge badge-regen" title="リジェネ">✨<span class="badge-num">${enemy.buffs.regen}</span></div>`;
             if (enemy.debuffs && enemy.debuffs.poison) badgesHTML += `<div class="status-badge badge-debuff" title="毒">☠️<span class="badge-num">${enemy.debuffs.poison}</span></div>`;
             if (enemy.debuffs && enemy.debuffs.atk_down) badgesHTML += `<div class="status-badge badge-debuff" title="攻撃DOWN">⏬<span class="badge-num">${enemy.debuffs.atk_down}</span></div>`;
+            if (enemy.debuffs && enemy.debuffs.curse) badgesHTML += `<div class="status-badge badge-debuff" title="呪い">🕯️<span class="badge-num">${enemy.debuffs.curse}</span></div>`;
 
             badgeContainer.innerHTML = badgesHTML;
 
@@ -690,12 +731,13 @@ export class BattleManager {
 
         if (this.wasAllDown || this.allOutPrompted) return;
 
+        this.bgm.playSpecialReady();
         this.wasAllDown = true;
         this.allOutPrompted = true;
 
         const doAllOut = await this.ui.showAllOutPrompt();
         if (!doAllOut) {
-            this.ui.addLog("総攻撃を見送った！", GameConfig.COLORS.LOG_SYSTEM);
+            this.ui.addLog("トリニティアタックを見送った！", GameConfig.COLORS.LOG_SYSTEM);
             this.state.getAliveEnemies().forEach(enemy => {
                 enemy.down = false;
                 enemy.downUsed = false;
@@ -705,6 +747,7 @@ export class BattleManager {
             return;
         }
 
+        this.bgm.playSpecial();
         await this.ui.playAllOutAnimation();
         await this.executor.executeAllOutAttack();
         this.updateUI();
