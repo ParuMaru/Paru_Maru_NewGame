@@ -278,6 +278,8 @@ export class ActionExecutor {
             target.down = false;
             target.downUsed = false;
         });
+
+        this.director.refreshStatus();
     }
 
     _getAttackTag(actor, skill) {
