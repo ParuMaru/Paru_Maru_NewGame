@@ -115,7 +115,7 @@ export class EnemyAI {
         // 3. ゴブリンの行動 (goblin)
         // ------------------------------------------
         if (enemy.enemyType === 'goblin') {
-            // 40%の確率で「こんぼう強打」
+            // 40%の確率で「ごぶりんぱんち」
             if (Math.random() < 0.4) {
                 const target = party[Math.floor(Math.random() * party.length)];
                 return {
