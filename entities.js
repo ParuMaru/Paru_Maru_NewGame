@@ -331,9 +331,9 @@ export class FireGolem extends Entity {
 // ★追加：怨霊（聖弱点）
 export class Onryo extends Entity {
     constructor(name = "怨霊") {
-        super(name, 240, 80, 25, 15, 45, 30, 105, 0, './resource/ghost.webp');
+        super(name, 260, 80, 30, 20, 45, 35, 110, 0, './resource/ghost.webp');
         this.enemyType = "onryo";
         this.weaknessTag = "holy";
-        this.skills = ["curse_charge", "onryo_curse"];
+        this.skills = ["curse"];
     }
 }

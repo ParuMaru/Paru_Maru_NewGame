@@ -63,15 +63,8 @@ export class BattleManager {
         else {
             if (rnd < 0.6) {
                 const holyOnryo = new Onryo();
-                const slashGoblin = new Goblin("ゴブリンA");
-                const elementCragen = new cragen(false, "クラーゲンB");
-                if (Math.random() < 0.5) {
-                    elementCragen.weaknessTag = "fire";
-                } else {
-                    elementCragen.weaknessTag = "ice";
-                }
-                this.state.enemies.push(slashGoblin);
-                this.state.enemies.push(elementCragen);
+                this.state.enemies.push(new Goblin("ゴブリンA"));
+                this.state.enemies.push(new cragen(false, "クラーゲンB"));
                 this.state.enemies.push(holyOnryo);
             } else if (rnd < 0.9) {
                 const guardGoblin = new Goblin("護衛ゴブリン");
