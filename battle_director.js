@@ -31,9 +31,6 @@ export class BattleDirector {
         const logColor = actor.job ? GameConfig.COLORS.LOG_SKILL : GameConfig.COLORS.LOG_ATTACK;
         this.ui.addLog(`${actor.name}の攻撃！`, logColor, true);
         const isMagicUser = (actor.job === 'wizard' || actor.job === 'healer');
-        
-        if (isMagicUser) this.music.playMagic();
-        else this.music.playAttack();
 
         return isMagicUser;
     }
