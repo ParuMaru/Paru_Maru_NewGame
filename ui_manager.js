@@ -172,9 +172,19 @@ export class UIManager {
         overlay.innerHTML = `
             <div class="allout-darken"></div>
             <div class="allout-wipe"></div>
-            <div class="allout-logo">トリニティアタック！</div>
+            <div class="allout-cutin">
+                <img src="./resource/trinity_attack.jpg" alt="">
+            </div>
         `;
         wrapper.appendChild(overlay);
+
+        const cutinImage = overlay.querySelector('.allout-cutin img');
+        if (cutinImage) {
+            cutinImage.onerror = () => {
+                const cutin = overlay.querySelector('.allout-cutin');
+                if (cutin) cutin.classList.add('is-missing');
+            };
+        }
 
         const prompt = document.createElement('div');
         prompt.id = 'allout-prompt';
@@ -228,13 +238,14 @@ export class UIManager {
             overlay.classList.add('is-active');
 
             const animDuration = GameConfig.TIME.ALL_OUT_ANIMATION || 450;
+            const tailDelay = 400;
             const shakeTarget = document.getElementById('game-wrapper');
             if (shakeTarget) shakeTarget.classList.add('allout-shake');
             setTimeout(() => resolve(), animDuration);
-            setTimeout(() => overlay.classList.remove('is-active'), animDuration + 200);
+            setTimeout(() => overlay.classList.remove('is-active'), animDuration + tailDelay);
             setTimeout(() => {
                 if (shakeTarget) shakeTarget.classList.remove('allout-shake');
-            }, animDuration + 200);
+            }, animDuration + tailDelay);
         });
     }
 
