@@ -103,6 +103,11 @@ export class BattleDirector {
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
             this.effects.flash("rgba(255, 240, 150, 0.6)");
         }
+        else if (skill.id === 'onryo_curse') {
+            this.music.playPoison();
+            targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
+            this.effects.flash("rgba(120, 120, 160, 0.6)");
+        }
         else if (skill.id === 'lava_spray') {
             this.music.playMagicFire();
             const targetIds = targets.map(t => this._getTargetId(t));

@@ -320,7 +320,7 @@ export class IceDragon extends Entity {
 // ★追加：ファイアゴーレム（氷弱点）
 export class FireGolem extends Entity {
     constructor() {
-        super("ファイアゴーレム", 650, 0, 75, 75, 25, 15, 65, 0, './resource/fire_golem.webp');
+        super("ファイアゴーレム", 720, 0, 75, 85, 25, 10, 60, 0, './resource/fire_golem.webp');
         this.enemyType = "fire_golem";
         this.weaknessTag = "ice";
         this.skills = ["lava_spray"];
