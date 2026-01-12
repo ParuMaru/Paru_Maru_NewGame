@@ -44,10 +44,15 @@ export class ActionExecutor {
         const isMagicUser = this.director.showAttackStart(actor);
         const targets = Array.isArray(target) ? target : [target];
         const attackTag = this._getAttackTag(actor, null);
-        let hitSoundPlayed = false;
+        const hasAliveTarget = targets.some(t => t && t.is_alive());
         
         // ★追加: レリックリストを取得
         const relics = this.gameManager ? this.gameManager.relics : [];
+
+        if (hasAliveTarget) {
+            const hitSoundTag = attackTag || (isMagicUser ? 'magic' : 'slash');
+            this._playAttackHitSe(hitSoundTag);
+        }
 
         targets.forEach(originalTarget => {
             if (!originalTarget.is_alive()) return;
@@ -58,12 +63,6 @@ export class ActionExecutor {
             let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, null, relics);
             
             if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE); 
-
-            if (!hitSoundPlayed) {
-                const hitSoundTag = attackTag || (isMagicUser ? 'magic' : 'slash');
-                this._playAttackHitSe(hitSoundTag);
-                hitSoundPlayed = true;
-            }
 
             const prevHp = finalTarget.hp;
             finalTarget.add_hp(-damage);
@@ -110,18 +109,16 @@ export class ActionExecutor {
                 if (skill.id === 'tentacle') this.director.music.playPoison(); 
 
                 const physicalTag = this._getAttackTag(actor, skill);
-                let physicalSoundPlayed = false;
+                const hasAlivePhysicalTarget = targets.some(t => t && t.is_alive());
+                if (hasAlivePhysicalTarget) {
+                    this._playAttackHitSe(physicalTag || 'slash');
+                }
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage, isCritical } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
                     if (isCovered) damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
-
-                    if (!physicalSoundPlayed) {
-                        this._playAttackHitSe(physicalTag || 'slash');
-                        physicalSoundPlayed = true;
-                    }
 
                     const prevHp = finalTarget.hp;
                     finalTarget.add_hp(-damage);
@@ -143,18 +140,16 @@ export class ActionExecutor {
                 this.director.showMagicEffect(actor, skill, targets);
                 
                 const magicTag = this._getAttackTag(actor, skill);
-                let magicSoundPlayed = false;
+                const hasAliveMagicTarget = targets.some(t => t && t.is_alive());
+                if (hasAliveMagicTarget) {
+                    this._playAttackHitSe(magicTag || 'magic');
+                }
                 targets.forEach(originalTarget => {
                     if (!originalTarget.is_alive()) return;
                     const { finalTarget, isCovered } = this._resolveCover(actor, originalTarget);
                     let { damage } = BattleCalculator.calculateDamage(actor, finalTarget, skill);
                     if (isCovered) {
                         damage = Math.floor(damage * GameConfig.BATTLE.COVER_DAMAGE_RATE);
-                    }
-
-                    if (!magicSoundPlayed) {
-                        this._playAttackHitSe(magicTag || 'magic');
-                        magicSoundPlayed = true;
                     }
 
                     const prevHp = finalTarget.hp;
@@ -257,9 +252,8 @@ export class ActionExecutor {
         const targets = this.enemies.filter(enemy => enemy.is_alive());
         if (targets.length === 0) return;
 
-        this.director.ui.addLog("トリニティアタック！", GameConfig.COLORS.LOG_IMPORTANT, true);
         this.director.effects.flash("rgba(255, 215, 0, 0.5)");
-        let hitSoundPlayed = false;
+        this._playAttackHitSe('slash');
 
         const partyAttack = this.party
             .filter(member => member.is_alive() && member.job)
@@ -269,10 +263,6 @@ export class ActionExecutor {
         targets.forEach(target => {
             const reduction = Math.floor(target.def / GameConfig.BATTLE.DEF_REDUCTION_RATE);
             const damage = Math.max(1, baseDamage - reduction);
-            if (!hitSoundPlayed) {
-                this._playAttackHitSe('slash');
-                hitSoundPlayed = true;
-            }
 
             const prevHp = target.hp;
             const wasDown = target.down;

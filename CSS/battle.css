@@ -80,14 +80,37 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 #allout-overlay.is-active {
     display: flex;
-    pointer-events: auto;
+    pointer-events: none;
+}
+.allout-cutin {
+    position: relative;
+    z-index: 1000;
+    width: min(86vw, 860px);
+    max-height: 70vh;
+    opacity: 0;
+    transform: translateX(20%) scale(0.95);
+    pointer-events: none;
+}
+.allout-cutin img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6), 0 0 25px rgba(255, 215, 150, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.6);
+}
+.allout-cutin.is-missing {
+    display: none;
+}
+#allout-overlay.is-active .allout-cutin {
+    animation: allout-cutin 1.1s ease-out forwards;
 }
 .allout-darken {
     position: absolute;
     inset: 0;
     background: rgba(5, 10, 20, 0.85);
     opacity: 0;
-    animation: allout-darken 0.5s ease-out forwards;
+    animation: allout-darken 1s ease-out forwards;
 }
 .allout-wipe {
     position: absolute;
@@ -96,7 +119,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(120, 200, 255, 0.8), rgba(255, 190, 80, 0.7));
     transform: translate(-95%, 90%) rotate(-12deg);
     opacity: 0.9;
-    animation: allout-wipe 0.5s ease-out forwards;
+    animation: allout-wipe 1s ease-out forwards;
     mix-blend-mode: screen;
 }
 .allout-logo {
@@ -109,7 +132,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     z-index: 2;
     opacity: 0;
     transform: translateY(12px) scale(0.92);
-    animation: allout-logo 0.5s ease-out forwards;
+    animation: allout-logo 1s ease-out forwards;
 }
 .allout-logo::before {
     content: "";
@@ -141,8 +164,13 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     0% { opacity: 0; transform: translateY(14px) scale(0.9); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+@keyframes allout-cutin {
+    0% { opacity: 0; transform: translateX(30%) scale(0.9); }
+    50% { opacity: 1; transform: translateX(0) scale(1.05); }
+    100% { opacity: 0.9; transform: translateX(-4%) scale(1.02); }
+}
 .allout-shake {
-    animation: allout-shake 0.5s ease-out;
+    animation: allout-shake 1s ease-out;
 }
 @keyframes allout-shake {
     0% { transform: translate(0, 0); }
