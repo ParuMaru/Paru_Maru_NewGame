@@ -3,7 +3,7 @@ import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
 import { BattleBGM } from './music.js';
 import { EnemyAI } from './enemy_ai.js';
-import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem } from './entities.js'; 
+import { cragen, Kingcragen, Goblin, ShadowHero, ShadowWizard, ShadowHealer, ShadowLord, IceDragon, FireGolem, Onryo } from './entities.js'; 
 import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
@@ -56,18 +56,16 @@ export class BattleManager {
         else if (enemyType === 'weakness_test') {
             const iceGoblin = new Goblin("弱点ゴブリン(氷)");
             iceGoblin.weaknessTag = "ice";
-            const holyCragen = new cragen(false, "弱点クラーゲン(聖)");
-            holyCragen.weaknessTag = "holy";
+            const holyOnryo = new Onryo("弱点怨霊(聖)");
             this.state.enemies.push(iceGoblin);
-            this.state.enemies.push(holyCragen);
+            this.state.enemies.push(holyOnryo);
         }
         else {
             if (rnd < 0.6) {
-                const holyCragen = new cragen(false, "クラーゲンC");
-                holyCragen.weaknessTag = "holy";
+                const holyOnryo = new Onryo();
                 this.state.enemies.push(new Goblin("ゴブリンA"));
                 this.state.enemies.push(new cragen(false, "クラーゲンB"));
-                this.state.enemies.push(holyCragen);
+                this.state.enemies.push(holyOnryo);
             } else if (rnd < 0.9) {
                 const guardGoblin = new Goblin("護衛ゴブリン");
                 const cragenA = new cragen(false, "クラーゲンA");

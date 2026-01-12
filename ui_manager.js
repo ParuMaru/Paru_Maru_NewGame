@@ -446,6 +446,7 @@ export class UIManager {
             const img = document.createElement('img');
             img.src = enemy.img || './resource/cragen.webp'; 
             img.className = 'enemy-img';
+            img.onerror = () => { img.src = './resource/cragen.webp'; };
             
             unitDiv.appendChild(nameDiv);
             unitDiv.appendChild(infoDiv);

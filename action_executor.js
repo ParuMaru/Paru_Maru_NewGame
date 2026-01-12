@@ -69,6 +69,15 @@ export class ActionExecutor {
                 finalTarget.debuffs.poison = 3;
             }
         });
+
+        if (actor.job === 'healer') {
+            const beforeMp = actor.mp;
+            actor.add_mp(10);
+            const recovered = actor.mp - beforeMp;
+            if (recovered > 0) {
+                this.director.showHeal(actor, recovered, true, false);
+            }
+        }
         this.director.music.playDamage(); 
     }
 
@@ -232,6 +241,7 @@ export class ActionExecutor {
         if (skill && (skill.type === 'physical' || skill.type === 'magic')) return null;
 
         if (actor && actor.job === 'hero') return "slash";
+        if (actor && actor.job === 'healer') return "holy";
         if (actor && actor.job === 'wizard') return null;
         return "slash";
     }
@@ -317,7 +327,7 @@ export class ActionExecutor {
         [enemyA, enemyB, enemyC].forEach(boostStats);
         enemyA.weaknessTag = "slash";
         enemyB.weaknessTag = "fire";
-        enemyC.weaknessTag = "holy";
+        enemyC.weaknessTag = "ice";
         
         // 変数名に合わせたプロパティを付与（ui_managerで参照するため）
         enemyA.isSplitLeft = true;

@@ -153,7 +153,7 @@ export class Hero extends Entity {
        　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
         super(name, 280, 80, 80, 65, 20, 30, 105, 30);
         this.job = "hero";
-        this.skills = ["cover", "encourage"]; 
+        this.skills = ["cover", "encourage", "whirlwind_slash"]; 
     }
 }
 
@@ -325,5 +325,15 @@ export class FireGolem extends Entity {
         this.weaknessTag = "ice";
         this.skills = ["lava_spray"];
         this.lavaCharging = false;
+    }
+}
+
+// ★追加：怨霊（聖弱点）
+export class Onryo extends Entity {
+    constructor(name = "怨霊") {
+        super(name, 260, 80, 30, 20, 45, 35, 110, 0, './resource/ghost.webp');
+        this.enemyType = "onryo";
+        this.weaknessTag = "holy";
+        this.skills = ["curse"];
     }
 }
