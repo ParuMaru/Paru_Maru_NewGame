@@ -252,7 +252,6 @@ export class ActionExecutor {
         const targets = this.enemies.filter(enemy => enemy.is_alive());
         if (targets.length === 0) return;
 
-        this.director.ui.addLog("トリニティアタック！", GameConfig.COLORS.LOG_IMPORTANT, true);
         this.director.effects.flash("rgba(255, 215, 0, 0.5)");
         this._playAttackHitSe('slash');
 
