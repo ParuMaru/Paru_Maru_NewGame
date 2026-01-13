@@ -63,4 +63,11 @@ export const UiClasses = {
     ICE_DRAGON_CUTIN: 'ice-dragon-cutin',
     ICE_DRAGON_CUTIN_ACTIVE: 'is-active',
     ICE_DRAGON_CUTIN_FADEOUT: 'is-fadeout',
+    DRAGON_EVENT_OVERLAY: 'dragon-event-overlay',
+    DRAGON_EVENT_ACTIVE: 'is-active',
+    DRAGON_EVENT_SUBTITLE_VISIBLE: 'is-visible',
+    DRAGON_EVENT_IMAGE_VISIBLE: 'is-visible',
+    DRAGON_EVENT_FLASH: 'dragon-event-flash',
+    ZABOCHI_TRANSFORMED: 'zabochi-transformed',
+    ZABOCHI_REAPPEAR: 'zabochi-reappear',
 };

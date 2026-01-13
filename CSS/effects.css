@@ -331,12 +331,14 @@
 
 /* 2. 奇跡の復活（黄金の光） */
 .flash-gold {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    position: absolute;
+    inset: 0;
     
     /* 【修正】外側を transparent（透明）にして、ゲーム画面が見えるようにする */
     background: radial-gradient(circle, rgba(255, 255, 200, 0.8) 0%, rgba(255, 215, 0, 0.3) 40%, transparent 80%);
     
-    z-index: 99999; pointer-events: none;
+    z-index: 70;
+    pointer-events: none;
     mix-blend-mode: screen; /* 光を重ねるモード */
     
     opacity: 0; animation: flash-gold-anim 3.0s ease-in-out;
@@ -350,12 +352,13 @@
 
 /* 3. 神猫ざぼち降臨 */
 .zabochi-appear {
-    position: fixed !important;
-    top: 50%; left: 50%;
+    position: absolute !important;
+    top: 50%;
+    left: 50%;
     transform: translate(-50%, -50%);
     max-width: 60%; 
     max-height: 60%;
-    z-index: 100000;
+    z-index: 80;
     pointer-events: none;
     filter: drop-shadow(0 0 20px gold);
     opacity: 0;
@@ -366,4 +369,16 @@
     20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     80%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     100% { opacity: 0; transform: translate(-50%, -60%) scale(1.2); }
+}
+.zabochi-transformed {
+    filter: brightness(1.25) contrast(1.2) saturate(1.4) drop-shadow(0 0 18px #b0f6ff) drop-shadow(0 0 32px #7ee6ff);
+    transform: translate(-50%, -50%) scale(1.08);
+}
+.zabochi-reappear {
+    animation: zabochi-reappear 1.4s ease-out forwards;
+}
+@keyframes zabochi-reappear {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
+    40% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+    100% { opacity: 0; transform: translate(-50%, -55%) scale(1.15); }
 }

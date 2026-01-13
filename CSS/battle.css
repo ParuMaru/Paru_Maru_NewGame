@@ -108,6 +108,72 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     filter: blur(0.6px);
     opacity: 0.6;
 }
+.dragon-event-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: clamp(60px, 14vh, 120px) 1fr clamp(70px, 16vh, 140px);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 60;
+    background: #000;
+    transition: opacity 1s ease;
+}
+.dragon-event-overlay.is-active {
+    opacity: 1;
+}
+.dragon-event-bar {
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.dragon-event-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+}
+.dragon-event-center img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0;
+    transition: opacity 1s ease;
+}
+.dragon-event-center img.is-visible {
+    opacity: 1;
+}
+.dragon-event-subtitle {
+    color: #fff;
+    font-weight: 700;
+    text-align: center;
+    font-size: clamp(16px, 3.2vw, 24px);
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.7);
+    opacity: 0;
+    transition: opacity 1s ease;
+    padding: 0 12px;
+}
+.dragon-event-subtitle.is-visible {
+    opacity: 1;
+}
+.dragon-event-flash {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 55;
+}
+.dragon-event-flash.is-active {
+    animation: dragon-event-flash 0.6s ease-out;
+}
+@keyframes dragon-event-flash {
+    0% { opacity: 0; }
+    20% { opacity: 0.9; }
+    100% { opacity: 0; }
+}
 .ice-dragon-cutin {
     position: absolute;
     inset: 0;

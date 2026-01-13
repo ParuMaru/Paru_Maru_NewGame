@@ -65,6 +65,10 @@ export const GameConfig = {
             FLASH_OVERLAY: 'flash-overlay',
             DESPAIR_BLIZZARD: 'despair-blizzard',
             ACTIVE_BLIZZARD: 'active-blizzard',
+            DRAGON_EVENT_OVERLAY: 'dragon-event-overlay',
+            DRAGON_EVENT_SUBTITLE: 'dragon-event-subtitle',
+            DRAGON_EVENT_IMAGE: 'dragon-event-image',
+            DRAGON_EVENT_FLASH: 'dragon-event-flash',
         },
         ID_TEMPLATES: {
             ENEMY_SPRITE: 'enemy-sprite-{index}',
@@ -188,6 +192,7 @@ export const GameConfig = {
     ASSETS: {
         IMAGES: {
             ZABOCHI: './resource/zabochi.webp',
+            ZABOCHI_TRANSFORMED: './resource/zabochi.webp',
             TRINITY_CUTIN: './resource/trinity_attack.jpg',
             HERO_ICON: './resource/hero_icon.webp',
             WIZARD_ICON: './resource/wizard_icon.webp',
@@ -257,6 +262,8 @@ export const GameConfig = {
         DRAGON_FLASH_REMOVE_MS: 500,
         BLIZZARD_WAIT_MS: 1000,
         DESPAIR_INTRO_WAIT_MS: 1000,
+        DESPAIR_SWAY_MS: 1000,
+        DESPAIR_FLASH_MS: 600,
         DESPAIR_LINE_WAIT_MS: 1500,
         DESPAIR_SHAKE_WAIT_MS: 350,
         DESPAIR_AFTER_WIPE_WAIT_MS: 1000,
@@ -265,6 +272,9 @@ export const GameConfig = {
         DESPAIR_ZABOCHI_WAIT_MS: 1500,
         DESPAIR_ZABOCHI_APPEAR_MS: 1000,
         DESPAIR_ZABOCHI_JOIN_WAIT_MS: 5000,
+        DESPAIR_DRAGON_VOICE_DELAY_MS: 200,
+        DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS: 800,
+        DESPAIR_ZABOCHI_REAPPEAR_WAIT_MS: 1200,
         ALL_OUT_TAIL_DELAY_MS: 400,
     },
     // ★追加: レリックのパラメータ

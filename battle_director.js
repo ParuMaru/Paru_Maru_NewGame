@@ -124,6 +124,82 @@ export class BattleDirector {
         );
     }
 
+    _ensureDragonEventOverlay() {
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea) return null;
+        let overlay = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_OVERLAY);
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = GameConfig.UI.IDS.DRAGON_EVENT_OVERLAY;
+            overlay.className = UiClasses.DRAGON_EVENT_OVERLAY;
+            overlay.innerHTML = `
+                <div class="dragon-event-bar dragon-event-bar--top"></div>
+                <div class="dragon-event-center">
+                    <img id="${GameConfig.UI.IDS.DRAGON_EVENT_IMAGE}" alt="覚醒アイスドラゴン" />
+                </div>
+                <div class="dragon-event-bar dragon-event-bar--bottom">
+                    <div id="${GameConfig.UI.IDS.DRAGON_EVENT_SUBTITLE}" class="dragon-event-subtitle"></div>
+                </div>
+            `;
+        }
+        canvasArea.appendChild(overlay);
+        return overlay;
+    }
+
+    _showDragonEventOverlay(src) {
+        const overlay = this._ensureDragonEventOverlay();
+        if (!overlay) return;
+        const image = overlay.querySelector(`#${GameConfig.UI.IDS.DRAGON_EVENT_IMAGE}`);
+        if (image && src) {
+            image.classList.remove(UiClasses.DRAGON_EVENT_IMAGE_VISIBLE);
+            image.src = src;
+        }
+        overlay.classList.add(UiClasses.DRAGON_EVENT_ACTIVE);
+        requestAnimationFrame(() => {
+            if (image) image.classList.add(UiClasses.DRAGON_EVENT_IMAGE_VISIBLE);
+        });
+    }
+
+    _setDragonEventSubtitle(text) {
+        const overlay = this._ensureDragonEventOverlay();
+        if (!overlay) return;
+        const subtitle = overlay.querySelector(`#${GameConfig.UI.IDS.DRAGON_EVENT_SUBTITLE}`);
+        if (!subtitle) return;
+        subtitle.classList.remove(UiClasses.DRAGON_EVENT_SUBTITLE_VISIBLE);
+        subtitle.textContent = text ?? '';
+        requestAnimationFrame(() => subtitle.classList.add(UiClasses.DRAGON_EVENT_SUBTITLE_VISIBLE));
+    }
+
+    _clearDragonEventSubtitle() {
+        const subtitle = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_SUBTITLE);
+        if (!subtitle) return;
+        subtitle.classList.remove(UiClasses.DRAGON_EVENT_SUBTITLE_VISIBLE);
+        subtitle.textContent = '';
+    }
+
+    _showDragonEventFlash() {
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea) return;
+        let flash = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_FLASH);
+        if (!flash) {
+            flash = document.createElement('div');
+            flash.id = GameConfig.UI.IDS.DRAGON_EVENT_FLASH;
+            flash.className = UiClasses.DRAGON_EVENT_FLASH;
+        }
+        canvasArea.appendChild(flash);
+        flash.classList.remove(UiClasses.DRAGON_EVENT_ACTIVE);
+        requestAnimationFrame(() => flash.classList.add(UiClasses.DRAGON_EVENT_ACTIVE));
+        setTimeout(() => flash.classList.remove(UiClasses.DRAGON_EVENT_ACTIVE), GameConfig.TIMING.DESPAIR_FLASH_MS);
+    }
+
+    _cleanupDragonEventOverlays() {
+        const overlay = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_OVERLAY);
+        if (overlay) overlay.remove();
+        const flash = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_FLASH);
+        if (flash) flash.remove();
+        this._clearDragonEventSubtitle();
+    }
+
     // --- 攻撃系の演出 ---
 
     showAttackStart(actor) {
@@ -527,101 +603,150 @@ export class BattleDirector {
     }
     
     async playDespairAndRevival(party) {
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
-        this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", UiColors.LOG_DRAGON_DESPAIR);
-        this.music.playDragon_voice();
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
-        this._showCanvasCutinImage(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT, { displayMs: 10000 });
-        this.music.stopBGM();
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        const addLogWithSubtitle = (text, color) => {
+            this._setDragonEventSubtitle(text);
+            this.ui.addLog(text, color);
+        };
+        this._ensureDragonEventOverlay();
+        let goldFlash;
+        let zabochiImg;
+        let transformedZabochi;
 
-        this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_WHITEOUT);
-        document.body.classList.add(UiClasses.SCREEN_SHAKE);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SHAKE_WAIT_MS));
+        try {
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
+            const awakenLine = "覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』";
+            addLogWithSubtitle(awakenLine, UiColors.LOG_DRAGON_DESPAIR);
 
-        party.forEach((p, i) => {
-            p._hp = 0;
-            p.is_dead = true;
-            p.clear_all_buffs();
-            const hpText = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
-            );
-            const hpBar  = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
-            );
-            const card   = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
-            );
-            if (hpText) {
-                hpText.innerText = "HP: {current} / {max}"
-                    .replace('{current}', 0)
-                    .replace('{max}', p.max_hp);
+            if (canvasArea) {
+                canvasArea.classList.add(UiClasses.SWAY_SLOW);
             }
-            if (hpBar)  hpBar.style.width = UiStyle.ZERO_HP_PERCENT;
-            if (card)   card.style.opacity = UiStyle.CARD_OPACITY_DEAD;
-            const badgeContainer = card.querySelector(`.${UiClasses.STATUS_CONTAINER}`);
-                if (badgeContainer) badgeContainer.innerHTML = '';
-        });
-
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
-        document.body.classList.remove(UiClasses.SCREEN_SHAKE);
-
-        this.ui.addLog("パーティは全滅した...", UiColors.LOG_DESPAIR);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
-        this.ui.addLog("もうだめかと思ったその時...", UiColors.LOG_DEFAULT);
-        this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
-        this._setFullscreenBlizzardMode(UiClasses.BLIZZARD_MODE_NORMAL);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
-        
-        this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", UiColors.LOG_ATTACK);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
-        
-        const goldFlash = document.createElement('div');
-        goldFlash.className = UiClasses.FLASH_GOLD;
-        document.body.appendChild(goldFlash);
-
-        const zabochiImg = document.createElement('img');
-        zabochiImg.src = GameConfig.ASSETS.IMAGES.ZABOCHI; 
-        zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
-        document.body.appendChild(zabochiImg);
-
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
-        
-        party.forEach((p, i) => {
-            p.revive(p.max_hp); p.add_mp(p.max_mp);
-            const hpText = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
-            );
-            const hpBar  = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
-            );
-            const card   = document.getElementById(
-                GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
-            );
-            if (hpText) {
-                hpText.innerText = "HP: {current} / {max}"
-                    .replace('{current}', p.max_hp)
-                    .replace('{max}', p.max_hp);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SWAY_MS));
+            if (canvasArea) {
+                canvasArea.classList.remove(UiClasses.SWAY_SLOW);
             }
-            if (hpBar)  hpBar.style.width = UiStyle.FULL_HP_PERCENT;
-            if (card)   card.style.opacity = UiStyle.CARD_OPACITY_ALIVE;
-        });
 
-        this.music.playHeal();
-        this.ui.addLog("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", UiColors.LOG_ATTACK);
-        this.ui.addLog("味方全員のHP・MPが全回復！", UiColors.LOG_ATTACK);
-        
-        const hasZabochi = party.some(m => m instanceof GodCat);
-        if (!hasZabochi) {
-            const zabochi = new GodCat();
-            zabochi.resetActionValue(); 
-            party.push(zabochi);
+            this._showDragonEventFlash();
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_FLASH_MS));
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
+
+            this._showDragonEventOverlay(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT);
+            this._setDragonEventSubtitle(awakenLine);
+            setTimeout(() => this.music.playDragon_voice(), GameConfig.TIMING.DESPAIR_DRAGON_VOICE_DELAY_MS);
+            this.music.stopBGM();
+
+            this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_WHITEOUT);
+            document.body.classList.add(UiClasses.SCREEN_SHAKE);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SHAKE_WAIT_MS));
+
+            party.forEach((p, i) => {
+                p._hp = 0;
+                p.is_dead = true;
+                p.clear_all_buffs();
+                const hpText = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
+                );
+                const hpBar  = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
+                );
+                const card   = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
+                );
+                if (hpText) {
+                    hpText.innerText = "HP: {current} / {max}"
+                        .replace('{current}', 0)
+                        .replace('{max}', p.max_hp);
+                }
+                if (hpBar)  hpBar.style.width = UiStyle.ZERO_HP_PERCENT;
+                if (card)   card.style.opacity = UiStyle.CARD_OPACITY_DEAD;
+                const badgeContainer = card.querySelector(`.${UiClasses.STATUS_CONTAINER}`);
+                    if (badgeContainer) badgeContainer.innerHTML = '';
+            });
+
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
+            document.body.classList.remove(UiClasses.SCREEN_SHAKE);
+
+            addLogWithSubtitle("パーティは全滅した...", UiColors.LOG_DESPAIR);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
+            addLogWithSubtitle("もうだめかと思ったその時...", UiColors.LOG_DEFAULT);
+            this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
+            this._setFullscreenBlizzardMode(UiClasses.BLIZZARD_MODE_NORMAL);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
             
-            this.ui.addLog("ざぼちが共闘してくれる！", UiColors.LOG_ATTACK);
+            addLogWithSubtitle("？？？『にゃにを諦めているにゃ！？』", UiColors.LOG_ATTACK);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
+            
+            goldFlash = document.createElement('div');
+            goldFlash.className = UiClasses.FLASH_GOLD;
+            if (canvasArea) {
+                canvasArea.appendChild(goldFlash);
+            }
+
+            zabochiImg = document.createElement('img');
+            zabochiImg.src = GameConfig.ASSETS.IMAGES.ZABOCHI; 
+            zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
+            if (canvasArea) {
+                canvasArea.appendChild(zabochiImg);
+            }
+
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
+            
+            party.forEach((p, i) => {
+                p.revive(p.max_hp); p.add_mp(p.max_mp);
+                const hpText = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
+                );
+                const hpBar  = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
+                );
+                const card   = document.getElementById(
+                    GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
+                );
+                if (hpText) {
+                    hpText.innerText = "HP: {current} / {max}"
+                        .replace('{current}', p.max_hp)
+                        .replace('{max}', p.max_hp);
+                }
+                if (hpBar)  hpBar.style.width = UiStyle.FULL_HP_PERCENT;
+                if (card)   card.style.opacity = UiStyle.CARD_OPACITY_ALIVE;
+            });
+
+            this.music.playHeal();
+            addLogWithSubtitle("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", UiColors.LOG_ATTACK);
+            addLogWithSubtitle("味方全員のHP・MPが全回復！", UiColors.LOG_ATTACK);
+            
+            const hasZabochi = party.some(m => m instanceof GodCat);
+            if (!hasZabochi) {
+                const zabochi = new GodCat();
+                zabochi.resetActionValue(); 
+                party.push(zabochi);
+                
+                addLogWithSubtitle("ざぼちが共闘してくれる！", UiColors.LOG_ATTACK);
+            }
+
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS));
+            if (zabochiImg) zabochiImg.remove();
+
+            transformedZabochi = document.createElement('img');
+            transformedZabochi.src = GameConfig.ASSETS.IMAGES.ZABOCHI_TRANSFORMED;
+            transformedZabochi.className = `${UiClasses.ZABOCHI_APPEAR} ${UiClasses.ZABOCHI_TRANSFORMED} ${UiClasses.ZABOCHI_REAPPEAR}`;
+            if (canvasArea) {
+                canvasArea.appendChild(transformedZabochi);
+            }
+            addLogWithSubtitle("ざぼちは変身した姿で再び現れた！", UiColors.LOG_ATTACK);
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_REAPPEAR_WAIT_MS));
+
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
+        } finally {
+            document.body.classList.remove(UiClasses.SCREEN_SHAKE);
+            if (canvasArea) {
+                canvasArea.classList.remove(UiClasses.SWAY_SLOW);
+            }
+            if (goldFlash) goldFlash.remove();
+            if (zabochiImg) zabochiImg.remove();
+            if (transformedZabochi) transformedZabochi.remove();
+            this._cleanupDragonEventOverlays();
         }
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
-        
-        goldFlash.remove();
-        zabochiImg.remove();
     }
 
     showItemUse(actor, item) {
