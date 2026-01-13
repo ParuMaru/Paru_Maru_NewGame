@@ -41,13 +41,6 @@
    ========================================= */
 #log { height: 15vh; min-height: 80px; background: #1a252f; padding: 8px; overflow-y: auto; font-size: 13px; text-shadow: 1px 1px 0 #333, -1px -1px 0 #333; border-bottom: 2px solid #ecf0f1 !important; }
 #log div { border-bottom: 1px dashed #333; padding: 2px 0; }
-#log.log-whiteout {
-    position: relative;
-    z-index: 100000;
-    background: rgba(10, 18, 26, 0.85) !important;
-    text-shadow: 1px 1px 0 #000, -1px -1px 0 #000;
-}
-
 #status-area { height: 15vh; max-height: 120px; display: flex; flex-direction: row; justify-content: space-around; background: #2c3e50; padding: 10px 5px; gap: 4px; align-items: center; border-bottom: 2px solid #ecf0f1 !important; }
 .member-card { flex: 1; min-width: 0; text-align: center; border: 1px solid #34495e; padding: 5px 2px; border-radius: 5px; position: relative; font-size: 12px; transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s; }
 .status-container { position: absolute; top: -22px; right: 10px; display: flex; flex-direction: row; justify-content: flex-end; align-items: flex-end; gap: 3px; z-index: 10; }
@@ -88,12 +81,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     100% { opacity: 0.55; }
 }
 #despair-blizzard {
-    position: fixed;
+    position: absolute;
     inset: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.45s ease-out, background-color 0.45s ease-out, filter 0.45s ease-out;
-    z-index: 2;
+    z-index: 5;
     overflow: hidden;
 }
 #despair-blizzard.is-active {
