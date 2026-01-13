@@ -600,6 +600,7 @@ export class BattleDirector {
             enemyEl.classList.remove(UiClasses.SWAY_SLOW);
             enemyEl.classList.add(UiClasses.FLASH_RAPID);
         }
+        await new Promise(r => setTimeout(r, 2000));
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_WAIT_MS));
     }
     
@@ -609,6 +610,7 @@ export class BattleDirector {
         this.ui.addLog(log2, UiColors.LOG_DRAGON_DESPAIR);
         this._startIceDragonEventOverlay(log2);
         this.music.playDragon_voice();
+        await new Promise(r => setTimeout(r, 2000));
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
 
@@ -616,6 +618,7 @@ export class BattleDirector {
         this._refreshAwakenedEnemyAppearance();
         this.ui.addLog(log3, UiColors.LOG_BLIZZARD);
         this._updateIceDragonEventSubtitle(log3);
+        await new Promise(r => setTimeout(r, 2000));
         const blizzardOverlay = this._ensureActiveBlizzardOverlay();
         if (blizzardOverlay) {
             await new Promise(r => requestAnimationFrame(r));
@@ -652,15 +655,15 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
         document.body.classList.remove(UiClasses.SCREEN_SHAKE);
 
-        const log4 = "パーティは全滅した";
+        const log4 = "パーティは全滅した･･･";
         this.ui.addLog(log4, UiColors.LOG_DESPAIR);
         this._updateIceDragonEventSubtitle(log4);
         await new Promise(r => setTimeout(r, 2000));
-        const log5 = "もうだめかと思った";
+        const log5 = "もうだめかと思った･･･";
         this.ui.addLog(log5, UiColors.LOG_DEFAULT);
         this._updateIceDragonEventSubtitle(log5);
         await new Promise(r => setTimeout(r, 2000));
-        const log6 = "その時";
+        const log6 = "その時･･･";
         this.ui.addLog(log6, UiColors.LOG_DEFAULT);
         this._updateIceDragonEventSubtitle(log6);
         await new Promise(r => setTimeout(r, 2000));
