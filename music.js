@@ -1,3 +1,6 @@
+import { AudioConstants } from './audio_constants.js';
+import { GameConfig } from './game_config.js';
+
 /**
  * ゲーム内のBGMおよびSE（効果音）を制御するクラス
  * Web Audio APIを使用してリアルタイムに音を合成・再生します
@@ -7,8 +10,8 @@ export class BattleBGM {
         this.ctx = null;           // AudioContext
         this.isPlaying = false;    // BGM再生中フラグ
         this.allNotes = [];        // 現在再生中の音符データ
-        this.fixedBpm = 180;       // 現在の再生速度
-        this.baseBpm = 180;        // 通常曲の基本BPM
+        this.fixedBpm = GameConfig.AUDIO.BPM.DEFAULT;       // 現在の再生速度
+        this.baseBpm = GameConfig.AUDIO.BPM.DEFAULT;        // 通常曲の基本BPM
         
         this.totalDuration = 0;    
         this.schedulerTimer = null; 
@@ -22,52 +25,52 @@ export class BattleBGM {
 
         // 楽曲データ保存用
         this.bgmData = {
-            map:    [],
-            normal: [], 
-            elite:  [], 
-            shadow:   [],
-            boss:   []    
+            [GameConfig.AUDIO.BGM_TYPES.MAP]: [],
+            [GameConfig.AUDIO.BGM_TYPES.NORMAL]: [], 
+            [GameConfig.AUDIO.BGM_TYPES.ELITE]: [], 
+            [GameConfig.AUDIO.BGM_TYPES.SHADOW]: [],
+            [GameConfig.AUDIO.BGM_TYPES.BOSS]: []    
         };
         
         // MIDIファイルパス設定
         this.bgmFiles = {
-            map: './resource/map.mid',
-            normal: './resource/01battle.mid', 
-            elite:  './resource/03boss_battle.mid', 
-            shadow:   './resource/04boss_battle.mid', 
-            boss:   './resource/01boss_battle.mid'   
+            [GameConfig.AUDIO.BGM_TYPES.MAP]: GameConfig.AUDIO.BGM_FILES.MAP,
+            [GameConfig.AUDIO.BGM_TYPES.NORMAL]: GameConfig.AUDIO.BGM_FILES.NORMAL, 
+            [GameConfig.AUDIO.BGM_TYPES.ELITE]: GameConfig.AUDIO.BGM_FILES.ELITE, 
+            [GameConfig.AUDIO.BGM_TYPES.SHADOW]: GameConfig.AUDIO.BGM_FILES.SHADOW, 
+            [GameConfig.AUDIO.BGM_TYPES.BOSS]: GameConfig.AUDIO.BGM_FILES.BOSS   
         };
 
         // エンディング用MP3ファイルのパス
-        this.endingFile = './resource/ending.mp3';
+        this.endingFile = GameConfig.AUDIO.ENDING_FILE;
         this.endingBuffer = null;
-        this.currentType = 'normal';
+        this.currentType = GameConfig.AUDIO.BGM_TYPES.NORMAL;
         
         // ボス後半戦用ファイルのパス
-        this.boss2File = './resource/burning_heart.mp3';
+        this.boss2File = GameConfig.AUDIO.BOSS2_FILE;
         this.boss2Buffer = null;
-        this.currentType = 'normal';
+        this.currentType = GameConfig.AUDIO.BGM_TYPES.NORMAL;
         
         this.seFiles = {
-            'slash': './resource/slash.mp3',
-            'magic': './resource/magic.mp3',
-            'fire': './resource/fire.mp3',
-            'ice': './resource/ice.mp3',
-            'holy': './resource/holy.mp3',
-            'meteor': './resource/meteor.mp3',
-            'heal': './resource/heal.mp3',
-            'meditation': './resource/meditation.mp3',
-            'kobu': './resource/kobu.mp3',
-            'cover': './resource/cover.mp3',
-            'splited': './resource/splited.mp3',
-            'bukubuku': './resource/bukubuku.mp3',
-            'damage': './resource/damage.mp3',
-            'poison': './resource/poison.mp3',
-            'breath': './resource/breath.mp3',
-            'dragon_voice':'./resource/dragon_voice.mp3',
-            'win': './resource/win.mp3',
-            'special_ready': './resource/special_ready.mp3',
-            'special': './resource/special.mp3'
+            [GameConfig.AUDIO.SE_KEYS.SLASH]: GameConfig.AUDIO.SE_FILES.SLASH,
+            [GameConfig.AUDIO.SE_KEYS.MAGIC]: GameConfig.AUDIO.SE_FILES.MAGIC,
+            [GameConfig.AUDIO.SE_KEYS.FIRE]: GameConfig.AUDIO.SE_FILES.FIRE,
+            [GameConfig.AUDIO.SE_KEYS.ICE]: GameConfig.AUDIO.SE_FILES.ICE,
+            [GameConfig.AUDIO.SE_KEYS.HOLY]: GameConfig.AUDIO.SE_FILES.HOLY,
+            [GameConfig.AUDIO.SE_KEYS.METEOR]: GameConfig.AUDIO.SE_FILES.METEOR,
+            [GameConfig.AUDIO.SE_KEYS.HEAL]: GameConfig.AUDIO.SE_FILES.HEAL,
+            [GameConfig.AUDIO.SE_KEYS.MEDITATION]: GameConfig.AUDIO.SE_FILES.MEDITATION,
+            [GameConfig.AUDIO.SE_KEYS.KOBU]: GameConfig.AUDIO.SE_FILES.KOBU,
+            [GameConfig.AUDIO.SE_KEYS.COVER]: GameConfig.AUDIO.SE_FILES.COVER,
+            [GameConfig.AUDIO.SE_KEYS.SPLITED]: GameConfig.AUDIO.SE_FILES.SPLITED,
+            [GameConfig.AUDIO.SE_KEYS.BUKUBUKU]: GameConfig.AUDIO.SE_FILES.BUKUBUKU,
+            [GameConfig.AUDIO.SE_KEYS.DAMAGE]: GameConfig.AUDIO.SE_FILES.DAMAGE,
+            [GameConfig.AUDIO.SE_KEYS.POISON]: GameConfig.AUDIO.SE_FILES.POISON,
+            [GameConfig.AUDIO.SE_KEYS.BREATH]: GameConfig.AUDIO.SE_FILES.BREATH,
+            [GameConfig.AUDIO.SE_KEYS.DRAGON_VOICE]: GameConfig.AUDIO.SE_FILES.DRAGON_VOICE,
+            [GameConfig.AUDIO.SE_KEYS.WIN]: GameConfig.AUDIO.SE_FILES.WIN,
+            [GameConfig.AUDIO.SE_KEYS.SPECIAL_READY]: GameConfig.AUDIO.SE_FILES.SPECIAL_READY,
+            [GameConfig.AUDIO.SE_KEYS.SPECIAL]: GameConfig.AUDIO.SE_FILES.SPECIAL
         };
         
         this.victoryLoopTimer = null; 
@@ -119,21 +122,21 @@ export class BattleBGM {
         })();
 
         // 各MIDI BGMの読み込み
-        const bgmPromiseMap = this.loadMidi(this.bgmFiles.map, 'map');
-        const bgmPromiseNormal = this.loadMidi(this.bgmFiles.normal, 'normal');
+        const bgmPromiseMap = this.loadMidi(this.bgmFiles[GameConfig.AUDIO.BGM_TYPES.MAP], GameConfig.AUDIO.BGM_TYPES.MAP);
+        const bgmPromiseNormal = this.loadMidi(this.bgmFiles[GameConfig.AUDIO.BGM_TYPES.NORMAL], GameConfig.AUDIO.BGM_TYPES.NORMAL);
         
-        const bgmPromiseElite = this.loadMidi(this.bgmFiles.elite, 'elite').catch(() => {
+        const bgmPromiseElite = this.loadMidi(this.bgmFiles[GameConfig.AUDIO.BGM_TYPES.ELITE], GameConfig.AUDIO.BGM_TYPES.ELITE).catch(() => {
             console.log("エリートBGMが見つかりません。通常曲を流用します。");
-            this.bgmData.elite = null;
+            this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE] = null;
         });
-        const bgmPromiseShadow = this.loadMidi(this.bgmFiles.shadow, 'shadow').catch(() => {
+        const bgmPromiseShadow = this.loadMidi(this.bgmFiles[GameConfig.AUDIO.BGM_TYPES.SHADOW], GameConfig.AUDIO.BGM_TYPES.SHADOW).catch(() => {
             console.log("shadowBGMが見つかりません。通常曲を流用します。");
-            this.bgmData.elite = null;
+            this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE] = null;
         });
 
-        const bgmPromiseBoss = this.loadMidi(this.bgmFiles.boss, 'boss').catch(() => {
+        const bgmPromiseBoss = this.loadMidi(this.bgmFiles[GameConfig.AUDIO.BGM_TYPES.BOSS], GameConfig.AUDIO.BGM_TYPES.BOSS).catch(() => {
             console.log("ボスBGMが見つかりません。エリート曲を流用します。");
-            this.bgmData.boss = null; 
+            this.bgmData[GameConfig.AUDIO.BGM_TYPES.BOSS] = null; 
         });
 
         await Promise.all([...sePromises, endingPromise, bgmPromiseNormal, bgmPromiseElite, bgmPromiseBoss]);
@@ -145,16 +148,16 @@ export class BattleBGM {
         if (!res.ok) throw new Error(`File not found: ${url}`);
         const arrayBuffer = await res.arrayBuffer();
         
-        let targetBpm = 180;
-        if (type ==='map') targetBpm = 100;
-        if (type === 'elite') targetBpm = 180; 
-        if (type === 'dark')  targetBpm = 220; 
-        if (type === 'boss')  targetBpm = 180; 
+        let targetBpm = GameConfig.AUDIO.BPM.DEFAULT;
+        if (type === GameConfig.AUDIO.BGM_TYPES.MAP) targetBpm = GameConfig.AUDIO.BPM.MAP;
+        if (type === GameConfig.AUDIO.BGM_TYPES.ELITE) targetBpm = GameConfig.AUDIO.BPM.ELITE; 
+        if (type === GameConfig.AUDIO.BGM_TYPES.DARK)  targetBpm = GameConfig.AUDIO.BPM.DARK; 
+        if (type === GameConfig.AUDIO.BGM_TYPES.BOSS)  targetBpm = GameConfig.AUDIO.BPM.BOSS; 
 
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
     }
     
-    playSE(name, volume = 0.5) {
+    playSE(name, volume = GameConfig.AUDIO.VOLUME.SE_DEFAULT) {
         if (!this.ctx || !this.seBuffers[name]) return;
         const source = this.ctx.createBufferSource();
         source.buffer = this.seBuffers[name];
@@ -175,19 +178,19 @@ export class BattleBGM {
     /**
      * BGM再生
      */
-    playBGM(type = 'normal') {
+    playBGM(type = GameConfig.AUDIO.BGM_TYPES.NORMAL) {
         this.stopBGM(); // ★ここで全てのBGM（勝利ループ含む）を停止
         this.currentType = type;
 
         // エンディング(MP3)の場合はここで再生してリターン
-        if (type === 'ending') {
+        if (type === GameConfig.AUDIO.BGM_TYPES.ENDING) {
             if (this.endingBuffer) {
                 const source = this.ctx.createBufferSource();
                 source.buffer = this.endingBuffer;
                 source.loop = true; 
                 
                 const gainNode = this.ctx.createGain();
-                gainNode.gain.value = 0.6; 
+                gainNode.gain.value = GameConfig.AUDIO.VOLUME.ENDING_GAIN; 
 
                 source.connect(gainNode).connect(this.ctx.destination);
                 source.start(0);
@@ -197,14 +200,14 @@ export class BattleBGM {
             }
             return; // MIDI処理には行かない
         }
-        else if(type ==='boss2') {
+        else if(type === GameConfig.AUDIO.BGM_TYPES.BOSS2) {
             if (this.endingBuffer) {
                 const source = this.ctx.createBufferSource();
                 source.buffer = this.boss2Buffer;
                 source.loop = true; 
                 
                 const gainNode = this.ctx.createGain();
-                gainNode.gain.value = 0.4; 
+                gainNode.gain.value = GameConfig.AUDIO.VOLUME.BOSS2_GAIN; 
 
                 source.connect(gainNode).connect(this.ctx.destination);
                 source.start(0);
@@ -216,42 +219,42 @@ export class BattleBGM {
         }
 
         // --- MIDI再生ロジック ---
-        let notesToPlay = this.bgmData.normal;
+        let notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.NORMAL];
         let bpmToUse = this.baseBpm;
 
-        if (type === 'map'){
-            if (this.bgmData.map) {
-                notesToPlay = this.bgmData.map;
-                bpmToUse = 100; 
+        if (type === GameConfig.AUDIO.BGM_TYPES.MAP){
+            if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.MAP]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.MAP];
+                bpmToUse = GameConfig.AUDIO.BPM.MAP; 
             } else {
                 notesToPlay = []; 
             }
         }
-        else if (type === 'boss') {
-            if (this.bgmData.boss) {
-                notesToPlay = this.bgmData.boss;
-                bpmToUse = 236; 
-            } else if (this.bgmData.elite) {
-                notesToPlay = this.bgmData.elite;
-                bpmToUse = 220;
+        else if (type === GameConfig.AUDIO.BGM_TYPES.BOSS) {
+            if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.BOSS]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.BOSS];
+                bpmToUse = GameConfig.AUDIO.BPM.BOSS_PLAY; 
+            } else if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE];
+                bpmToUse = GameConfig.AUDIO.BPM.ELITE_PLAY;
             }
         }
-        else if (type === 'shadow') {
-            if (this.bgmData.boss) {
-                notesToPlay = this.bgmData.shadow;
-                bpmToUse = 160; 
-            } else if (this.bgmData.elite) {
-                notesToPlay = this.bgmData.elite;
-                bpmToUse = 220;
+        else if (type === GameConfig.AUDIO.BGM_TYPES.SHADOW) {
+            if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.BOSS]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.SHADOW];
+                bpmToUse = GameConfig.AUDIO.BPM.SHADOW_PLAY; 
+            } else if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE];
+                bpmToUse = GameConfig.AUDIO.BPM.ELITE_PLAY;
             }
         } 
-        else if (type === 'elite') {
-            if (this.bgmData.elite) {
-                notesToPlay = this.bgmData.elite;
-                bpmToUse = 220; 
+        else if (type === GameConfig.AUDIO.BGM_TYPES.ELITE) {
+            if (this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE]) {
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.ELITE];
+                bpmToUse = GameConfig.AUDIO.BPM.ELITE_PLAY; 
             } else {
-                notesToPlay = this.bgmData.normal;
-                bpmToUse = this.baseBpm * 1.2;
+                notesToPlay = this.bgmData[GameConfig.AUDIO.BGM_TYPES.NORMAL];
+                bpmToUse = this.baseBpm * GameConfig.AUDIO.MULTIPLIERS.ELITE_FALLBACK_BPM;
             }
         }
 
@@ -261,34 +264,34 @@ export class BattleBGM {
         if (this.allNotes && this.allNotes.length > 0) {
             this.isPlaying = true;
             this.nextNoteIndex = 0;
-            this.startTime = this.ctx.currentTime + 0.1;
+            this.startTime = this.ctx.currentTime + GameConfig.AUDIO.TIMING.START_TIME_OFFSET_S;
             this.schedule();
         }
     }
 
     schedule() {
         if (!this.isPlaying) return;
-        if (this.currentType === 'ending') return;
-        if (this.currentType === 'boss2') return;
+        if (this.currentType === GameConfig.AUDIO.BGM_TYPES.ENDING) return;
+        if (this.currentType === GameConfig.AUDIO.BGM_TYPES.BOSS2) return;
 
-        const lookAhead = 1.0; 
+        const lookAhead = GameConfig.AUDIO.TIMING.LOOK_AHEAD_S; 
         const currentTime = this.ctx.currentTime - this.startTime;
 
         while (this.nextNoteIndex < this.allNotes.length && 
                this.allNotes[this.nextNoteIndex].time < currentTime + lookAhead) {
             const note = this.allNotes[this.nextNoteIndex];
-            this.playNote(note.freq, this.startTime + note.time, 0.1);
+            this.playNote(note.freq, this.startTime + note.time, GameConfig.AUDIO.VOLUME.NOTE_DEFAULT);
             this.nextNoteIndex++;
         }
 
         if (this.nextNoteIndex >= this.allNotes.length && this.allNotes.length > 0) {
             const lastNoteTime = this.allNotes[this.allNotes.length - 1].time;
-            if (currentTime > lastNoteTime + 0.25) {
+            if (currentTime > lastNoteTime + GameConfig.AUDIO.TIMING.LOOP_GAP_S) {
                 this.nextNoteIndex = 0;
                 this.startTime = this.ctx.currentTime;
             }
         }
-        this.schedulerTimer = setTimeout(() => this.schedule(), 200);
+        this.schedulerTimer = setTimeout(() => this.schedule(), GameConfig.AUDIO.TIMING.SCHEDULE_INTERVAL_MS);
     }
 
     playNote(freq, time, vol) {
@@ -296,24 +299,24 @@ export class BattleBGM {
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
         
-        osc.type = "square"; 
+        osc.type = AudioConstants.WAVEFORMS.NOTE; 
         
         osc.frequency.setValueAtTime(freq, time);
-        const duration = 0.2; 
+        const duration = GameConfig.AUDIO.TIMING.NOTE_DURATION_S; 
 
         g.gain.setValueAtTime(0, time);
-        g.gain.linearRampToValueAtTime(vol * 0.2, time + 0.01);
-        g.gain.exponentialRampToValueAtTime(0.001, time + duration); 
+        g.gain.linearRampToValueAtTime(vol * GameConfig.AUDIO.MULTIPLIERS.NOTE_VOLUME, time + GameConfig.AUDIO.TIMING.NOTE_RAMP_UP_S);
+        g.gain.exponentialRampToValueAtTime(GameConfig.AUDIO.TIMING.NOTE_MIN_GAIN, time + duration); 
 
         osc.connect(g).connect(this.ctx.destination);
         osc.start(time);
-        osc.stop(time + duration + 0.1);
+        osc.stop(time + duration + GameConfig.AUDIO.TIMING.NOTE_STOP_OFFSET_S);
         
         this.activeSources.push(osc);
         setTimeout(() => {
             const idx = this.activeSources.indexOf(osc);
             if (idx > -1) this.activeSources.splice(idx, 1);
-        }, (duration + 0.2) * 1000);
+        }, (duration + GameConfig.AUDIO.TIMING.ACTIVE_SOURCE_CLEANUP_BUFFER_S) * 1000);
     }
 
     stop() {
@@ -396,34 +399,34 @@ export class BattleBGM {
     }
     
     // --- SE再生メソッド群 ---
-    playAttack() { this.playSE('slash'); }
-    playMagic() { this.playSE('magic'); }
-    playMagicFire() { this.playSE('fire'); }
-    playMagicMeteor() { this.playSE('meteor'); }
-    playHeal() { this.playSE('heal'); }
-    playMeditation(){ this.playSE('meditation'); }
-    playKobu(){ this.playSE('kobu'); }
-    playCover(){ this.playSE('cover'); }
-    playSplited(){this.playSE('splited');}
-    playBukubuku(){this.playSE('bukubuku');}
-    playPoison(){this.playSE('poison');}
-    playBreath(){this.playSE('breath');}
-    playDragon_voice(){this.playSE('dragon_voice');}
-    playSpecialReady() { this.playSE('special_ready'); }
-    playSpecial() { this.playSE('special'); }
+    playAttack() { this.playSE(GameConfig.AUDIO.SE_KEYS.SLASH); }
+    playMagic() { this.playSE(GameConfig.AUDIO.SE_KEYS.MAGIC); }
+    playMagicFire() { this.playSE(GameConfig.AUDIO.SE_KEYS.FIRE); }
+    playMagicMeteor() { this.playSE(GameConfig.AUDIO.SE_KEYS.METEOR); }
+    playHeal() { this.playSE(GameConfig.AUDIO.SE_KEYS.HEAL); }
+    playMeditation(){ this.playSE(GameConfig.AUDIO.SE_KEYS.MEDITATION); }
+    playKobu(){ this.playSE(GameConfig.AUDIO.SE_KEYS.KOBU); }
+    playCover(){ this.playSE(GameConfig.AUDIO.SE_KEYS.COVER); }
+    playSplited(){this.playSE(GameConfig.AUDIO.SE_KEYS.SPLITED);}
+    playBukubuku(){this.playSE(GameConfig.AUDIO.SE_KEYS.BUKUBUKU);}
+    playPoison(){this.playSE(GameConfig.AUDIO.SE_KEYS.POISON);}
+    playBreath(){this.playSE(GameConfig.AUDIO.SE_KEYS.BREATH);}
+    playDragon_voice(){this.playSE(GameConfig.AUDIO.SE_KEYS.DRAGON_VOICE);}
+    playSpecialReady() { this.playSE(GameConfig.AUDIO.SE_KEYS.SPECIAL_READY); }
+    playSpecial() { this.playSE(GameConfig.AUDIO.SE_KEYS.SPECIAL); }
     playElementHit(tag) {
-        if (tag === 'holy') return this.playSE('holy');
-        if (tag === 'ice') return this.playSE('ice');
-        if (tag === 'fire') return this.playSE('fire');
-        return this.playSE('magic');
+        if (tag === GameConfig.ELEMENT_TAGS.HOLY) return this.playSE(GameConfig.AUDIO.SE_KEYS.HOLY);
+        if (tag === GameConfig.ELEMENT_TAGS.ICE) return this.playSE(GameConfig.AUDIO.SE_KEYS.ICE);
+        if (tag === GameConfig.ELEMENT_TAGS.FIRE) return this.playSE(GameConfig.AUDIO.SE_KEYS.FIRE);
+        return this.playSE(GameConfig.AUDIO.SE_KEYS.MAGIC);
     }
     playDamage() {
-        this.playSE('damage');
+        this.playSE(GameConfig.AUDIO.SE_KEYS.DAMAGE);
     }
-    playWin(){this.playSE('win');}
+    playWin(){this.playSE(GameConfig.AUDIO.SE_KEYS.WIN);}
     
 
-    playInstr(freqs, time, dur, vol, type = "sawtooth") {
+    playInstr(freqs, time, dur, vol, type = AudioConstants.WAVEFORMS.INSTRUMENT_DEFAULT) {
         if (!this.ctx) return;
         
         // ★修正: 停止フラグが降りていたら音を予約しない（これが重要！）
@@ -437,24 +440,24 @@ export class BattleBGM {
             osc.type = type;
 
             const filter = this.ctx.createBiquadFilter();
-            filter.type = "lowpass";
-            filter.frequency.value = 2000;
+            filter.type = AudioConstants.FILTERS.LOWPASS;
+            filter.frequency.value = AudioConstants.FILTERS.INSTRUMENT_FREQ;
 
             osc.frequency.setValueAtTime(f, time);
             g.gain.setValueAtTime(0, time);
-            g.gain.linearRampToValueAtTime(vol, time + 0.02);
-            g.gain.setValueAtTime(vol * 0.8, time + 0.05); 
+            g.gain.linearRampToValueAtTime(vol, time + GameConfig.AUDIO.INSTRUMENT.GAIN_RAMP_UP_S);
+            g.gain.setValueAtTime(vol * GameConfig.AUDIO.INSTRUMENT.GAIN_SUSTAIN_MULTIPLIER, time + GameConfig.AUDIO.INSTRUMENT.GAIN_SUSTAIN_TIME_S); 
             g.gain.linearRampToValueAtTime(0, time + dur); 
 
             osc.connect(filter).connect(g).connect(this.ctx.destination);
             osc.start(time);
-            osc.stop(time + dur + 0.1);
+            osc.stop(time + dur + GameConfig.AUDIO.INSTRUMENT.STOP_OFFSET_S);
             
             this.activeSources.push(osc);
             setTimeout(() => {
                  const idx = this.activeSources.indexOf(osc);
                  if (idx > -1) this.activeSources.splice(idx, 1);
-            }, (dur + 0.2) * 1000);
+            }, (dur + GameConfig.AUDIO.INSTRUMENT.CLEANUP_BUFFER_S) * 1000);
         });
     }
 

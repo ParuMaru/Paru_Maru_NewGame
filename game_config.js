@@ -45,29 +45,226 @@ export const GameConfig = {
         FUSION_ANIM: 2200,       // 合体演出の溜め時間
         TRANSFORM_WAIT: 2000,    // 変身演出の待ち時間
         ALL_OUT_ANIMATION: 1000,  // トリニティアタック演出の待ち時間
+        ALL_OUT_ANIMATION_FALLBACK: 450, // トリニティアタック演出のフォールバック
     },
 
-    // --- 色設定 (ログやポップアップ用) ---
-    COLORS: {
-        // ダメージ・回復
-        DAMAGE: "#ff4757",        // 赤 (ダメージ)
-        HEAL_HP: "#2ecc71",       // 緑 (HP回復)
-        HEAL_MP: "#3498db",       // 青 (MP回復)
-        FULL_HEAL: "#f1c40f",     // 金 (全回復)
-        CRITICAL: "#f1c40f",      // 金 (クリティカル文字)
-        POISON: "#9b59b6",        // 紫 (毒ダメージ)
+    UI: {
+        IDS: {
+            LOG: 'log',
+            COMMAND_CONTAINER: 'command-container',
+            TURN_LABEL: 'turn-label',
+            ENEMY_TARGET: 'enemy-target',
+            CANVAS_AREA: 'canvas-area',
+            TURN_ORDER_PANEL: 'turn-order-panel',
+            ROUND_INFO_TEXT: 'round-info-text',
+            TURN_LIST_CONTAINER: 'turn-list-container',
+            GAME_WRAPPER: 'game-wrapper',
+            ALLOUT_OVERLAY: 'allout-overlay',
+            ALLOUT_PROMPT: 'allout-prompt',
+            RELIC_CONTAINER: 'relic-container',
+            FLASH_OVERLAY: 'flash-overlay',
+            DESPAIR_BLIZZARD: 'despair-blizzard',
+            ACTIVE_BLIZZARD: 'active-blizzard',
+        },
+        ID_TEMPLATES: {
+            ENEMY_SPRITE: 'enemy-sprite-{index}',
+            CARD: 'card-{index}',
+            PLAYER_HP_TEXT: 'p{index}-hp-text',
+            PLAYER_HP_BAR: 'p{index}-hp-bar',
+        },
+        LIMITS: {
+            TURN_QUEUE_DISPLAY: 5,
+            LOG_BOLD_FONT_SIZE_PX: 15,
+            PARTY_SIZE: 3,
+            HEX_COLOR_MIN_LENGTH: 7,
+            LUMINANCE_THRESHOLD: 0.7,
+            LUMINANCE_DENOMINATOR: 255,
+            MIN_PERCENT: 0,
+        },
+    },
 
-        // ログメッセージ
-        LOG_DEFAULT: "#ffffff",   // 白 (通常)
-        LOG_ATTACK: "#f1c40f",    // 黄 (物理攻撃ログ)
-        LOG_SKILL: "#3498db",     // 青 (スキル使用ログ)
-        LOG_ITEM: "#e67e22",      // オレンジ (アイテムログ)
-        LOG_BUFF: "#e74c3c",      // 赤系 (バフ効果)
-        LOG_DEBUFF: "#7f8c8d",    // グレー (デバフ効果)
-        LOG_PRAYER: "#8e44ad",    // 紫 (祈り)
-        LOG_IMPORTANT: "#ffff00", // 黄色強調 (重要メッセージ)
-        LOG_DESPAIR: "#7f8c8d",   // グレー (全滅...)
-        LOG_SYSTEM: "#bdc3c7",    // 薄グレー (システムメッセージ)
+    AUDIO: {
+        BPM: {
+            DEFAULT: 180,
+            MAP: 100,
+            ELITE: 180,
+            DARK: 220,
+            BOSS: 180,
+            BOSS_PLAY: 236,
+            SHADOW_PLAY: 160,
+            ELITE_PLAY: 220,
+        },
+        VOLUME: {
+            SE_DEFAULT: 0.5,
+            ENDING_GAIN: 0.6,
+            BOSS2_GAIN: 0.4,
+            NOTE_DEFAULT: 0.1,
+        },
+        MULTIPLIERS: {
+            ELITE_FALLBACK_BPM: 1.2,
+            NOTE_VOLUME: 0.2,
+        },
+        TIMING: {
+            LOOK_AHEAD_S: 1.0,
+            START_TIME_OFFSET_S: 0.1,
+            NOTE_DURATION_S: 0.2,
+            NOTE_RAMP_UP_S: 0.01,
+            NOTE_MIN_GAIN: 0.001,
+            NOTE_STOP_OFFSET_S: 0.1,
+            ACTIVE_SOURCE_CLEANUP_BUFFER_S: 0.2,
+            LOOP_GAP_S: 0.25,
+            SCHEDULE_INTERVAL_MS: 200,
+        },
+        INSTRUMENT: {
+            GAIN_RAMP_UP_S: 0.02,
+            GAIN_SUSTAIN_MULTIPLIER: 0.8,
+            GAIN_SUSTAIN_TIME_S: 0.05,
+            STOP_OFFSET_S: 0.1,
+            CLEANUP_BUFFER_S: 0.2,
+        },
+        BGM_FILES: {
+            MAP: './resource/map.mid',
+            NORMAL: './resource/01battle.mid',
+            ELITE: './resource/03boss_battle.mid',
+            SHADOW: './resource/04boss_battle.mid',
+            BOSS: './resource/01boss_battle.mid',
+        },
+        ENDING_FILE: './resource/ending.mp3',
+        BOSS2_FILE: './resource/burning_heart.mp3',
+        SE_FILES: {
+            SLASH: './resource/slash.mp3',
+            MAGIC: './resource/magic.mp3',
+            FIRE: './resource/fire.mp3',
+            ICE: './resource/ice.mp3',
+            HOLY: './resource/holy.mp3',
+            METEOR: './resource/meteor.mp3',
+            HEAL: './resource/heal.mp3',
+            MEDITATION: './resource/meditation.mp3',
+            KOBU: './resource/kobu.mp3',
+            COVER: './resource/cover.mp3',
+            SPLITED: './resource/splited.mp3',
+            BUKUBUKU: './resource/bukubuku.mp3',
+            DAMAGE: './resource/damage.mp3',
+            POISON: './resource/poison.mp3',
+            BREATH: './resource/breath.mp3',
+            DRAGON_VOICE: './resource/dragon_voice.mp3',
+            WIN: './resource/win.mp3',
+            SPECIAL_READY: './resource/special_ready.mp3',
+            SPECIAL: './resource/special.mp3',
+        },
+        SE_KEYS: {
+            SLASH: 'slash',
+            MAGIC: 'magic',
+            FIRE: 'fire',
+            ICE: 'ice',
+            HOLY: 'holy',
+            METEOR: 'meteor',
+            HEAL: 'heal',
+            MEDITATION: 'meditation',
+            KOBU: 'kobu',
+            COVER: 'cover',
+            SPLITED: 'splited',
+            BUKUBUKU: 'bukubuku',
+            DAMAGE: 'damage',
+            POISON: 'poison',
+            BREATH: 'breath',
+            DRAGON_VOICE: 'dragon_voice',
+            WIN: 'win',
+            SPECIAL_READY: 'special_ready',
+            SPECIAL: 'special',
+        },
+        BGM_TYPES: {
+            NORMAL: 'normal',
+            MAP: 'map',
+            ELITE: 'elite',
+            SHADOW: 'shadow',
+            BOSS: 'boss',
+            ENDING: 'ending',
+            BOSS2: 'boss2',
+            DARK: 'dark',
+        },
+    },
+
+    ASSETS: {
+        IMAGES: {
+            ZABOCHI: './resource/zabochi.webp',
+            TRINITY_CUTIN: './resource/trinity_attack.jpg',
+            HERO_ICON: './resource/hero_icon.webp',
+            WIZARD_ICON: './resource/wizard_icon.webp',
+            HEALER_ICON: './resource/healer_icon.webp',
+            ENEMY_FALLBACK: './resource/cragen.webp',
+        },
+    },
+
+    SKILL_IDS: {
+        FIRE: 'fire',
+        FIRA: 'fira',
+        METEOR: 'meteor',
+        DARK_METEOR: 'dark_meteor',
+        BLIZZARD: 'blizzard',
+        BLIZZARA: 'blizzara',
+        ICE_BREATH: 'ice_breath',
+        CURSE: 'curse',
+        HOLY_STRIKE: 'holy_strike',
+        HOLY: 'holy',
+        ONRYO_CURSE: 'onryo_curse',
+        LAVA_SPRAY: 'lava_spray',
+        CHAOS_WAVE: 'chaos_wave',
+        MEDITATION: 'meditation',
+        RAISE: 'raise',
+    },
+
+    SKILL_MENUS: {
+        MAIN: 'main',
+        MAGIC: 'magic',
+        SKILL: 'skill',
+    },
+
+    JOBS: {
+        HERO: 'hero',
+        WIZARD: 'wizard',
+        HEALER: 'healer',
+    },
+
+    ENEMY_TYPES: {
+        ICE_DRAGON: 'ice_dragon',
+        SHADOW_LORD: 'shadow_lord',
+        SHADOW_PREFIX: 'shadow',
+    },
+
+    WEAKNESS_TAGS: {
+        FIRE: 'fire',
+        ICE: 'ice',
+        HOLY: 'holy',
+        SLASH: 'slash',
+    },
+
+    ELEMENT_TAGS: {
+        HOLY: 'holy',
+        ICE: 'ice',
+        FIRE: 'fire',
+    },
+
+    TIMING: {
+        BLIZZARD_OVERLAY_REMOVE_MS: 600,
+        SHADOW_FUSION_ABSORB_MS: 200,
+        SHADOW_FUSION_FLASH_REMOVE_MS: 500,
+        SHADOW_FUSION_SHAKE_MS: 1200,
+        SHADOW_FUSION_WAIT_MS: 1200,
+        DRAGON_FLASH_WAIT_MS: 1000,
+        DRAGON_FLASH_FADE_MS: 300,
+        DRAGON_FLASH_REMOVE_MS: 500,
+        BLIZZARD_WAIT_MS: 1000,
+        DESPAIR_INTRO_WAIT_MS: 1000,
+        DESPAIR_LINE_WAIT_MS: 1500,
+        DESPAIR_SHAKE_WAIT_MS: 350,
+        DESPAIR_AFTER_WIPE_WAIT_MS: 1000,
+        DESPAIR_LOG_WAIT_MS: 2000,
+        DESPAIR_HOPE_WAIT_MS: 2000,
+        DESPAIR_ZABOCHI_WAIT_MS: 1500,
+        DESPAIR_ZABOCHI_APPEAR_MS: 1000,
+        DESPAIR_ZABOCHI_JOIN_WAIT_MS: 5000,
+        ALL_OUT_TAIL_DELAY_MS: 400,
     },
     // ★追加: レリックのパラメータ
     RELIC: {
