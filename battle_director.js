@@ -589,11 +589,11 @@ export class BattleDirector {
         this.ui.addLog(log2, UiColors.LOG_DRAGON_DESPAIR);
         this._startIceDragonEventOverlay(log2);
         this.music.playDragon_voice();
-        this._refreshAwakenedEnemyAppearance();
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
 
         const log3 = "猛吹雪が吹き荒れる。";
+        this._refreshAwakenedEnemyAppearance();
         this.ui.addLog(log3, UiColors.LOG_BLIZZARD);
         this._updateIceDragonEventSubtitle(log3);
         const blizzardOverlay = this._ensureActiveBlizzardOverlay();
@@ -659,7 +659,7 @@ export class BattleDirector {
         const log7 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
         this.ui.addLog(log7, UiColors.LOG_ATTACK);
         this._updateIceDragonEventSubtitle(log7);
-        await this._fadeOutIceDragonEventOverlay();
+        
 
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
         
@@ -682,7 +682,8 @@ export class BattleDirector {
             if (hpBar)  hpBar.style.width = UiStyle.FULL_HP_PERCENT;
             if (card)   card.style.opacity = UiStyle.CARD_OPACITY_ALIVE;
         });
-
+        
+        await this._fadeOutIceDragonEventOverlay();
         this.music.playHeal();
         
         const hasZabochi = party.some(m => m instanceof GodCat);
