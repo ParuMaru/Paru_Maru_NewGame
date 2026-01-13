@@ -1,6 +1,7 @@
 import { BattleCalculator } from './battle_calculator.js';
 import { BattleDirector } from './battle_director.js'; 
 import { cragen } from './entities.js';
+import { UiColors } from './ui_colors.js';
 import { GameConfig } from './game_config.js';
 
 export class ActionExecutor {
@@ -80,8 +81,8 @@ export class ActionExecutor {
                 if (drainAmount > 0) {
                     actor.add_hp(drainAmount);
                     // 回復演出（ログはうるさいので出さなくてもOK、数字だけ出す）
-                    this.director.ui.addLog(`> ${actor.name}はHPを${drainAmount}吸収した`, GameConfig.COLORS.HEAL_HP);
-                    this.director.effects.damagePopup(drainAmount, this.director._getTargetId(actor), GameConfig.COLORS.HEAL_HP);
+                    this.director.ui.addLog(`> ${actor.name}はHPを${drainAmount}吸収した`, UiColors.HEAL_HP);
+                    this.director.effects.damagePopup(drainAmount, this.director._getTargetId(actor), UiColors.HEAL_HP);
                 }
             }
             
@@ -219,11 +220,11 @@ export class ActionExecutor {
                 }
                 else if (skill.id === 'lava_charge') {
                     actor.lavaCharging = true;
-                    this.director.ui.addLog(`${actor.name}は溶岩を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
+                    this.director.ui.addLog(`${actor.name}は溶岩を集めている...`, UiColors.LOG_IMPORTANT);
                 }
                 else if (skill.id === 'curse_charge') {
                     actor.curseCharging = true;
-                    this.director.ui.addLog(`${actor.name}は呪気を集めている...`, GameConfig.COLORS.LOG_IMPORTANT);
+                    this.director.ui.addLog(`${actor.name}は呪気を集めている...`, UiColors.LOG_IMPORTANT);
                 }
                 break;
 
@@ -304,8 +305,8 @@ export class ActionExecutor {
         target.actionValue += GameConfig.BATTLE.DOWN_DELAY;
 
         const targetId = this.director._getTargetId(target);
-        this.director.effects.damagePopup("DOWN", targetId, GameConfig.COLORS.LOG_IMPORTANT);
-        this.director.ui.addLog(`${target.name}はダウンした！`, GameConfig.COLORS.LOG_IMPORTANT);
+        this.director.effects.damagePopup("DOWN", targetId, UiColors.LOG_IMPORTANT);
+        this.director.ui.addLog(`${target.name}はダウンした！`, UiColors.LOG_IMPORTANT);
     }
 
     _applyBossBreakDamage(target, attackTag) {
@@ -330,8 +331,8 @@ export class ActionExecutor {
         target.actionValue += GameConfig.BATTLE.DOWN_DELAY;
 
         const targetId = this.director._getTargetId(target);
-        this.director.effects.damagePopup("DOWN", targetId, GameConfig.COLORS.LOG_IMPORTANT);
-        this.director.ui.addLog(`${target.name}はブレイクした！`, GameConfig.COLORS.LOG_IMPORTANT);
+        this.director.effects.damagePopup("DOWN", targetId, UiColors.LOG_IMPORTANT);
+        this.director.ui.addLog(`${target.name}はブレイクした！`, UiColors.LOG_IMPORTANT);
     }
     
     _resolveCover(actor, originalTarget) {

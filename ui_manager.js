@@ -1,14 +1,18 @@
 import { SkillData } from './skills.js';
 import { ItemData } from './items.js';
 import { RelicData } from './relics.js';
+import { UiClasses } from './ui_classes.js';
+import { UiColors } from './ui_colors.js';
+import { UiLuminance, UiStyle } from './ui_style.js';
+import { UiText } from './ui_text.js';
 import { GameConfig } from './game_config.js';
 
 export class UIManager {
     constructor() {
-        this.logElement = document.getElementById('log');
-        this.commandContainer = document.getElementById('command-container');
-        this.turnLabel = document.getElementById('turn-label');
-        this.enemyContainer = document.getElementById('enemy-target');
+        this.logElement = document.getElementById(GameConfig.UI.IDS.LOG);
+        this.commandContainer = document.getElementById(GameConfig.UI.IDS.COMMAND_CONTAINER);
+        this.turnLabel = document.getElementById(GameConfig.UI.IDS.TURN_LABEL);
+        this.enemyContainer = document.getElementById(GameConfig.UI.IDS.ENEMY_TARGET);
         this.currentActor = null; 
         this.inventory = null;
         this.initTurnOrderUI();
@@ -19,23 +23,23 @@ export class UIManager {
     // ★追加: 画面左に行動順表示エリアを作る
     initTurnOrderUI() {
         // すでにあったら作らない
-        if (document.getElementById('turn-order-panel')) return;
+        if (document.getElementById(GameConfig.UI.IDS.TURN_ORDER_PANEL)) return;
 
-        const canvasArea = document.getElementById('canvas-area');
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         const panel = document.createElement('div');
-        panel.id = 'turn-order-panel';
+        panel.id = GameConfig.UI.IDS.TURN_ORDER_PANEL;
         
 
         const roundInfo = document.createElement('div');
-        roundInfo.className = 'round-info';
-        roundInfo.id = 'round-info-text';
-        roundInfo.innerText = "▶ NEXT";
+        roundInfo.className = UiClasses.ROUND_INFO;
+        roundInfo.id = GameConfig.UI.IDS.ROUND_INFO_TEXT;
+        roundInfo.innerText = UiText.NEXT_LABEL;
         panel.appendChild(roundInfo);
 
 
         // リスト本体
         const list = document.createElement('div');
-        list.id = 'turn-list-container';
+        list.id = GameConfig.UI.IDS.TURN_LIST_CONTAINER;
         panel.appendChild(list);
 
         canvasArea.appendChild(panel);
@@ -43,8 +47,8 @@ export class UIManager {
 
     // ★追加: 行動順とラウンド情報の更新メソッド
     updateTurnOrder(turnQueue, currentRound) {
-        const listContainer = document.getElementById('turn-list-container');
-        const roundText = document.getElementById('round-info-text');
+        const listContainer = document.getElementById(GameConfig.UI.IDS.TURN_LIST_CONTAINER);
+        const roundText = document.getElementById(GameConfig.UI.IDS.ROUND_INFO_TEXT);
         
         if (!listContainer) return;
 
@@ -55,26 +59,26 @@ export class UIManager {
         listContainer.innerHTML = ""; // 一旦クリア
 
         // 先頭から最大5人分だけ表示（多すぎると画面が埋まるため）
-        const displayLimit = 5;
+        const displayLimit = GameConfig.UI.LIMITS.TURN_QUEUE_DISPLAY;
         const queueToShow = turnQueue.slice(0, displayLimit);
 
         queueToShow.forEach((chara, index) => {
             if (!chara.is_alive()) return; // 死体は表示しない
 
             const item = document.createElement('div');
-            item.className = 'turn-item';
+            item.className = UiClasses.TURN_ITEM;
             
             // 現在の行動者（先頭）
             if (index === 0) {
-                item.classList.add('current-turn');
+                item.classList.add(UiClasses.CURRENT_TURN);
             }
 
             // 味方か敵かで枠の色を変える
             // entities.jsで job を持っているのが味方、enemyTypeを持ってるのが敵
             if (chara.job) {
-                item.classList.add('is-ally');
+                item.classList.add(UiClasses.IS_ALLY);
             } else {
-                item.classList.add('is-enemy');
+                item.classList.add(UiClasses.IS_ENEMY);
             }
 
             // 画像
@@ -82,18 +86,18 @@ export class UIManager {
             // 味方の画像パスがない場合は適当なアイコンを割り当てる想定
             // entities.jsで味方にも img プロパティを持たせるか、ここで分岐が必要です
             // 一旦、Entity基底クラスに img がある前提で書きます
-            if (chara.job === 'hero') img.src = './resource/hero_icon.webp'; // 
-            else if (chara.job === 'wizard') img.src = './resource/wizard_icon.webp';
-            else if (chara.job === 'healer') img.src = './resource/healer_icon.webp';
-            else img.src = chara.img || './resource/cragen.webp'; // 敵は持ってるimgを使う
+            if (chara.job === GameConfig.JOBS.HERO) img.src = GameConfig.ASSETS.IMAGES.HERO_ICON; // 
+            else if (chara.job === GameConfig.JOBS.WIZARD) img.src = GameConfig.ASSETS.IMAGES.WIZARD_ICON;
+            else if (chara.job === GameConfig.JOBS.HEALER) img.src = GameConfig.ASSETS.IMAGES.HEALER_ICON;
+            else img.src = chara.img || GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK; // 敵は持ってるimgを使う
 
             // ※もし味方の画像を用意していない場合は、job名で分岐して仮画像を出してください
             // img.src が 404 になると見栄えが悪いのでエラーハンドリング
-            img.onerror = () => { img.src = './resource/cragen.webp'; };
+            img.onerror = () => { img.src = GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK; };
 
             // 行動値 (Action Value) バッジ
             const avBadge = document.createElement('div');
-            avBadge.className = 'turn-av-badge';
+            avBadge.className = UiClasses.TURN_AV_BADGE;
             // 小数点以下は切り捨てて表示
             avBadge.innerText = Math.floor(chara.actionValue);
 
@@ -105,26 +109,28 @@ export class UIManager {
 
     getWeaknessLabel(tag) {
         const labelMap = {
-            fire: "炎",
-            ice: "氷",
-            holy: "聖",
-            slash: "斬"
+            [GameConfig.WEAKNESS_TAGS.FIRE]: UiText.WEAKNESS_FIRE,
+            [GameConfig.WEAKNESS_TAGS.ICE]: UiText.WEAKNESS_ICE,
+            [GameConfig.WEAKNESS_TAGS.HOLY]: UiText.WEAKNESS_HOLY,
+            [GameConfig.WEAKNESS_TAGS.SLASH]: UiText.WEAKNESS_SLASH
         };
-        return labelMap[tag] ? `弱点:${labelMap[tag]}` : "弱点:なし";
+        return labelMap[tag]
+            ? `${UiText.WEAKNESS_PREFIX}${labelMap[tag]}`
+            : UiText.WEAKNESS_NONE;
     }
 
     setInventory(inventory) {
         this.inventory = inventory;
     }
     // ログ出力
-    addLog(message, color = "white",isBold = false){
+    addLog(message, color = UiColors.LOG_DEFAULT,isBold = false){
         const div = document.createElement('div');
         div.style.color = color;
         div.innerHTML = message;
         
         if (isBold) {
-            div.style.fontWeight = "bold";
-            div.style.fontSize = "15px"; 
+            div.style.fontWeight = UiStyle.FONT_WEIGHT_BOLD;
+            div.style.fontSize = `${GameConfig.UI.LIMITS.LOG_BOLD_FONT_SIZE_PX}px`; 
         }
         
         this.logElement.appendChild(div);
@@ -139,9 +145,9 @@ export class UIManager {
             this.commandOptions = {};
         }
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = `▼ ${actor.name} の行動選択`; 
+        this.turnLabel.innerText = UiText.TURN_SELECT_TEMPLATE.replace('{name}', actor.name); 
 
-        this._createButton("攻撃", "#c0392b", () => onSelect({ type: 'attack' }));
+        this._createButton(UiText.COMMAND_ATTACK, GameConfig.UI.COLORS.BUTTON_ATTACK, () => onSelect({ type: 'attack' }));
 
         actor.skills.forEach(id => {
             const skill = SkillData[id];
@@ -149,51 +155,53 @@ export class UIManager {
 
             let btnColor = skill.color;
 
-            if (skill.menu === "main") {
-                const mainColor = skill.id === "meditation" ? "#9b59b6" : "#8e44ad";
+            if (skill.menu === GameConfig.SKILL_MENUS.MAIN) {
+                const mainColor = skill.id === GameConfig.SKILL_IDS.MEDITATION
+                    ? GameConfig.UI.COLORS.BUTTON_MAIN_MAGIC
+                    : GameConfig.UI.COLORS.BUTTON_MAIN_SKILL;
                 this._createButton(skill.name, mainColor, () => onSelect({ type: 'skill', detail: skill }));
-            } else if (skill.menu === "magic" && !this._hasButton("魔法")) {
-                this._createButton("魔法", btnColor, () => this.showSubMenu("magic", onSelect));
-            } else if (skill.menu === "skill" && !this._hasButton("スキル")) {
-                this._createButton("スキル", "#f1c40f", () => this.showSubMenu("skill", onSelect));
+            } else if (skill.menu === GameConfig.SKILL_MENUS.MAGIC && !this._hasButton(UiText.COMMAND_MAGIC)) {
+                this._createButton(UiText.COMMAND_MAGIC, btnColor, () => this.showSubMenu(GameConfig.SKILL_MENUS.MAGIC, onSelect));
+            } else if (skill.menu === GameConfig.SKILL_MENUS.SKILL && !this._hasButton(UiText.COMMAND_SKILL)) {
+                this._createButton(UiText.COMMAND_SKILL, GameConfig.UI.COLORS.BUTTON_SKILL, () => this.showSubMenu(GameConfig.SKILL_MENUS.SKILL, onSelect));
             }
         });
 
-        this._createButton("どうぐ", "#d35400", () => this.showItemMenu(onSelect));
+        this._createButton(UiText.COMMAND_ITEM, GameConfig.UI.COLORS.BUTTON_ITEM, () => this.showItemMenu(onSelect));
     }
 
     initAllOutUI() {
-        if (document.getElementById('allout-overlay')) return;
+        if (document.getElementById(GameConfig.UI.IDS.ALLOUT_OVERLAY)) return;
 
-        const wrapper = document.getElementById('game-wrapper') || document.body;
+        const wrapper = document.getElementById(GameConfig.UI.IDS.GAME_WRAPPER) || document.body;
 
         const overlay = document.createElement('div');
-        overlay.id = 'allout-overlay';
+        overlay.id = GameConfig.UI.IDS.ALLOUT_OVERLAY;
         overlay.innerHTML = `
-            <div class="allout-darken"></div>
-            <div class="allout-wipe"></div>
-            <div class="allout-cutin">
-                <img src="./resource/trinity_attack.jpg" alt="">
+            <div class="${UiClasses.ALL_OUT_DARKEN}"></div>
+            <div class="${UiClasses.ALL_OUT_WIPE}"></div>
+            <div class="${UiClasses.ALL_OUT_CUTIN}">
+                <img src="${GameConfig.ASSETS.IMAGES.TRINITY_CUTIN}" alt="">
             </div>
         `;
         wrapper.appendChild(overlay);
 
-        const cutinImage = overlay.querySelector('.allout-cutin img');
+        const cutinImage = overlay.querySelector(`.${UiClasses.ALL_OUT_CUTIN} img`);
         if (cutinImage) {
             cutinImage.onerror = () => {
-                const cutin = overlay.querySelector('.allout-cutin');
-                if (cutin) cutin.classList.add('is-missing');
+                const cutin = overlay.querySelector(`.${UiClasses.ALL_OUT_CUTIN}`);
+                if (cutin) cutin.classList.add(UiClasses.ALL_OUT_CUTIN_MISSING);
             };
         }
 
         const prompt = document.createElement('div');
-        prompt.id = 'allout-prompt';
+        prompt.id = GameConfig.UI.IDS.ALLOUT_PROMPT;
         prompt.innerHTML = `
-            <div class="allout-prompt-box">
-                <div class="allout-prompt-title">トリニティアタックのチャンス！</div>
-                <div class="allout-prompt-buttons">
-                    <button class="allout-confirm">トリニティアタック</button>
-                    <button class="allout-cancel">しない</button>
+            <div class="${UiClasses.ALL_OUT_PROMPT_BOX}">
+                <div class="${UiClasses.ALL_OUT_PROMPT_TITLE}">${UiText.ALL_OUT_TITLE}</div>
+                <div class="${UiClasses.ALL_OUT_PROMPT_BUTTONS}">
+                    <button class="${UiClasses.ALL_OUT_CONFIRM}">${UiText.ALL_OUT_CONFIRM}</button>
+                    <button class="${UiClasses.ALL_OUT_CANCEL}">${UiText.ALL_OUT_CANCEL}</button>
                 </div>
             </div>
         `;
@@ -202,17 +210,17 @@ export class UIManager {
 
     showAllOutPrompt() {
         return new Promise(resolve => {
-            const prompt = document.getElementById('allout-prompt');
+            const prompt = document.getElementById(GameConfig.UI.IDS.ALLOUT_PROMPT);
             if (!prompt) {
                 resolve(false);
                 return;
             }
 
-            const confirmBtn = prompt.querySelector('.allout-confirm');
-            const cancelBtn = prompt.querySelector('.allout-cancel');
+            const confirmBtn = prompt.querySelector(`.${UiClasses.ALL_OUT_CONFIRM}`);
+            const cancelBtn = prompt.querySelector(`.${UiClasses.ALL_OUT_CANCEL}`);
 
             const cleanup = (result) => {
-                prompt.classList.remove('is-active');
+                prompt.classList.remove(UiClasses.ALL_OUT_ACTIVE);
                 confirmBtn.onclick = null;
                 cancelBtn.onclick = null;
                 resolve(result);
@@ -221,50 +229,53 @@ export class UIManager {
             confirmBtn.onclick = () => cleanup(true);
             cancelBtn.onclick = () => cleanup(false);
 
-            prompt.classList.add('is-active');
+            prompt.classList.add(UiClasses.ALL_OUT_ACTIVE);
         });
     }
 
     playAllOutAnimation() {
         return new Promise(resolve => {
-            const overlay = document.getElementById('allout-overlay');
+            const overlay = document.getElementById(GameConfig.UI.IDS.ALLOUT_OVERLAY);
             if (!overlay) {
                 resolve();
                 return;
             }
 
-            overlay.classList.remove('is-active');
+            overlay.classList.remove(UiClasses.ALL_OUT_ACTIVE);
             void overlay.offsetWidth;
-            overlay.classList.add('is-active');
+            overlay.classList.add(UiClasses.ALL_OUT_ACTIVE);
 
-            const animDuration = GameConfig.TIME.ALL_OUT_ANIMATION || 450;
-            const tailDelay = 400;
-            const shakeTarget = document.getElementById('game-wrapper');
-            if (shakeTarget) shakeTarget.classList.add('allout-shake');
+            const animDuration = GameConfig.TIME.ALL_OUT_ANIMATION || GameConfig.TIME.ALL_OUT_ANIMATION_FALLBACK;
+            const tailDelay = GameConfig.TIMING.ALL_OUT_TAIL_DELAY_MS;
+            const shakeTarget = document.getElementById(GameConfig.UI.IDS.GAME_WRAPPER);
+            if (shakeTarget) shakeTarget.classList.add(UiClasses.ALL_OUT_SHAKE);
             setTimeout(() => resolve(), animDuration);
-            setTimeout(() => overlay.classList.remove('is-active'), animDuration + tailDelay);
+            setTimeout(() => overlay.classList.remove(UiClasses.ALL_OUT_ACTIVE), animDuration + tailDelay);
             setTimeout(() => {
-                if (shakeTarget) shakeTarget.classList.remove('allout-shake');
+                if (shakeTarget) shakeTarget.classList.remove(UiClasses.ALL_OUT_SHAKE);
             }, animDuration + tailDelay);
         });
     }
 
     showSubMenu(menuType, onSelect) {
         this.commandContainer.innerHTML = "";
-        const label = menuType === "magic" ? "魔法" : "スキル";
-        this.turnLabel.innerText = `${label}を選択`;
+        this.turnLabel.innerText = menuType === GameConfig.SKILL_MENUS.MAGIC
+            ? UiText.SELECT_MAGIC
+            : UiText.SELECT_SKILL;
 
         this.currentActor.skills.forEach(id => {
             const skill = SkillData[id];
             if (skill && skill.menu === menuType) {
-                const canUse = (this.currentActor.mp >= skill.cost) || (skill.id === 'raise');
+                const canUse = (this.currentActor.mp >= skill.cost) || (skill.id === GameConfig.SKILL_IDS.RAISE);
                 
-                let btnText = `${skill.name} (${skill.cost})`;
+                let btnText = UiText.SKILL_COST_TEMPLATE
+                    .replace('{name}', skill.name)
+                    .replace('{cost}', skill.cost);
                 let btnColor = skill.color;
                 
-                if (skill.id === 'raise' && this.currentActor.mp < skill.cost) {
-                    btnText = "命の代償";
-                    btnColor = "#e74c3c"; 
+                if (skill.id === GameConfig.SKILL_IDS.RAISE && this.currentActor.mp < skill.cost) {
+                    btnText = UiText.RAISE_FALLBACK;
+                    btnColor = GameConfig.UI.COLORS.BUTTON_RAISE; 
                 }
                 
                 this._createButton(
@@ -276,26 +287,28 @@ export class UIManager {
             }
         });
 
-        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
 
     showItemMenu(onSelect) {
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = "アイテムを選択";
+        this.turnLabel.innerText = UiText.ITEM_SELECT;
         
         const items = this.inventory || ItemData;
 
         Object.values(items).forEach(item => {
             const canUse = item.count > 0;
             this._createButton(
-                `${item.name} (${item.count})`,
+                UiText.ITEM_COUNT_TEMPLATE
+                    .replace('{name}', item.name)
+                    .replace('{count}', item.count),
                 item.color,
                 () => onSelect({ type: 'item', detail: item }),
                 canUse
             );
         });
 
-        this._createButton("戻る", "#574d4d", () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
     
     /**
@@ -304,22 +317,22 @@ export class UIManager {
      */
     showTargetMenu(targets, onSelect, onBack) {
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = "対象を選択してください";
+        this.turnLabel.innerText = UiText.TARGET_SELECT;
 
         // --- クリック選択機能 ---
 
         // 1. まず変数を定義する（ここが重要！）
-        const enemyUnits = document.querySelectorAll('.enemy-unit');
-        const memberCards = document.querySelectorAll('.member-card');
+        const enemyUnits = document.querySelectorAll(`.${UiClasses.ENEMY_UNIT}`);
+        const memberCards = document.querySelectorAll(`.${UiClasses.MEMBER_CARD}`);
 
         // 2. お掃除関数を定義
         const cleanupClickEvents = () => {
             enemyUnits.forEach(u => {
-                u.classList.remove('target-candidate');
+                u.classList.remove(UiClasses.TARGET_CANDIDATE);
                 u.onclick = null;
             });
             memberCards.forEach(c => {
-                c.classList.remove('target-candidate');
+                c.classList.remove(UiClasses.TARGET_CANDIDATE);
                 c.onclick = null;
             });
         };
@@ -338,7 +351,7 @@ export class UIManager {
         // 敵キャラ
         enemyUnits.forEach(unit => {
             if (unit._enemyRef && targets.includes(unit._enemyRef)) {
-                unit.classList.add('target-candidate');
+                unit.classList.add(UiClasses.TARGET_CANDIDATE);
                 unit.onclick = () => wrappedOnSelect(unit._enemyRef);
             }
         });
@@ -346,7 +359,7 @@ export class UIManager {
         // 味方キャラ
         memberCards.forEach(card => {
             if (card._memberRef && targets.includes(card._memberRef)) {
-                card.classList.add('target-candidate');
+                card.classList.add(UiClasses.TARGET_CANDIDATE);
                 card.onclick = () => wrappedOnSelect(card._memberRef);
             }
         });
@@ -356,22 +369,26 @@ export class UIManager {
         targets.forEach((target, i) => {
             this._createButton(
                 target.name,
-                target.job ? "#2ecc71" : "#c0392b", 
+                target.job ? GameConfig.UI.COLORS.TARGET_ALLY : GameConfig.UI.COLORS.TARGET_ENEMY, 
                 () => wrappedOnSelect(target)
             );
         });
 
-        this._createButton("戻る", "#574d4d", wrappedOnBack);
+        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, wrappedOnBack);
     }
 
     _createButton(text, color, action, enabled = true) {
         const btn = document.createElement('button');
         btn.innerText = text;
-        btn.className = "command-btn";
-        btn.style.backgroundColor = enabled ? color : "#333";
-        const textColor = enabled ? this._getButtonTextColor(color) : "#777";
+        btn.className = UiClasses.COMMAND_BTN;
+        btn.style.backgroundColor = enabled ? color : GameConfig.UI.COLORS.BUTTON_DISABLED_BG;
+        const textColor = enabled ? this._getButtonTextColor(color) : GameConfig.UI.COLORS.BUTTON_DISABLED_TEXT;
         btn.style.color = textColor;
-        btn.style.textShadow = enabled ? (textColor === "#111" ? "0 1px 1px rgba(255,255,255,0.35)" : "0 1px 1px rgba(0,0,0,0.6)"): "none";
+        btn.style.textShadow = enabled
+            ? (textColor === GameConfig.UI.COLORS.BUTTON_TEXT_DARK
+                ? UiStyle.TEXT_SHADOW_LIGHT
+                : UiStyle.TEXT_SHADOW_DARK)
+            : UiStyle.TEXT_SHADOW_NONE;
         btn.disabled = !enabled;
         btn.onclick = action;
         this.commandContainer.appendChild(btn);
@@ -382,86 +399,89 @@ export class UIManager {
     }
 
     _getButtonTextColor(color) {
-        if (!color || color[0] !== "#" || color.length < 7) return "#fff";
-        const hex = color.replace("#", "");
+        if (!color || color[0] !== UiStyle.COLOR_HASH || color.length < GameConfig.UI.LIMITS.HEX_COLOR_MIN_LENGTH) return GameConfig.UI.COLORS.BUTTON_TEXT_LIGHT;
+        const hex = color.replace(UiStyle.COLOR_HASH, "");
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
         const b = parseInt(hex.substring(4, 6), 16);
-        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-        return luminance > 0.7 ? "#111" : "#fff";
+        const luminance = (UiLuminance.RED_WEIGHT * r + UiLuminance.GREEN_WEIGHT * g + UiLuminance.BLUE_WEIGHT * b)
+            / GameConfig.UI.LIMITS.LUMINANCE_DENOMINATOR;
+        return luminance > GameConfig.UI.LIMITS.LUMINANCE_THRESHOLD
+            ? GameConfig.UI.COLORS.BUTTON_TEXT_DARK
+            : GameConfig.UI.COLORS.BUTTON_TEXT_LIGHT;
     }
 
     refreshEnemyGraphics(enemies) {
         this.enemyContainer.innerHTML = ''; 
 
         Object.assign(this.enemyContainer.style, {
-            display: 'grid',
-            gridTemplateColumns: `repeat(${enemies.length}, 1fr)`, 
-            width: '100%',
-            justifyItems: 'center', 
-            alignItems: 'end'       
+            display: UiStyle.GRID_DISPLAY,
+            gridTemplateColumns: `${UiStyle.GRID_TEMPLATE_PREFIX}${enemies.length}${UiStyle.GRID_TEMPLATE_SUFFIX}`, 
+            width: UiStyle.WIDTH_FULL,
+            justifyItems: UiStyle.JUSTIFY_CENTER, 
+            alignItems: UiStyle.ALIGN_END      
         });
 
         enemies.forEach((enemy, index) => {
             if (!enemy.is_alive()) return; 
 
             const unitDiv = document.createElement('div');
-            unitDiv.className = 'enemy-unit';
-            unitDiv.id = `enemy-sprite-${index}`; 
+            unitDiv.className = UiClasses.ENEMY_UNIT;
+            unitDiv.id = GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', index); 
             
             // enemyオブジェクトが持つフラグに基づきCSSクラスを付与
             if (enemy.isSplitLeft) {
-                unitDiv.classList.add('split-pos-left');
+                unitDiv.classList.add(UiClasses.SPLIT_POS_LEFT);
             } else if (enemy.isSplitRight) {
-                unitDiv.classList.add('split-pos-right');
+                unitDiv.classList.add(UiClasses.SPLIT_POS_RIGHT);
             }
             
             // DOM要素に敵データを埋め込む（クリック選択用）
             unitDiv._enemyRef = enemy;
 
-            unitDiv.style.gridColumn = index + 1;
-            unitDiv.style.gridRow = 1; 
+            unitDiv.style.gridColumn = index + UiStyle.GRID_COLUMN_OFFSET;
+            unitDiv.style.gridRow = UiStyle.GRID_ROW; 
 
             if (enemy.isBoss) {
-                if (enemy.enemyType === 'ice_dragon') {
-                    unitDiv.classList.add('dragon-size');
+                if (enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON) {
+                    unitDiv.classList.add(UiClasses.DRAGON_SIZE);
                 } else {
-                    unitDiv.classList.add('king-size');
+                    unitDiv.classList.add(UiClasses.KING_SIZE);
                 }
             }
-            if (enemy.enemyType === 'ice_dragon' || enemy.enemyType === 'shadow_lord') {
-                unitDiv.classList.add('boss-lift');
+            if (enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON || enemy.enemyType === GameConfig.ENEMY_TYPES.SHADOW_LORD) {
+                unitDiv.classList.add(UiClasses.BOSS_LIFT);
             }
             
             //  影シリーズの場合、特別なクラスを付与
-            if (enemy.enemyType && enemy.enemyType.startsWith('shadow')) {
-                unitDiv.classList.add('shadow-aura');
+            if (enemy.enemyType && enemy.enemyType.startsWith(GameConfig.ENEMY_TYPES.SHADOW_PREFIX)) {
+                unitDiv.classList.add(UiClasses.SHADOW_AURA);
             }
 
             const nameDiv = document.createElement('div');
-            nameDiv.className = 'enemy-label';
+            nameDiv.className = UiClasses.ENEMY_LABEL;
             nameDiv.innerText = enemy.name;
 
             const infoDiv = document.createElement('div');
-            infoDiv.className = 'enemy-info';
+            infoDiv.className = UiClasses.ENEMY_INFO;
 
             const weaknessDiv = document.createElement('div');
-            weaknessDiv.className = 'enemy-weakness';
+            weaknessDiv.className = UiClasses.ENEMY_WEAKNESS;
             weaknessDiv.innerText = this.getWeaknessLabel(enemy.weaknessTag);
 
             const downDiv = document.createElement('div');
-            downDiv.className = 'enemy-down';
-            downDiv.innerText = 'DOWN';
-            downDiv.style.display = enemy.down ? 'inline-flex' : 'none';
+            downDiv.className = UiClasses.ENEMY_DOWN;
+            downDiv.innerText = UiText.LOG_DOWN;
+            downDiv.style.display = enemy.down ? UiStyle.DISPLAY_INLINE_FLEX : UiStyle.DISPLAY_NONE;
 
             infoDiv.appendChild(weaknessDiv);
             infoDiv.appendChild(downDiv);
 
             const hpBox = document.createElement('div');
-            hpBox.className = 'enemy-hp-container';
+            hpBox.className = UiClasses.ENEMY_HP_CONTAINER;
             
             const hpBar = document.createElement('div');
-            hpBar.className = 'enemy-hp-bar';
+            hpBar.className = UiClasses.ENEMY_HP_BAR;
             const hpPercent = (enemy.hp / enemy.max_hp) * 100;
             hpBar.style.width = `${hpPercent}%`;
 
@@ -470,19 +490,19 @@ export class UIManager {
             let breakBox = null;
             if (enemy.isBoss && enemy.breakMax) {
                 breakBox = document.createElement('div');
-                breakBox.className = 'enemy-break-container';
+                breakBox.className = UiClasses.ENEMY_BREAK_CONTAINER;
 
                 const breakBar = document.createElement('div');
-                breakBar.className = 'enemy-break-bar';
+                breakBar.className = UiClasses.ENEMY_BREAK_BAR;
                 const breakPercent = (enemy.breakGauge / enemy.breakMax) * 100;
                 breakBar.style.width = `${breakPercent}%`;
                 breakBox.appendChild(breakBar);
             }
 
             const img = document.createElement('img');
-            img.src = enemy.img || './resource/cragen.webp'; 
-            img.className = 'enemy-img';
-            img.onerror = () => { img.src = './resource/cragen.webp'; };
+            img.src = enemy.img || GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK; 
+            img.className = UiClasses.ENEMY_IMG;
+            img.onerror = () => { img.src = GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK; };
             
             unitDiv.appendChild(nameDiv);
             unitDiv.appendChild(infoDiv);
@@ -498,43 +518,47 @@ export class UIManager {
 
     updateEnemyHP(enemies) {
         enemies.forEach((enemy, index) => {
-            const hpBar = document.querySelector(`#enemy-sprite-${index} .enemy-hp-bar`);
+            const hpBar = document.querySelector(
+                `#${GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', index)} .${UiClasses.ENEMY_HP_BAR}`
+            );
             if (hpBar) {
-                const hpPercent = Math.max(0, (enemy.hp / enemy.max_hp) * 100);
+                const hpPercent = Math.max(GameConfig.UI.LIMITS.MIN_PERCENT, (enemy.hp / enemy.max_hp) * 100);
                 hpBar.style.width = `${hpPercent}%`;
             }
-            const breakBar = document.querySelector(`#enemy-sprite-${index} .enemy-break-bar`);
+            const breakBar = document.querySelector(
+                `#${GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', index)} .${UiClasses.ENEMY_BREAK_BAR}`
+            );
             if (breakBar && enemy.breakMax) {
-                const breakPercent = Math.max(0, (enemy.breakGauge / enemy.breakMax) * 100);
+                const breakPercent = Math.max(GameConfig.UI.LIMITS.MIN_PERCENT, (enemy.breakGauge / enemy.breakMax) * 100);
                 breakBar.style.width = `${breakPercent}%`;
             }
         });
     }
     
     highlightActiveMember(actorIndex) {
-        for (let i = 0; i < 3; i++) { 
-            const card = document.getElementById(`card-${i}`);
+        for (let i = 0; i < GameConfig.UI.LIMITS.PARTY_SIZE; i++) { 
+            const card = document.getElementById(GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i));
             if (card) {
-                card.classList.remove('active-member');
+                card.classList.remove(UiClasses.ACTIVE_MEMBER);
             }
         }
         if (actorIndex >= 0) {
-            const activeCard = document.getElementById(`card-${actorIndex}`);
+            const activeCard = document.getElementById(GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', actorIndex));
             if (activeCard) {
-                activeCard.classList.add('active-member');
+                activeCard.classList.add(UiClasses.ACTIVE_MEMBER);
             }
         }
     }
     
     // レリック置き場を作る
     initRelicUI() {
-        const canvasArea = document.getElementById('canvas-area');
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         
         // すでにあったら作らない
-        if (document.getElementById('relic-container')) return;
+        if (document.getElementById(GameConfig.UI.IDS.RELIC_CONTAINER)) return;
 
         const container = document.createElement('div');
-        container.id = 'relic-container';
+        container.id = GameConfig.UI.IDS.RELIC_CONTAINER;
         // 最初は空なので隠しておくか、そのまま表示しておく
         canvasArea.appendChild(container);
         this.relicContainer = container;
@@ -547,20 +571,22 @@ export class UIManager {
         this.relicContainer.innerHTML = ""; 
 
         if (!relicIdList || relicIdList.length === 0) {
-            this.relicContainer.style.display = 'none';
+            this.relicContainer.style.display = UiStyle.DISPLAY_NONE;
             return;
         }
-        this.relicContainer.style.display = 'flex';
+        this.relicContainer.style.display = UiStyle.DISPLAY_FLEX;
 
         relicIdList.forEach(id => {
             const data = RelicData[id];
             if (!data) return;
 
             const icon = document.createElement('div');
-            icon.className = 'relic-icon';
+            icon.className = UiClasses.RELIC_ICON;
             // アイコン文字（なければ💎）
-            icon.innerText = data.icon || "💎"; 
-            icon.title = `${data.name}\n${data.desc}`;
+            icon.innerText = data.icon || UiText.RELIC_FALLBACK_ICON; 
+            icon.title = UiText.RELIC_TITLE_TEMPLATE
+                .replace('{name}', data.name)
+                .replace('{desc}', data.desc);
             
             this.relicContainer.appendChild(icon);
         });

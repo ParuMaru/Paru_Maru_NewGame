@@ -1,4 +1,9 @@
 import { GodCat } from './entities.js';
+import { EffectsConfig } from './effects_constants.js';
+import { UiClasses } from './ui_classes.js';
+import { UiColors } from './ui_colors.js';
+import { UiStyle } from './ui_style.js';
+import { UiText } from './ui_text.js';
 import { GameConfig } from './game_config.js'; // ★Configをインポート
 
 export class BattleDirector {
@@ -10,7 +15,7 @@ export class BattleDirector {
         this.enemies = enemies;
         
         const img = new Image();
-        img.src = './resource/zabochi.webp';
+        img.src = GameConfig.ASSETS.IMAGES.ZABOCHI;
     }
 
     /**
@@ -18,24 +23,26 @@ export class BattleDirector {
      */
     _getTargetId(target) {
         if (target.job) {
-            return `card-${this.party.indexOf(target)}`;
+            return GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', this.party.indexOf(target));
         } else {
             const index = this.enemies.indexOf(target);
-            return index >= 0 ? `enemy-sprite-${index}` : 'enemy-target';
+            return index >= 0
+                ? GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', index)
+                : GameConfig.UI.IDS.ENEMY_TARGET;
         }
     }
 
     _ensureFullscreenBlizzardOverlay() {
         if (!document || !document.body) return null;
-        let overlay = document.getElementById('despair-blizzard');
+        let overlay = document.getElementById(GameConfig.UI.IDS.DESPAIR_BLIZZARD);
         if (!overlay) {
             overlay = document.createElement('div');
-            overlay.id = 'despair-blizzard';
-            overlay.className = 'blizzard-container';
+            overlay.id = GameConfig.UI.IDS.DESPAIR_BLIZZARD;
+            overlay.className = UiClasses.BLIZZARD_CONTAINER;
             overlay.innerHTML = `
-                <div class="snow-layer back"></div>
-                <div class="snow-layer middle"></div>
-                <div class="snow-layer front"></div>
+                <div class="${UiClasses.SNOW_LAYER_BACK}"></div>
+                <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
+                <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
             `;
             document.body.appendChild(overlay);
         }
@@ -45,44 +52,52 @@ export class BattleDirector {
     _setFullscreenBlizzardMode(mode) {
         const overlay = this._ensureFullscreenBlizzardOverlay();
         if (!overlay) return;
-        overlay.classList.remove('blizzard--whiteout', 'blizzard--normal');
-        overlay.classList.add(`blizzard--${mode}`);
-        overlay.classList.add('is-active');
-        this._setLogWhiteout(mode === 'whiteout');
+        overlay.classList.remove(UiClasses.BLIZZARD_WHITEOUT, UiClasses.BLIZZARD_NORMAL);
+        overlay.classList.add(`${UiClasses.BLIZZARD_PREFIX}${mode}`);
+        overlay.classList.add(UiClasses.BLIZZARD_ACTIVE);
+        this._setLogWhiteout(mode === UiClasses.BLIZZARD_MODE_WHITEOUT);
     }
 
-    _showFullscreenBlizzard(mode = 'whiteout') {
+    _showFullscreenBlizzard(mode = UiClasses.BLIZZARD_MODE_WHITEOUT) {
         const overlay = this._ensureFullscreenBlizzardOverlay();
         if (!overlay) return;
-        overlay.classList.remove('blizzard--whiteout', 'blizzard--normal');
-        overlay.classList.add(`blizzard--${mode}`);
-        overlay.classList.remove('is-active');
-        requestAnimationFrame(() => overlay.classList.add('is-active'));
-        this._setLogWhiteout(mode === 'whiteout');
+        overlay.classList.remove(UiClasses.BLIZZARD_WHITEOUT, UiClasses.BLIZZARD_NORMAL);
+        overlay.classList.add(`${UiClasses.BLIZZARD_PREFIX}${mode}`);
+        overlay.classList.remove(UiClasses.BLIZZARD_ACTIVE);
+        requestAnimationFrame(() => overlay.classList.add(UiClasses.BLIZZARD_ACTIVE));
+        this._setLogWhiteout(mode === UiClasses.BLIZZARD_MODE_WHITEOUT);
     }
 
     _hideFullscreenBlizzard() {
-        const overlay = document.getElementById('despair-blizzard');
+        const overlay = document.getElementById(GameConfig.UI.IDS.DESPAIR_BLIZZARD);
         if (!overlay) return;
-        overlay.classList.remove('is-active', 'blizzard--whiteout', 'blizzard--normal');
+        overlay.classList.remove(
+            UiClasses.BLIZZARD_ACTIVE,
+            UiClasses.BLIZZARD_WHITEOUT,
+            UiClasses.BLIZZARD_NORMAL
+        );
         this._setLogWhiteout(false);
         const removeOverlay = () => overlay.remove();
         overlay.addEventListener('transitionend', removeOverlay, { once: true });
-        setTimeout(removeOverlay, 600);
+        setTimeout(removeOverlay, GameConfig.TIMING.BLIZZARD_OVERLAY_REMOVE_MS);
     }
 
     _setLogWhiteout(isActive) {
-        const log = document.getElementById('log');
+        const log = document.getElementById(GameConfig.UI.IDS.LOG);
         if (!log) return;
-        log.classList.toggle('log-whiteout', isActive);
+        log.classList.toggle(UiClasses.LOG_WHITEOUT, isActive);
     }
 
     // --- 攻撃系の演出 ---
 
     showAttackStart(actor) {
-        const logColor = actor.job ? GameConfig.COLORS.LOG_SKILL : GameConfig.COLORS.LOG_ATTACK;
-        this.ui.addLog(`${actor.name}の攻撃！`, logColor, true);
-        const isMagicUser = (actor.job === 'wizard' || actor.job === 'healer');
+        const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
+        this.ui.addLog(
+            UiText.LOG_ATTACK_TEMPLATE.replace('{name}', actor.name),
+            logColor,
+            true
+        );
+        const isMagicUser = (actor.job === GameConfig.JOBS.WIZARD || actor.job === GameConfig.JOBS.HEALER);
 
         return isMagicUser;
     }
@@ -94,11 +109,15 @@ export class BattleDirector {
         else this.effects.slashEffect(targetId);
 
         // ★定数使用
-        const popupColor = GameConfig.COLORS.DAMAGE;
+        const popupColor = UiColors.DAMAGE;
         this.effects.damagePopup(damage, targetId, popupColor);
 
-        if (isCritical) this.ui.addLog("クリティカルヒット！", GameConfig.COLORS.CRITICAL, true);
-        this.ui.addLog(`> ${target.name}に ${damage} のダメージ！`);
+        if (isCritical) this.ui.addLog(UiText.LOG_CRITICAL, UiColors.CRITICAL, true);
+        this.ui.addLog(
+            UiText.LOG_DAMAGE_TEMPLATE
+                .replace('{name}', target.name)
+                .replace('{damage}', damage)
+        );
 
         this._checkDeath(target, targetId);
     }
@@ -106,74 +125,80 @@ export class BattleDirector {
     // --- スキル・魔法系の演出 ---
 
     showSkillStart(actor, skill) {
-        const logColor = actor.job ? GameConfig.COLORS.LOG_SKILL : GameConfig.COLORS.LOG_ATTACK;
-        this.ui.addLog(`${actor.name}の ${skill.name} `, logColor, true);
+        const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
+        this.ui.addLog(
+            UiText.LOG_SKILL_TEMPLATE
+                .replace('{name}', actor.name)
+                .replace('{skill}', skill.name),
+            logColor,
+            true
+        );
     }
 
     showMagicEffect(actor, skill, targets) {
         const actorId = this._getTargetId(actor);
 
-        if (skill.id === 'fire') {
+        if (skill.id === GameConfig.SKILL_IDS.FIRE) {
             this.music.playMagicFire();
             targets.forEach(t => this.effects.fireEffect(this._getTargetId(t), actorId));
         } 
-        else if (skill.id === 'fira') {
+        else if (skill.id === GameConfig.SKILL_IDS.FIRA) {
             this.music.playMagicFire();
             const targetIds = targets.map(t => this._getTargetId(t));
             this.effects.allFireEffect(targetIds);
         } 
-        else if (skill.id === 'meteor' || skill.id === 'dark_meteor') {
+        else if (skill.id === GameConfig.SKILL_IDS.METEOR || skill.id === GameConfig.SKILL_IDS.DARK_METEOR) {
             this.music.playMagicMeteor();
             targets.forEach(t => this.effects.meteorEffect(this._getTargetId(t)));
         }
-        else if (skill.id === 'blizzard') {
+        else if (skill.id === GameConfig.SKILL_IDS.BLIZZARD) {
             this.music.playMagic();
             targets.forEach(t => this.effects.iceEffect(this._getTargetId(t)));
         }
-        else if (skill.id === 'blizzara') {
+        else if (skill.id === GameConfig.SKILL_IDS.BLIZZARA) {
             this.music.playMagic();
             targets.forEach(t => this.effects.iceEffect(this._getTargetId(t)));
         }
-        else if (skill.id === 'ice_breath') {
+        else if (skill.id === GameConfig.SKILL_IDS.ICE_BREATH) {
             this.music.playBreath(); 
             this.effects.allIceEffect(targets); 
         }
-        else if (skill.id === 'curse') {
+        else if (skill.id === GameConfig.SKILL_IDS.CURSE) {
             this.music.playPoison(); 
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
         }
-        else if (skill.id === 'holy_strike') {
+        else if (skill.id === GameConfig.SKILL_IDS.HOLY_STRIKE) {
             this.music.playMagic();
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
-            this.effects.flash("rgba(255, 240, 150, 0.5)");
+            this.effects.flash(EffectsConfig.FLASH.HOLY_STRIKE);
         }
-        else if (skill.id === 'holy') {
+        else if (skill.id === GameConfig.SKILL_IDS.HOLY) {
             this.music.playMagic();
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
-            this.effects.flash("rgba(255, 240, 150, 0.6)");
+            this.effects.flash(EffectsConfig.FLASH.HOLY);
         }
-        else if (skill.id === 'onryo_curse') {
+        else if (skill.id === GameConfig.SKILL_IDS.ONRYO_CURSE) {
             this.music.playPoison();
             targets.forEach(t => this.effects.magicExplosion(this._getTargetId(t)));
-            this.effects.flash("rgba(120, 120, 160, 0.6)");
+            this.effects.flash(EffectsConfig.FLASH.ONRYO_CURSE);
         }
-        else if (skill.id === 'lava_spray') {
+        else if (skill.id === GameConfig.SKILL_IDS.LAVA_SPRAY) {
             this.music.playMagicFire();
             const targetIds = targets.map(t => this._getTargetId(t));
             this.effects.allFireEffect(targetIds);
         }
-        else if (skill.id === 'chaos_wave') {
+        else if (skill.id === GameConfig.SKILL_IDS.CHAOS_WAVE) {
             this.music.playMagicMeteor();
             
-            document.body.classList.add('screen-shake');
-            this.effects.flash("rgba(0, 0, 0, 0.8)");
+            document.body.classList.add(UiClasses.SCREEN_SHAKE);
+            this.effects.flash(EffectsConfig.FLASH.CHAOS_WAVE);
             
             targets.forEach(t => {
                 this.effects.magicExplosion(this._getTargetId(t));
             });
 
             // ★定数使用
-            setTimeout(() => document.body.classList.remove('screen-shake'), GameConfig.TIME.SHAKE_LONG);
+            setTimeout(() => document.body.classList.remove(UiClasses.SCREEN_SHAKE), GameConfig.TIME.SHAKE_LONG);
         }
         else {
             this.music.playMagic();
@@ -184,8 +209,12 @@ export class BattleDirector {
     showMagicHit(target, damage) {
         const targetId = this._getTargetId(target);
         // ★定数使用
-        this.effects.damagePopup(damage, targetId, GameConfig.COLORS.DAMAGE);
-        this.ui.addLog(`> ${target.name}に ${damage} のダメージ！`);
+        this.effects.damagePopup(damage, targetId, UiColors.DAMAGE);
+        this.ui.addLog(
+            UiText.LOG_DAMAGE_TEMPLATE
+                .replace('{name}', target.name)
+                .replace('{damage}', damage)
+        );
         this._checkDeath(target, targetId);
     }
 
@@ -201,12 +230,17 @@ export class BattleDirector {
         this.effects.healEffect(targetId);
         
         // ★定数使用
-        const color = isMp ? GameConfig.COLORS.HEAL_MP : GameConfig.COLORS.HEAL_HP;
-        const unit = isMp ? "MP" : "";
+        const color = isMp ? UiColors.HEAL_MP : UiColors.HEAL_HP;
+        const unit = isMp ? UiText.LOG_MP : "";
         this.effects.damagePopup(`+${amount}${unit}`, targetId, color);
 
-        const typeStr = isMp ? "MP" : "HP";
-        this.ui.addLog(`> ${target.name}の${typeStr}が ${amount} 回復した`);
+        const typeStr = isMp ? UiText.LOG_MP : UiText.LOG_HP;
+        this.ui.addLog(
+            UiText.LOG_HEAL_TEMPLATE
+                .replace('{name}', target.name)
+                .replace('{type}', typeStr)
+                .replace('{amount}', amount)
+        );
     }
 
     showFullHeal(target) {
@@ -214,8 +248,11 @@ export class BattleDirector {
         const targetId = this._getTargetId(target);
         this.effects.healEffect(targetId);
         // ★定数使用
-        this.effects.damagePopup("FULL", targetId, GameConfig.COLORS.FULL_HEAL);
-        this.ui.addLog(`> ${target.name}のHP・MPが全回復した！`, GameConfig.COLORS.FULL_HEAL);
+        this.effects.damagePopup(UiText.LOG_FULL, targetId, UiColors.FULL_HEAL);
+        this.ui.addLog(
+            UiText.LOG_FULL_HEAL_TEMPLATE.replace('{name}', target.name),
+            UiColors.FULL_HEAL
+        );
     }
 
     showResurrection(target, isFullRevive = false) {
@@ -224,31 +261,47 @@ export class BattleDirector {
         this.music.playHeal();
         
         if (isFullRevive) {
-            this.ui.addLog(`${target.name}が完全な状態で蘇生した！`, GameConfig.COLORS.LOG_IMPORTANT, true);
+            this.ui.addLog(
+                UiText.LOG_RESURRECT_FULL_TEMPLATE.replace('{name}', target.name),
+                UiColors.LOG_IMPORTANT,
+                true
+            );
         } else {
-            this.ui.addLog(`> ${target.name}が蘇った！`, GameConfig.COLORS.LOG_ATTACK);
+            this.ui.addLog(
+                UiText.LOG_RESURRECT_TEMPLATE.replace('{name}', target.name),
+                UiColors.LOG_ATTACK
+            );
         }
     }
 
     showCover(actor) {
         this.music.playCover();
-        this.ui.addLog(`${actor.name}は身構えた！`, GameConfig.COLORS.LOG_SKILL, true);
-        this.ui.addLog(` > 仲間への攻撃を身代わりする！`);
+        this.ui.addLog(
+            UiText.LOG_COVER_READY_TEMPLATE.replace('{name}', actor.name),
+            UiColors.LOG_SKILL,
+            true
+        );
+        this.ui.addLog(UiText.LOG_COVER_DESC);
     }
 
     showCoverAction(protector, target) {
-         this.ui.addLog(` > ${protector.name}が${target.name}をかばった！`, GameConfig.COLORS.LOG_SKILL);
+         this.ui.addLog(
+             UiText.LOG_COVER_ACTION_TEMPLATE
+                 .replace('{protector}', protector.name)
+                 .replace('{target}', target.name),
+             UiColors.LOG_SKILL
+         );
     }
 
     showBuff(targets, skillName) {
-        if (skillName === "竜の咆哮") {
+        if (skillName === UiText.LOG_DRAGON_ROAR) {
             this.music.playBreath(); 
             const actorId = this._getTargetId(targets[0]);
             this.effects.roarEffect(actorId);
-            this.ui.addLog(` > ドラゴンの攻撃力が激増した！`, GameConfig.COLORS.LOG_BUFF);
+            this.ui.addLog(UiText.LOG_DRAGON_ATTACK_UP, UiColors.LOG_BUFF);
         } else {
             this.music.playKobu();
-            this.ui.addLog(` > 味方の攻撃力が上がった！`); 
+            this.ui.addLog(UiText.LOG_ALLY_ATTACK_UP); 
         }
 
         targets.forEach(t => {
@@ -258,226 +311,267 @@ export class BattleDirector {
 
     showRegen(actor) {
         this.music.playHeal();
-        this.ui.addLog(`${actor.name}は天に祈りを捧げた！`, GameConfig.COLORS.LOG_PRAYER, true);
-        this.ui.addLog(` > 味方全員に祝福が宿る！`, GameConfig.COLORS.LOG_PRAYER);
+        this.ui.addLog(
+            UiText.LOG_REGEN_TEMPLATE.replace('{name}', actor.name),
+            UiColors.LOG_PRAYER,
+            true
+        );
+        this.ui.addLog(UiText.LOG_REGEN_EFFECT, UiColors.LOG_PRAYER);
     }
     
     // --- 分裂イベント演出 ---
 
     async showSplittingTrigger(enemy) {
-        this.ui.addLog(`${enemy.name}の体が震えだした...！`, "#ff00ff");
+        this.ui.addLog(
+            UiText.LOG_SPLIT_TRIGGER_TEMPLATE.replace('{name}', enemy.name),
+            UiColors.LOG_SPLIT
+        );
         this.music.playBukubuku();
         
         const targetId = this._getTargetId(enemy); 
         const unitDiv = document.getElementById(targetId);
         
         if (unitDiv) {
-            unitDiv.classList.remove('splitting');
+            unitDiv.classList.remove(UiClasses.SPLITTING);
             void unitDiv.offsetWidth; 
-            unitDiv.classList.add('splitting'); 
+            unitDiv.classList.add(UiClasses.SPLITTING); 
         }
     }
 
     showSplittingTransform(oldName) {
-        this.ui.addLog(`${oldName}は3匹に分裂した！`, "#ff00ff");
+        this.ui.addLog(
+            UiText.LOG_SPLIT_TRANSFORM_TEMPLATE.replace('{name}', oldName),
+            UiColors.LOG_SPLIT
+        );
         this.music.playSplited(); 
     }
 
     showSplittingAppear(startIndex) {
-        const spriteLeft = document.getElementById(`enemy-sprite-${startIndex}`);
-        const spriteRight = document.getElementById(`enemy-sprite-${startIndex+2}`);
+        const spriteLeft = document.getElementById(
+            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', startIndex)
+        );
+        const spriteRight = document.getElementById(
+            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', startIndex + 2)
+        );
 
         if (spriteLeft) {
-            const unitLeft = spriteLeft.closest('.enemy-unit') || spriteLeft;
+            const unitLeft = spriteLeft.closest(`.${UiClasses.ENEMY_UNIT}`) || spriteLeft;
             void spriteLeft.offsetWidth; 
-            spriteLeft.classList.add('appear-left');
+            spriteLeft.classList.add(UiClasses.APPEAR_LEFT);
         }
 
         if (spriteRight) {
-            const unitRight = spriteRight.closest('.enemy-unit') || spriteRight;
+            const unitRight = spriteRight.closest(`.${UiClasses.ENEMY_UNIT}`) || spriteRight;
             void spriteRight.offsetWidth;
-            spriteRight.classList.add('appear-right');
+            spriteRight.classList.add(UiClasses.APPEAR_RIGHT);
         }
     }
     
     async showShadowFusionStart() {
-        this.ui.addLog("影たちが一点に凝縮していく...！", GameConfig.COLORS.LOG_PRAYER, true);
+        this.ui.addLog(UiText.LOG_SHADOW_FUSION_START, UiColors.LOG_PRAYER, true);
         this.music.playMeditation(); 
 
-        const container = document.getElementById('enemy-target');
-        if (container) container.style.position = 'relative';
+        const container = document.getElementById(GameConfig.UI.IDS.ENEMY_TARGET);
+        if (container) container.style.position = UiStyle.POSITION_RELATIVE;
 
         const core = document.createElement('div');
-        core.className = 'fusion-core';
+        core.className = UiClasses.FUSION_CORE;
         if (container) container.appendChild(core);
 
-        const deadShadows = document.querySelectorAll('.enemy-unit');
+        const deadShadows = document.querySelectorAll(`.${UiClasses.ENEMY_UNIT}`);
         
         setTimeout(() => {
             deadShadows.forEach(el => {
-                el.style.opacity = '1'; 
+                el.style.opacity = UiStyle.OPACITY_VISIBLE; 
                 requestAnimationFrame(() => {
-                    el.classList.add('being-absorbed');
-                    el.style.transformOrigin = "center center";
+                    el.classList.add(UiClasses.BEING_ABSORBED);
+                    el.style.transformOrigin = UiStyle.TRANSFORM_ORIGIN;
                 });
             });
-        }, 200);
+        }, GameConfig.TIMING.SHADOW_FUSION_ABSORB_MS);
 
         // ★定数使用
         await new Promise(r => setTimeout(r, GameConfig.TIME.FUSION_ANIM));
         
         const flash = document.createElement('div');
-        flash.className = 'dark-flash';
+        flash.className = UiClasses.DARK_FLASH;
         document.body.appendChild(flash);
         
         if (core.parentNode) core.parentNode.removeChild(core);
         
-        await new Promise(r => setTimeout(r, 500)); 
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.SHADOW_FUSION_FLASH_REMOVE_MS)); 
         if (flash.parentNode) flash.parentNode.removeChild(flash);
     }
 
     async showShadowFusionEnd() {
-        this.ui.addLog("「影の支配者」が現れた！！！", GameConfig.COLORS.LOG_BUFF, true);
+        this.ui.addLog(UiText.LOG_SHADOW_FUSION_END, UiColors.LOG_BUFF, true);
         this.music.playMagicMeteor(); 
         
-        const bossEl = document.getElementById('enemy-sprite-0');
+        const bossEl = document.getElementById(GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', 0));
         if (bossEl) {
-            bossEl.classList.add('shadow-aura'); 
-            bossEl.classList.add('king-size'); 
-            bossEl.classList.add('boss-lift');
+            bossEl.classList.add(UiClasses.SHADOW_AURA); 
+            bossEl.classList.add(UiClasses.KING_SIZE); 
+            bossEl.classList.add(UiClasses.BOSS_LIFT);
             
-            bossEl.style.animation = 'none';
+            bossEl.style.animation = EffectsConfig.ANIMATION.NONE;
             void bossEl.offsetHeight; 
-            bossEl.style.animation = 'resurrectionFlash 1.5s ease-out';
+            bossEl.style.animation = EffectsConfig.ANIMATION.RESURRECTION_FLASH;
         }
         
-        document.body.classList.add('screen-shake');
+        document.body.classList.add(UiClasses.SCREEN_SHAKE);
         // ★定数使用
-        setTimeout(() => document.body.classList.remove('screen-shake'), 1200);
+        setTimeout(
+            () => document.body.classList.remove(UiClasses.SCREEN_SHAKE),
+            GameConfig.TIMING.SHADOW_FUSION_SHAKE_MS
+        );
         
-        await new Promise(r => setTimeout(r, 1200));
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.SHADOW_FUSION_WAIT_MS));
     }
     
     async playDragonTransformation(enemy, allEnemies) {
         const enemyIndex = allEnemies.indexOf(enemy);
-        const enemyEl = document.getElementById(`enemy-sprite-${enemyIndex}`);
+        const enemyEl = document.getElementById(
+            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
+        );
 
-        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", GameConfig.COLORS.LOG_BUFF);
-        if (enemyEl) enemyEl.classList.add('sway-slow');
+        this.ui.addLog(UiText.LOG_DRAGON_TRANSFORM, UiColors.LOG_BUFF);
+        if (enemyEl) enemyEl.classList.add(UiClasses.SWAY_SLOW);
         // ★定数使用
         await new Promise(r => setTimeout(r, GameConfig.TIME.TRANSFORM_WAIT));
 
         if (enemyEl) {
-            enemyEl.classList.remove('sway-slow');
-            enemyEl.classList.add('flash-rapid');
+            enemyEl.classList.remove(UiClasses.SWAY_SLOW);
+            enemyEl.classList.add(UiClasses.FLASH_RAPID);
         }
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_WAIT_MS));
 
         const flashOverlay = document.createElement('div');
-        flashOverlay.id = 'flash-overlay';
+        flashOverlay.id = GameConfig.UI.IDS.FLASH_OVERLAY;
         document.body.appendChild(flashOverlay);
         await new Promise(r => requestAnimationFrame(r));
-        flashOverlay.style.opacity = '1';
-        await new Promise(r => setTimeout(r, 300));
+        flashOverlay.style.opacity = UiStyle.OPACITY_VISIBLE;
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_FADE_MS));
 
         this.ui.refreshEnemyGraphics(allEnemies);
 
-        const refreshedEnemyEl = document.getElementById(`enemy-sprite-${enemyIndex}`);
-        if (refreshedEnemyEl && enemy.enemyType === 'ice_dragon') {
-            refreshedEnemyEl.classList.add('boss-lift');
+        const refreshedEnemyEl = document.getElementById(
+            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
+        );
+        if (refreshedEnemyEl && enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON) {
+            refreshedEnemyEl.classList.add(UiClasses.BOSS_LIFT);
         }
         
-        flashOverlay.style.opacity = '0';
-        setTimeout(() => flashOverlay.remove(), 500);
+        flashOverlay.style.opacity = UiStyle.OPACITY_HIDDEN;
+        setTimeout(() => flashOverlay.remove(), GameConfig.TIMING.DRAGON_FLASH_REMOVE_MS);
 
-        const enemyArea = document.getElementById('canvas-area'); 
+        const enemyArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA); 
 
         if (enemyArea) {
-            enemyArea.style.position = 'relative'; 
-            enemyArea.style.overflow = 'hidden';
+            enemyArea.style.position = UiStyle.POSITION_RELATIVE; 
+            enemyArea.style.overflow = UiStyle.OVERFLOW_HIDDEN;
 
             const blizzardContainer = document.createElement('div');
-            blizzardContainer.className = 'blizzard-container'; 
-            blizzardContainer.id = 'active-blizzard'; 
+            blizzardContainer.className = UiClasses.BLIZZARD_CONTAINER; 
+            blizzardContainer.id = GameConfig.UI.IDS.ACTIVE_BLIZZARD; 
 
             blizzardContainer.innerHTML = `
-                <div class="snow-layer back"></div>
-                <div class="snow-layer middle"></div>
-                <div class="snow-layer front"></div>
+                <div class="${UiClasses.SNOW_LAYER_BACK}"></div>
+                <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
+                <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
             `;
             
             enemyArea.appendChild(blizzardContainer);
 
             await new Promise(r => requestAnimationFrame(r));
-            blizzardContainer.style.opacity = '1';
+            blizzardContainer.style.opacity = UiStyle.OPACITY_VISIBLE;
         }
 
-        this.ui.addLog("猛吹雪が吹き荒れる！", "#00d2ff");
-        await new Promise(r => setTimeout(r, 1000));
+        this.ui.addLog(UiText.LOG_BLIZZARD, UiColors.LOG_BLIZZARD);
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.BLIZZARD_WAIT_MS));
     }
     
     async playDespairAndRevival(party) {
-        await new Promise(r => setTimeout(r, 1000));
-        this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", "#ff0000");
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
+        this.ui.addLog(UiText.LOG_DESPAIR_ATTACK, UiColors.LOG_DRAGON_DESPAIR);
         this.music.playDragon_voice();
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
 
-        this._showFullscreenBlizzard('whiteout');
-        document.body.classList.add('screen-shake');
-        await new Promise(r => setTimeout(r, 350));
+        this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_WHITEOUT);
+        document.body.classList.add(UiClasses.SCREEN_SHAKE);
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SHAKE_WAIT_MS));
 
         party.forEach((p, i) => {
             p._hp = 0;
             p.is_dead = true;
             p.clear_all_buffs();
-            const hpText = document.getElementById(`p${i}-hp-text`);
-            const hpBar  = document.getElementById(`p${i}-hp-bar`);
-            const card   = document.getElementById(`card-${i}`);
-            if (hpText) hpText.innerText = `HP: 0 / ${p.max_hp}`;
-            if (hpBar)  hpBar.style.width = "0%";
-            if (card)   card.style.opacity = "0.5";
-            const badgeContainer = card.querySelector('.status-container');
+            const hpText = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
+            );
+            const hpBar  = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
+            );
+            const card   = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
+            );
+            if (hpText) {
+                hpText.innerText = UiText.LOG_STATUS_HP_TEMPLATE
+                    .replace('{current}', 0)
+                    .replace('{max}', p.max_hp);
+            }
+            if (hpBar)  hpBar.style.width = UiStyle.ZERO_HP_PERCENT;
+            if (card)   card.style.opacity = UiStyle.CARD_OPACITY_DEAD;
+            const badgeContainer = card.querySelector(`.${UiClasses.STATUS_CONTAINER}`);
                 if (badgeContainer) badgeContainer.innerHTML = '';
         });
 
-        await new Promise(r => setTimeout(r, 1000));
-        document.body.classList.remove('screen-shake');
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
+        document.body.classList.remove(UiClasses.SCREEN_SHAKE);
 
-        this.ui.addLog("パーティは全滅した...", GameConfig.COLORS.LOG_DESPAIR);
-        await new Promise(r => setTimeout(r, 2000));
-        this.ui.addLog("もうだめかと思ったその時...", "#ffffff");
-        this.music.playBGM('boss2');
-        this._setFullscreenBlizzardMode('normal');
-        await new Promise(r => setTimeout(r, 2000));
+        this.ui.addLog(UiText.LOG_PARTY_WIPE, UiColors.LOG_DESPAIR);
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
+        this.ui.addLog(UiText.LOG_HOPE, UiColors.LOG_DEFAULT);
+        this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
+        this._setFullscreenBlizzardMode(UiClasses.BLIZZARD_MODE_NORMAL);
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
         
-        this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", GameConfig.COLORS.LOG_ATTACK);
-        await new Promise(r => setTimeout(r, 1500));
+        this.ui.addLog(UiText.LOG_ZABOCHI_LINE, UiColors.LOG_ATTACK);
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
         
         const goldFlash = document.createElement('div');
-        goldFlash.className = 'flash-gold';
+        goldFlash.className = UiClasses.FLASH_GOLD;
         document.body.appendChild(goldFlash);
 
         const zabochiImg = document.createElement('img');
-        zabochiImg.src = './resource/zabochi.webp'; 
-        zabochiImg.className = 'zabochi-appear';   
+        zabochiImg.src = GameConfig.ASSETS.IMAGES.ZABOCHI; 
+        zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
         document.body.appendChild(zabochiImg);
 
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
         
         party.forEach((p, i) => {
             p.revive(p.max_hp); p.add_mp(p.max_mp);
-            const hpText = document.getElementById(`p${i}-hp-text`);
-            const hpBar  = document.getElementById(`p${i}-hp-bar`);
-            const card   = document.getElementById(`card-${i}`);
-            if (hpText) hpText.innerText = `HP: ${p.max_hp} / ${p.max_hp}`;
-            if (hpBar)  hpBar.style.width = "100%";
-            if (card)   card.style.opacity = "1";
+            const hpText = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_TEXT.replace('{index}', i)
+            );
+            const hpBar  = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.PLAYER_HP_BAR.replace('{index}', i)
+            );
+            const card   = document.getElementById(
+                GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
+            );
+            if (hpText) {
+                hpText.innerText = UiText.LOG_STATUS_HP_TEMPLATE
+                    .replace('{current}', p.max_hp)
+                    .replace('{max}', p.max_hp);
+            }
+            if (hpBar)  hpBar.style.width = UiStyle.FULL_HP_PERCENT;
+            if (card)   card.style.opacity = UiStyle.CARD_OPACITY_ALIVE;
         });
 
         this.music.playHeal();
-        this.ui.addLog("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", GameConfig.COLORS.LOG_ATTACK);
-        this.ui.addLog("味方全員のHP・MPが全回復！", GameConfig.COLORS.LOG_ATTACK);
+        this.ui.addLog(UiText.LOG_ZABOCHI_MIRACLE, UiColors.LOG_ATTACK);
+        this.ui.addLog(UiText.LOG_FULL_RECOVERY, UiColors.LOG_ATTACK);
         
         const hasZabochi = party.some(m => m instanceof GodCat);
         if (!hasZabochi) {
@@ -485,16 +579,22 @@ export class BattleDirector {
             zabochi.resetActionValue(); 
             party.push(zabochi);
             
-            this.ui.addLog("ざぼちが共闘してくれる！", GameConfig.COLORS.LOG_ATTACK);
+            this.ui.addLog(UiText.LOG_ZABOCHI_JOIN, UiColors.LOG_ATTACK);
         }
-        await new Promise(r => setTimeout(r, 5000)); 
+        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
         
         goldFlash.remove();
         zabochiImg.remove();
     }
 
     showItemUse(actor, item) {
-        this.ui.addLog(`${actor.name}は ${item.name} を使った！`, GameConfig.COLORS.LOG_ITEM, true);
+        this.ui.addLog(
+            UiText.LOG_ITEM_USE_TEMPLATE
+                .replace('{name}', actor.name)
+                .replace('{item}', item.name),
+            UiColors.LOG_ITEM,
+            true
+        );
     }
     
     _checkDeath(target, targetId) {

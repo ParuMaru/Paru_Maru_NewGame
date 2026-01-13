@@ -8,6 +8,7 @@ import { EffectManager } from './effects.js';
 import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
 import { RelicData } from './relics.js';
+import { UiColors } from './ui_colors.js';
 import { GameConfig } from './game_config.js';
 
 export class BattleManager {
@@ -274,14 +275,14 @@ export class BattleManager {
 
         if (!actor.job && actor.down && actor.is_alive()) {
             if (actor.isBoss) {
-                this.ui.addLog(`${actor.name}は立ち上がった！`, GameConfig.COLORS.LOG_SYSTEM);
+                this.ui.addLog(`${actor.name}は立ち上がった！`, UiColors.LOG_SYSTEM);
                 actor.down = false;
                 actor.downUsed = false;
                 if (actor.breakMax) actor.breakGauge = actor.breakMax;
                 this.updateUI();
                 await new Promise(r => setTimeout(r, 600));
             } else {
-                this.ui.addLog(`${actor.name}はダウン中で動けない！`, GameConfig.COLORS.LOG_SYSTEM);
+                this.ui.addLog(`${actor.name}はダウン中で動けない！`, UiColors.LOG_SYSTEM);
                 actor.down = false;
                 actor.downUsed = false;
                 if (actor.lavaCharging) actor.lavaCharging = false;
@@ -338,7 +339,7 @@ export class BattleManager {
         if (actor.buffs.mp_regen > 0) {
             const mpRec = GameConfig.BATTLE.MP_REGEN_VALUE;
             actor.add_mp(mpRec);
-            this.ui.addLog(`> ${actor.name}のMPが ${mpRec} 回復した(祈り)`, GameConfig.COLORS.HEAL_MP);
+            this.ui.addLog(`> ${actor.name}のMPが ${mpRec} 回復した(祈り)`, UiColors.HEAL_MP);
         }
 
         if (actor.debuffs && actor.debuffs.curse > 0) {
@@ -766,14 +767,14 @@ export class BattleManager {
 
         if (this.wasAllDown || this.allOutPrompted) return;
 
-        this.ui.addLog("トリニティアタックのチャンス！", GameConfig.COLORS.LOG_IMPORTANT);
+        this.ui.addLog("トリニティアタックのチャンス！", UiColors.LOG_IMPORTANT);
         this.bgm.playSpecialReady();
         this.wasAllDown = true;
         this.allOutPrompted = true;
 
         const doAllOut = await this.ui.showAllOutPrompt();
         if (!doAllOut) {
-            this.ui.addLog("トリニティアタックを見送った！", GameConfig.COLORS.LOG_SYSTEM);
+            this.ui.addLog("トリニティアタックを見送った！", UiColors.LOG_SYSTEM);
             this.state.getAliveEnemies().forEach(enemy => {
                 enemy.down = false;
                 enemy.downUsed = false;
