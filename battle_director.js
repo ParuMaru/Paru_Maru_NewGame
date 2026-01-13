@@ -3,7 +3,6 @@ import { EffectsConfig } from './effects_constants.js';
 import { UiClasses } from './ui_classes.js';
 import { UiColors } from './ui_colors.js';
 import { UiStyle } from './ui_style.js';
-import { UiText } from './ui_text.js';
 import { GameConfig } from './game_config.js'; // ★Configをインポート
 
 export class BattleDirector {
@@ -93,7 +92,7 @@ export class BattleDirector {
     showAttackStart(actor) {
         const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
         this.ui.addLog(
-            UiText.LOG_ATTACK_TEMPLATE.replace('{name}', actor.name),
+            "{name}の攻撃！".replace('{name}', actor.name),
             logColor,
             true
         );
@@ -112,9 +111,9 @@ export class BattleDirector {
         const popupColor = UiColors.DAMAGE;
         this.effects.damagePopup(damage, targetId, popupColor);
 
-        if (isCritical) this.ui.addLog(UiText.LOG_CRITICAL, UiColors.CRITICAL, true);
+        if (isCritical) this.ui.addLog("クリティカルヒット！", UiColors.CRITICAL, true);
         this.ui.addLog(
-            UiText.LOG_DAMAGE_TEMPLATE
+            "> {name}に {damage} のダメージ！"
                 .replace('{name}', target.name)
                 .replace('{damage}', damage)
         );
@@ -127,7 +126,7 @@ export class BattleDirector {
     showSkillStart(actor, skill) {
         const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
         this.ui.addLog(
-            UiText.LOG_SKILL_TEMPLATE
+            "{name}の {skill} "
                 .replace('{name}', actor.name)
                 .replace('{skill}', skill.name),
             logColor,
@@ -211,7 +210,7 @@ export class BattleDirector {
         // ★定数使用
         this.effects.damagePopup(damage, targetId, UiColors.DAMAGE);
         this.ui.addLog(
-            UiText.LOG_DAMAGE_TEMPLATE
+            "> {name}に {damage} のダメージ！"
                 .replace('{name}', target.name)
                 .replace('{damage}', damage)
         );
@@ -231,12 +230,12 @@ export class BattleDirector {
         
         // ★定数使用
         const color = isMp ? UiColors.HEAL_MP : UiColors.HEAL_HP;
-        const unit = isMp ? UiText.LOG_MP : "";
+        const unit = isMp ? "MP" : "";
         this.effects.damagePopup(`+${amount}${unit}`, targetId, color);
 
-        const typeStr = isMp ? UiText.LOG_MP : UiText.LOG_HP;
+        const typeStr = isMp ? "MP" : "HP";
         this.ui.addLog(
-            UiText.LOG_HEAL_TEMPLATE
+            "> {name}の{type}が {amount} 回復した"
                 .replace('{name}', target.name)
                 .replace('{type}', typeStr)
                 .replace('{amount}', amount)
@@ -248,9 +247,9 @@ export class BattleDirector {
         const targetId = this._getTargetId(target);
         this.effects.healEffect(targetId);
         // ★定数使用
-        this.effects.damagePopup(UiText.LOG_FULL, targetId, UiColors.FULL_HEAL);
+        this.effects.damagePopup("FULL", targetId, UiColors.FULL_HEAL);
         this.ui.addLog(
-            UiText.LOG_FULL_HEAL_TEMPLATE.replace('{name}', target.name),
+            "> {name}のHP・MPが全回復した！".replace('{name}', target.name),
             UiColors.FULL_HEAL
         );
     }
@@ -262,13 +261,13 @@ export class BattleDirector {
         
         if (isFullRevive) {
             this.ui.addLog(
-                UiText.LOG_RESURRECT_FULL_TEMPLATE.replace('{name}', target.name),
+                "{name}が完全な状態で蘇生した！".replace('{name}', target.name),
                 UiColors.LOG_IMPORTANT,
                 true
             );
         } else {
             this.ui.addLog(
-                UiText.LOG_RESURRECT_TEMPLATE.replace('{name}', target.name),
+                "> {name}が蘇った！".replace('{name}', target.name),
                 UiColors.LOG_ATTACK
             );
         }
@@ -277,16 +276,16 @@ export class BattleDirector {
     showCover(actor) {
         this.music.playCover();
         this.ui.addLog(
-            UiText.LOG_COVER_READY_TEMPLATE.replace('{name}', actor.name),
+            "{name}は身構えた！".replace('{name}', actor.name),
             UiColors.LOG_SKILL,
             true
         );
-        this.ui.addLog(UiText.LOG_COVER_DESC);
+        this.ui.addLog(" > 仲間への攻撃を身代わりする！");
     }
 
     showCoverAction(protector, target) {
          this.ui.addLog(
-             UiText.LOG_COVER_ACTION_TEMPLATE
+             " > {protector}が{target}をかばった！"
                  .replace('{protector}', protector.name)
                  .replace('{target}', target.name),
              UiColors.LOG_SKILL
@@ -294,14 +293,14 @@ export class BattleDirector {
     }
 
     showBuff(targets, skillName) {
-        if (skillName === UiText.LOG_DRAGON_ROAR) {
+        if (skillName === "竜の咆哮") {
             this.music.playBreath(); 
             const actorId = this._getTargetId(targets[0]);
             this.effects.roarEffect(actorId);
-            this.ui.addLog(UiText.LOG_DRAGON_ATTACK_UP, UiColors.LOG_BUFF);
+            this.ui.addLog(" > ドラゴンの攻撃力が激増した！", UiColors.LOG_BUFF);
         } else {
             this.music.playKobu();
-            this.ui.addLog(UiText.LOG_ALLY_ATTACK_UP); 
+            this.ui.addLog(" > 味方の攻撃力が上がった！"); 
         }
 
         targets.forEach(t => {
@@ -312,18 +311,18 @@ export class BattleDirector {
     showRegen(actor) {
         this.music.playHeal();
         this.ui.addLog(
-            UiText.LOG_REGEN_TEMPLATE.replace('{name}', actor.name),
+            "{name}は天に祈りを捧げた！".replace('{name}', actor.name),
             UiColors.LOG_PRAYER,
             true
         );
-        this.ui.addLog(UiText.LOG_REGEN_EFFECT, UiColors.LOG_PRAYER);
+        this.ui.addLog(" > 味方全員に祝福が宿る！", UiColors.LOG_PRAYER);
     }
     
     // --- 分裂イベント演出 ---
 
     async showSplittingTrigger(enemy) {
         this.ui.addLog(
-            UiText.LOG_SPLIT_TRIGGER_TEMPLATE.replace('{name}', enemy.name),
+            "{name}の体が震えだした...！".replace('{name}', enemy.name),
             UiColors.LOG_SPLIT
         );
         this.music.playBukubuku();
@@ -340,7 +339,7 @@ export class BattleDirector {
 
     showSplittingTransform(oldName) {
         this.ui.addLog(
-            UiText.LOG_SPLIT_TRANSFORM_TEMPLATE.replace('{name}', oldName),
+            "{name}は3匹に分裂した！".replace('{name}', oldName),
             UiColors.LOG_SPLIT
         );
         this.music.playSplited(); 
@@ -368,7 +367,7 @@ export class BattleDirector {
     }
     
     async showShadowFusionStart() {
-        this.ui.addLog(UiText.LOG_SHADOW_FUSION_START, UiColors.LOG_PRAYER, true);
+        this.ui.addLog("影たちが一点に凝縮していく...！", UiColors.LOG_PRAYER, true);
         this.music.playMeditation(); 
 
         const container = document.getElementById(GameConfig.UI.IDS.ENEMY_TARGET);
@@ -404,7 +403,7 @@ export class BattleDirector {
     }
 
     async showShadowFusionEnd() {
-        this.ui.addLog(UiText.LOG_SHADOW_FUSION_END, UiColors.LOG_BUFF, true);
+        this.ui.addLog("「影の支配者」が現れた！！！", UiColors.LOG_BUFF, true);
         this.music.playMagicMeteor(); 
         
         const bossEl = document.getElementById(GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', 0));
@@ -434,7 +433,7 @@ export class BattleDirector {
             GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
         );
 
-        this.ui.addLog(UiText.LOG_DRAGON_TRANSFORM, UiColors.LOG_BUFF);
+        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", UiColors.LOG_BUFF);
         if (enemyEl) enemyEl.classList.add(UiClasses.SWAY_SLOW);
         // ★定数使用
         await new Promise(r => setTimeout(r, GameConfig.TIME.TRANSFORM_WAIT));
@@ -486,13 +485,13 @@ export class BattleDirector {
             blizzardContainer.style.opacity = UiStyle.OPACITY_VISIBLE;
         }
 
-        this.ui.addLog(UiText.LOG_BLIZZARD, UiColors.LOG_BLIZZARD);
+        this.ui.addLog("猛吹雪が吹き荒れる！", UiColors.LOG_BLIZZARD);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.BLIZZARD_WAIT_MS));
     }
     
     async playDespairAndRevival(party) {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
-        this.ui.addLog(UiText.LOG_DESPAIR_ATTACK, UiColors.LOG_DRAGON_DESPAIR);
+        this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", UiColors.LOG_DRAGON_DESPAIR);
         this.music.playDragon_voice();
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
@@ -515,7 +514,7 @@ export class BattleDirector {
                 GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
             );
             if (hpText) {
-                hpText.innerText = UiText.LOG_STATUS_HP_TEMPLATE
+                hpText.innerText = "HP: {current} / {max}"
                     .replace('{current}', 0)
                     .replace('{max}', p.max_hp);
             }
@@ -528,14 +527,14 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
         document.body.classList.remove(UiClasses.SCREEN_SHAKE);
 
-        this.ui.addLog(UiText.LOG_PARTY_WIPE, UiColors.LOG_DESPAIR);
+        this.ui.addLog("パーティは全滅した...", UiColors.LOG_DESPAIR);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
-        this.ui.addLog(UiText.LOG_HOPE, UiColors.LOG_DEFAULT);
+        this.ui.addLog("もうだめかと思ったその時...", UiColors.LOG_DEFAULT);
         this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
         this._setFullscreenBlizzardMode(UiClasses.BLIZZARD_MODE_NORMAL);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
         
-        this.ui.addLog(UiText.LOG_ZABOCHI_LINE, UiColors.LOG_ATTACK);
+        this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", UiColors.LOG_ATTACK);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
         
         const goldFlash = document.createElement('div');
@@ -561,7 +560,7 @@ export class BattleDirector {
                 GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i)
             );
             if (hpText) {
-                hpText.innerText = UiText.LOG_STATUS_HP_TEMPLATE
+                hpText.innerText = "HP: {current} / {max}"
                     .replace('{current}', p.max_hp)
                     .replace('{max}', p.max_hp);
             }
@@ -570,8 +569,8 @@ export class BattleDirector {
         });
 
         this.music.playHeal();
-        this.ui.addLog(UiText.LOG_ZABOCHI_MIRACLE, UiColors.LOG_ATTACK);
-        this.ui.addLog(UiText.LOG_FULL_RECOVERY, UiColors.LOG_ATTACK);
+        this.ui.addLog("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", UiColors.LOG_ATTACK);
+        this.ui.addLog("味方全員のHP・MPが全回復！", UiColors.LOG_ATTACK);
         
         const hasZabochi = party.some(m => m instanceof GodCat);
         if (!hasZabochi) {
@@ -579,7 +578,7 @@ export class BattleDirector {
             zabochi.resetActionValue(); 
             party.push(zabochi);
             
-            this.ui.addLog(UiText.LOG_ZABOCHI_JOIN, UiColors.LOG_ATTACK);
+            this.ui.addLog("ざぼちが共闘してくれる！", UiColors.LOG_ATTACK);
         }
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
         
@@ -589,7 +588,7 @@ export class BattleDirector {
 
     showItemUse(actor, item) {
         this.ui.addLog(
-            UiText.LOG_ITEM_USE_TEMPLATE
+            "{name}は {item} を使った！"
                 .replace('{name}', actor.name)
                 .replace('{item}', item.name),
             UiColors.LOG_ITEM,
