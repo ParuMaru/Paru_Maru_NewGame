@@ -595,7 +595,6 @@ export class BattleDirector {
             blizzardContainer.style.opacity = UiStyle.OPACITY_VISIBLE;
         }
 
-        this.ui.addLog("猛吹雪が吹き荒れる！", UiColors.LOG_BLIZZARD);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.BLIZZARD_WAIT_MS));
     }
     
@@ -612,8 +611,6 @@ export class BattleDirector {
             : null;
         let goldFlash;
         let zabochiImg;
-        let transformedZabochi;
-
         try {
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
             const awakenLine = "覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』";
@@ -631,6 +628,7 @@ export class BattleDirector {
 
             this._showDragonEventOverlay(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT);
             this._setDragonEventSubtitle(awakenLine);
+            addLogWithSubtitle("猛吹雪が吹き荒れる！", UiColors.LOG_BLIZZARD);
             setTimeout(() => this.music.playDragon_voice(), GameConfig.TIMING.DESPAIR_DRAGON_VOICE_DELAY_MS);
             this.music.stopBGM();
 
@@ -728,25 +726,12 @@ export class BattleDirector {
 
             this.ui.refreshEnemyGraphics(this.enemies);
 
-            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS));
-            if (zabochiImg) zabochiImg.remove();
-
-            transformedZabochi = document.createElement('img');
-            transformedZabochi.src = GameConfig.ASSETS.IMAGES.ZABOCHI_TRANSFORMED;
-            transformedZabochi.className = `${UiClasses.ZABOCHI_APPEAR} ${UiClasses.ZABOCHI_TRANSFORMED} ${UiClasses.ZABOCHI_REAPPEAR}`;
-            if (canvasArea) {
-                canvasArea.appendChild(transformedZabochi);
-            }
-            addLogWithSubtitle("ざぼちは変身した姿で再び現れた！", UiColors.LOG_ATTACK);
-            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_REAPPEAR_WAIT_MS));
-
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
         } finally {
             document.body.classList.remove(UiClasses.SCREEN_SHAKE);
             if (dragonEl) dragonEl.classList.remove(UiClasses.SWAY_SLOW);
             if (goldFlash) goldFlash.remove();
             if (zabochiImg) zabochiImg.remove();
-            if (transformedZabochi) transformedZabochi.remove();
             this._cleanupDragonEventOverlays();
         }
     }

@@ -370,15 +370,3 @@
     80%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }
     100% { opacity: 0; transform: translate(-50%, -60%) scale(1.2); }
 }
-.zabochi-transformed {
-    filter: brightness(1.25) contrast(1.2) saturate(1.4) drop-shadow(0 0 18px #b0f6ff) drop-shadow(0 0 32px #7ee6ff);
-    transform: translate(-50%, -50%) scale(1.08);
-}
-.zabochi-reappear {
-    animation: zabochi-reappear 1.4s ease-out forwards;
-}
-@keyframes zabochi-reappear {
-    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); }
-    40% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
-    100% { opacity: 0; transform: translate(-50%, -55%) scale(1.15); }
-}

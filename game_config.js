@@ -191,7 +191,6 @@ export const GameConfig = {
     ASSETS: {
         IMAGES: {
             ZABOCHI: './resource/zabochi.webp',
-            ZABOCHI_TRANSFORMED: './resource/zabochi.webp',
             TRINITY_CUTIN: './resource/trinity_attack.jpg',
             HERO_ICON: './resource/hero_icon.webp',
             WIZARD_ICON: './resource/wizard_icon.webp',
@@ -271,8 +270,6 @@ export const GameConfig = {
         DESPAIR_ZABOCHI_APPEAR_MS: 1000,
         DESPAIR_ZABOCHI_JOIN_WAIT_MS: 5000,
         DESPAIR_DRAGON_VOICE_DELAY_MS: 200,
-        DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS: 800,
-        DESPAIR_ZABOCHI_REAPPEAR_WAIT_MS: 1200,
         DESPAIR_IMAGE_FADE_MS: 1000,
         ALL_OUT_TAIL_DELAY_MS: 400,
     },
