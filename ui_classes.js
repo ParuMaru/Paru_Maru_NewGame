@@ -60,4 +60,7 @@ export const UiClasses = {
     MEMBER_CARD: 'member-card',
     ZABOCHI_APPEAR: 'zabochi-appear',
     FLASH_GOLD: 'flash-gold',
+    ICE_DRAGON_CUTIN: 'ice-dragon-cutin',
+    ICE_DRAGON_CUTIN_ACTIVE: 'is-active',
+    ICE_DRAGON_CUTIN_FADEOUT: 'is-fadeout',
 };
