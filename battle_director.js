@@ -109,6 +109,8 @@ export class BattleDirector {
             return;
         }
 
+        this._showIceDragonEventFlash(canvasArea);
+
         const container = document.createElement('div');
         container.className = UiClasses.ICE_DRAGON_EVENT_OVERLAY;
 
@@ -135,6 +137,24 @@ export class BattleDirector {
 
         this._iceDragonEventOverlay = { container, caption };
         requestAnimationFrame(() => container.classList.add(UiClasses.ICE_DRAGON_EVENT_ACTIVE));
+    }
+
+    _showIceDragonEventFlash(canvasArea) {
+        const targetArea = canvasArea ?? document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!targetArea) return;
+        const flash = document.createElement('div');
+        flash.className = UiClasses.ICE_DRAGON_FLASH;
+        targetArea.appendChild(flash);
+
+        const removeFlash = () => {
+            if (flash.parentNode) flash.remove();
+        };
+
+        setTimeout(() => {
+            flash.classList.add(UiClasses.ICE_DRAGON_FLASH_FADEOUT);
+            flash.addEventListener('transitionend', removeFlash, { once: true });
+            setTimeout(removeFlash, 1300);
+        }, 1000);
     }
 
     _updateIceDragonEventSubtitle(subtitleText) {
@@ -635,16 +655,21 @@ export class BattleDirector {
         const log4 = "パーティは全滅した";
         this.ui.addLog(log4, UiColors.LOG_DESPAIR);
         this._updateIceDragonEventSubtitle(log4);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
-        const log5 = "もうだめかと思ったその時・・・";
+        await new Promise(r => setTimeout(r, 2000));
+        const log5 = "もうだめかと思った";
         this.ui.addLog(log5, UiColors.LOG_DEFAULT);
         this._updateIceDragonEventSubtitle(log5);
+        await new Promise(r => setTimeout(r, 2000));
+        const log6 = "その時";
+        this.ui.addLog(log6, UiColors.LOG_DEFAULT);
+        this._updateIceDragonEventSubtitle(log6);
+        await new Promise(r => setTimeout(r, 2000));
         this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
         
-        const log6 = "？？？『にゃにをあきらめているにゃ！？』";
-        this.ui.addLog(log6, UiColors.LOG_ATTACK);
-        this._updateIceDragonEventSubtitle(log6);
+        const log7 = "？？？『にゃにをあきらめているにゃ！？』";
+        this.ui.addLog(log7, UiColors.LOG_ATTACK);
+        this._updateIceDragonEventSubtitle(log7);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
         
         const goldFlash = document.createElement('div');
@@ -656,9 +681,9 @@ export class BattleDirector {
         zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
         document.body.appendChild(zabochiImg);
 
-        const log7 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
-        this.ui.addLog(log7, UiColors.LOG_ATTACK);
-        this._updateIceDragonEventSubtitle(log7);
+        const log8 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
+        this.ui.addLog(log8, UiColors.LOG_ATTACK);
+        this._updateIceDragonEventSubtitle(log8);
         
 
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
