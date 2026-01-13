@@ -160,6 +160,20 @@ export class BattleDirector {
         });
     }
 
+    _hideDragonEventOverlay() {
+        const overlay = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_OVERLAY);
+        if (!overlay) return;
+        const image = overlay.querySelector(`#${GameConfig.UI.IDS.DRAGON_EVENT_IMAGE}`);
+        if (image) {
+            image.classList.remove(UiClasses.DRAGON_EVENT_IMAGE_VISIBLE);
+        }
+        const subtitle = overlay.querySelector(`#${GameConfig.UI.IDS.DRAGON_EVENT_SUBTITLE}`);
+        if (subtitle) {
+            subtitle.classList.remove(UiClasses.DRAGON_EVENT_SUBTITLE_VISIBLE);
+        }
+        overlay.classList.remove(UiClasses.DRAGON_EVENT_ACTIVE);
+    }
+
     _setDragonEventSubtitle(text) {
         const overlay = this._ensureDragonEventOverlay();
         if (!overlay) return;
@@ -177,26 +191,9 @@ export class BattleDirector {
         subtitle.textContent = '';
     }
 
-    _showDragonEventFlash() {
-        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
-        if (!canvasArea) return;
-        let flash = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_FLASH);
-        if (!flash) {
-            flash = document.createElement('div');
-            flash.id = GameConfig.UI.IDS.DRAGON_EVENT_FLASH;
-            flash.className = UiClasses.DRAGON_EVENT_FLASH;
-        }
-        canvasArea.appendChild(flash);
-        flash.classList.remove(UiClasses.DRAGON_EVENT_ACTIVE);
-        requestAnimationFrame(() => flash.classList.add(UiClasses.DRAGON_EVENT_ACTIVE));
-        setTimeout(() => flash.classList.remove(UiClasses.DRAGON_EVENT_ACTIVE), GameConfig.TIMING.DESPAIR_FLASH_MS);
-    }
-
     _cleanupDragonEventOverlays() {
         const overlay = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_OVERLAY);
         if (overlay) overlay.remove();
-        const flash = document.getElementById(GameConfig.UI.IDS.DRAGON_EVENT_FLASH);
-        if (flash) flash.remove();
         this._clearDragonEventSubtitle();
     }
 
@@ -609,6 +606,10 @@ export class BattleDirector {
             this.ui.addLog(text, color);
         };
         this._ensureDragonEventOverlay();
+        const dragonIndex = this.enemies.findIndex(enemy => enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON);
+        const dragonEl = dragonIndex >= 0
+            ? document.getElementById(GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', dragonIndex))
+            : null;
         let goldFlash;
         let zabochiImg;
         let transformedZabochi;
@@ -618,16 +619,14 @@ export class BattleDirector {
             const awakenLine = "覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』";
             addLogWithSubtitle(awakenLine, UiColors.LOG_DRAGON_DESPAIR);
 
-            if (canvasArea) {
-                canvasArea.classList.add(UiClasses.SWAY_SLOW);
+            if (dragonEl) {
+                dragonEl.classList.add(UiClasses.SWAY_SLOW);
             }
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SWAY_MS));
-            if (canvasArea) {
-                canvasArea.classList.remove(UiClasses.SWAY_SLOW);
+            if (dragonEl) {
+                dragonEl.classList.remove(UiClasses.SWAY_SLOW);
             }
 
-            this._showDragonEventFlash();
-            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_FLASH_MS));
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
 
             this._showDragonEventOverlay(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT);
@@ -724,6 +723,11 @@ export class BattleDirector {
                 addLogWithSubtitle("ざぼちが共闘してくれる！", UiColors.LOG_ATTACK);
             }
 
+            this._hideDragonEventOverlay();
+            await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_IMAGE_FADE_MS));
+
+            this.ui.refreshEnemyGraphics(this.enemies);
+
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS));
             if (zabochiImg) zabochiImg.remove();
 
@@ -739,9 +743,7 @@ export class BattleDirector {
             await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
         } finally {
             document.body.classList.remove(UiClasses.SCREEN_SHAKE);
-            if (canvasArea) {
-                canvasArea.classList.remove(UiClasses.SWAY_SLOW);
-            }
+            if (dragonEl) dragonEl.classList.remove(UiClasses.SWAY_SLOW);
             if (goldFlash) goldFlash.remove();
             if (zabochiImg) zabochiImg.remove();
             if (transformedZabochi) transformedZabochi.remove();

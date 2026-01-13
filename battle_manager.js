@@ -818,8 +818,7 @@ export class BattleManager {
             'active-blizzard',
             'flash-overlay',
             'despair-blizzard',
-            'dragon-event-overlay',
-            'dragon-event-flash'
+            'dragon-event-overlay'
         ];
         overlayIds.forEach((id) => {
             const el = document.getElementById(id);

@@ -67,7 +67,6 @@ export const UiClasses = {
     DRAGON_EVENT_ACTIVE: 'is-active',
     DRAGON_EVENT_SUBTITLE_VISIBLE: 'is-visible',
     DRAGON_EVENT_IMAGE_VISIBLE: 'is-visible',
-    DRAGON_EVENT_FLASH: 'dragon-event-flash',
     ZABOCHI_TRANSFORMED: 'zabochi-transformed',
     ZABOCHI_REAPPEAR: 'zabochi-reappear',
 };

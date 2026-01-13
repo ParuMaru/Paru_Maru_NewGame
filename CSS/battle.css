@@ -115,7 +115,7 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     grid-template-rows: clamp(60px, 14vh, 120px) 1fr clamp(70px, 16vh, 140px);
     opacity: 0;
     pointer-events: none;
-    z-index: 60;
+    z-index: 600;
     background: #000;
     transition: opacity 1s ease;
 }
@@ -157,22 +157,6 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .dragon-event-subtitle.is-visible {
     opacity: 1;
-}
-.dragon-event-flash {
-    position: absolute;
-    inset: 0;
-    background: rgba(255, 255, 255, 0.9);
-    opacity: 0;
-    pointer-events: none;
-    z-index: 55;
-}
-.dragon-event-flash.is-active {
-    animation: dragon-event-flash 0.6s ease-out;
-}
-@keyframes dragon-event-flash {
-    0% { opacity: 0; }
-    20% { opacity: 0.9; }
-    100% { opacity: 0; }
 }
 .ice-dragon-cutin {
     position: absolute;

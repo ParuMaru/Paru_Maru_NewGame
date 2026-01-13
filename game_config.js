@@ -68,7 +68,6 @@ export const GameConfig = {
             DRAGON_EVENT_OVERLAY: 'dragon-event-overlay',
             DRAGON_EVENT_SUBTITLE: 'dragon-event-subtitle',
             DRAGON_EVENT_IMAGE: 'dragon-event-image',
-            DRAGON_EVENT_FLASH: 'dragon-event-flash',
         },
         ID_TEMPLATES: {
             ENEMY_SPRITE: 'enemy-sprite-{index}',
@@ -263,7 +262,6 @@ export const GameConfig = {
         BLIZZARD_WAIT_MS: 1000,
         DESPAIR_INTRO_WAIT_MS: 1000,
         DESPAIR_SWAY_MS: 1000,
-        DESPAIR_FLASH_MS: 600,
         DESPAIR_LINE_WAIT_MS: 1500,
         DESPAIR_SHAKE_WAIT_MS: 350,
         DESPAIR_AFTER_WIPE_WAIT_MS: 1000,
@@ -275,6 +273,7 @@ export const GameConfig = {
         DESPAIR_DRAGON_VOICE_DELAY_MS: 200,
         DESPAIR_ZABOCHI_TRANSFORM_WAIT_MS: 800,
         DESPAIR_ZABOCHI_REAPPEAR_WAIT_MS: 1200,
+        DESPAIR_IMAGE_FADE_MS: 1000,
         ALL_OUT_TAIL_DELAY_MS: 400,
     },
     // ★追加: レリックのパラメータ
