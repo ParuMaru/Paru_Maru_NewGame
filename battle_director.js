@@ -571,7 +571,6 @@ export class BattleDirector {
 
         const log1 = "『我ガネムリヲ妨ゲル物ハ・・・消エ去レ・・・！！』";
         this.ui.addLog(log1, UiColors.LOG_BUFF);
-        this._startIceDragonEventOverlay(log1);
         if (enemyEl) enemyEl.classList.add(UiClasses.SWAY_SLOW);
         this._pendingAwakenRefresh = { enemy, allEnemies, enemyIndex };
         // ★定数使用
@@ -588,8 +587,9 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
         const log2 = "覚醒アイスドラゴン『無ニ帰ス・・・絶対零度！！』";
         this.ui.addLog(log2, UiColors.LOG_DRAGON_DESPAIR);
-        this._updateIceDragonEventSubtitle(log2);
+        this._startIceDragonEventOverlay(log2);
         this.music.playDragon_voice();
+        this._refreshAwakenedEnemyAppearance();
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
 
@@ -660,7 +660,6 @@ export class BattleDirector {
         this.ui.addLog(log7, UiColors.LOG_ATTACK);
         this._updateIceDragonEventSubtitle(log7);
         await this._fadeOutIceDragonEventOverlay();
-        this._refreshAwakenedEnemyAppearance();
 
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
         
