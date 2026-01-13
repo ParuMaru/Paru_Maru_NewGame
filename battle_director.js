@@ -79,6 +79,51 @@ export class BattleDirector {
         setTimeout(removeOverlay, GameConfig.TIMING.BLIZZARD_OVERLAY_REMOVE_MS);
     }
 
+    _showCanvasCutinImage(src, opts = {}) {
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea || !src) return;
+        const displayMs = opts.displayMs ?? 1100;
+        const cutin = document.createElement('div');
+        cutin.className = UiClasses.ICE_DRAGON_CUTIN;
+
+        const img = document.createElement('img');
+        img.src = src;
+        img.alt = opts.alt ?? '';
+
+        const removeCutin = () => {
+            if (cutin.parentNode) cutin.remove();
+        };
+
+        img.addEventListener('error', removeCutin, { once: true });
+        img.addEventListener(
+            'load',
+            () => {
+                cutin.appendChild(img);
+                canvasArea.appendChild(cutin);
+                requestAnimationFrame(() => cutin.classList.add(UiClasses.ICE_DRAGON_CUTIN_ACTIVE));
+
+                const fadeOutTimer = setTimeout(() => {
+                    cutin.classList.add(UiClasses.ICE_DRAGON_CUTIN_FADEOUT);
+                }, displayMs);
+
+                cutin.addEventListener(
+                    'transitionend',
+                    (event) => {
+                        if (event.propertyName !== 'opacity') return;
+                        if (cutin.classList.contains(UiClasses.ICE_DRAGON_CUTIN_FADEOUT)) {
+                            clearTimeout(fadeOutTimer);
+                            removeCutin();
+                        }
+                    },
+                    { once: true }
+                );
+
+                setTimeout(removeCutin, displayMs + 600);
+            },
+            { once: true }
+        );
+    }
+
     // --- 攻撃系の演出 ---
 
     showAttackStart(actor) {
@@ -485,6 +530,7 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
         this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", UiColors.LOG_DRAGON_DESPAIR);
         this.music.playDragon_voice();
+        this._showCanvasCutinImage(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT, { displayMs: 1100 });
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
         this.music.stopBGM();
 

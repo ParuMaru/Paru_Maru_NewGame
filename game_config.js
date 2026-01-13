@@ -193,6 +193,7 @@ export const GameConfig = {
             WIZARD_ICON: './resource/wizard_icon.webp',
             HEALER_ICON: './resource/healer_icon.webp',
             ENEMY_FALLBACK: './resource/cragen.webp',
+            ICE_DRAGON_EVENT: './resource/ice_dragon_event.jpg',
         },
     },
 
