@@ -79,6 +79,105 @@ export class BattleDirector {
         setTimeout(removeOverlay, GameConfig.TIMING.BLIZZARD_OVERLAY_REMOVE_MS);
     }
 
+    _ensureActiveBlizzardOverlay() {
+        const enemyArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!enemyArea) return null;
+        enemyArea.style.position = UiStyle.POSITION_RELATIVE;
+        enemyArea.style.overflow = UiStyle.OVERFLOW_HIDDEN;
+
+        let blizzardContainer = document.getElementById(GameConfig.UI.IDS.ACTIVE_BLIZZARD);
+        if (!blizzardContainer) {
+            blizzardContainer = document.createElement('div');
+            blizzardContainer.className = UiClasses.BLIZZARD_CONTAINER;
+            blizzardContainer.id = GameConfig.UI.IDS.ACTIVE_BLIZZARD;
+
+            blizzardContainer.innerHTML = `
+                <div class="${UiClasses.SNOW_LAYER_BACK}"></div>
+                <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
+                <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
+            `;
+            enemyArea.appendChild(blizzardContainer);
+        }
+        return blizzardContainer;
+    }
+
+    _startIceDragonEventOverlay(subtitleText) {
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea) return;
+        if (this._iceDragonEventOverlay?.container) {
+            this._updateIceDragonEventSubtitle(subtitleText);
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = UiClasses.ICE_DRAGON_EVENT_OVERLAY;
+
+        const topBar = document.createElement('div');
+        topBar.className = UiClasses.ICE_DRAGON_EVENT_BAR;
+
+        const image = document.createElement('img');
+        image.className = UiClasses.ICE_DRAGON_EVENT_IMAGE;
+        image.src = GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT;
+        image.alt = '';
+
+        const bottomBar = document.createElement('div');
+        bottomBar.className = UiClasses.ICE_DRAGON_EVENT_BAR;
+
+        const caption = document.createElement('div');
+        caption.className = UiClasses.ICE_DRAGON_EVENT_CAPTION;
+        caption.textContent = subtitleText ?? '';
+
+        bottomBar.appendChild(caption);
+        container.appendChild(topBar);
+        container.appendChild(image);
+        container.appendChild(bottomBar);
+        canvasArea.appendChild(container);
+
+        this._iceDragonEventOverlay = { container, caption };
+        requestAnimationFrame(() => container.classList.add(UiClasses.ICE_DRAGON_EVENT_ACTIVE));
+    }
+
+    _updateIceDragonEventSubtitle(subtitleText) {
+        if (!this._iceDragonEventOverlay?.caption) return;
+        this._iceDragonEventOverlay.caption.textContent = subtitleText ?? '';
+    }
+
+    _fadeOutIceDragonEventOverlay() {
+        const overlay = this._iceDragonEventOverlay?.container;
+        if (!overlay) return Promise.resolve();
+        return new Promise((resolve) => {
+            const cleanup = () => {
+                if (overlay.parentNode) overlay.remove();
+                this._iceDragonEventOverlay = null;
+                resolve();
+            };
+            overlay.addEventListener(
+                'transitionend',
+                (event) => {
+                    if (event.propertyName !== 'opacity') return;
+                    cleanup();
+                },
+                { once: true }
+            );
+            overlay.classList.add(UiClasses.ICE_DRAGON_EVENT_FADEOUT);
+            setTimeout(cleanup, 1100);
+        });
+    }
+
+    _refreshAwakenedEnemyAppearance() {
+        if (!this._pendingAwakenRefresh) return;
+        const { enemy, allEnemies, enemyIndex } = this._pendingAwakenRefresh;
+        this._pendingAwakenRefresh = null;
+
+        this.ui.refreshEnemyGraphics(allEnemies);
+        const refreshedEnemyEl = document.getElementById(
+            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
+        );
+        if (refreshedEnemyEl && enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON) {
+            refreshedEnemyEl.classList.add(UiClasses.BOSS_LIFT);
+        }
+    }
+
     _showCanvasCutinImage(src, opts = {}) {
         const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         if (!canvasArea || !src) return;
@@ -470,8 +569,10 @@ export class BattleDirector {
             GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
         );
 
-        this.ui.addLog("『我ガ眠リヲ妨ゲル者ハ...消エ去レ...！！』", UiColors.LOG_BUFF);
+        const log1 = "『我ガネムリヲ妨ゲル物ハ・・・消エ去レ・・・！！』";
+        this.ui.addLog(log1, UiColors.LOG_BUFF);
         if (enemyEl) enemyEl.classList.add(UiClasses.SWAY_SLOW);
+        this._pendingAwakenRefresh = { enemy, allEnemies, enemyIndex };
         // ★定数使用
         await new Promise(r => setTimeout(r, GameConfig.TIME.TRANSFORM_WAIT));
 
@@ -480,61 +581,27 @@ export class BattleDirector {
             enemyEl.classList.add(UiClasses.FLASH_RAPID);
         }
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_WAIT_MS));
-
-        const flashOverlay = document.createElement('div');
-        flashOverlay.id = GameConfig.UI.IDS.FLASH_OVERLAY;
-        document.body.appendChild(flashOverlay);
-        await new Promise(r => requestAnimationFrame(r));
-        flashOverlay.style.opacity = UiStyle.OPACITY_VISIBLE;
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_FADE_MS));
-
-        this.ui.refreshEnemyGraphics(allEnemies);
-
-        const refreshedEnemyEl = document.getElementById(
-            GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', enemyIndex)
-        );
-        if (refreshedEnemyEl && enemy.enemyType === GameConfig.ENEMY_TYPES.ICE_DRAGON) {
-            refreshedEnemyEl.classList.add(UiClasses.BOSS_LIFT);
-        }
-        
-        flashOverlay.style.opacity = UiStyle.OPACITY_HIDDEN;
-        setTimeout(() => flashOverlay.remove(), GameConfig.TIMING.DRAGON_FLASH_REMOVE_MS);
-
-        const enemyArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA); 
-
-        if (enemyArea) {
-            enemyArea.style.position = UiStyle.POSITION_RELATIVE; 
-            enemyArea.style.overflow = UiStyle.OVERFLOW_HIDDEN;
-
-            const blizzardContainer = document.createElement('div');
-            blizzardContainer.className = UiClasses.BLIZZARD_CONTAINER; 
-            blizzardContainer.id = GameConfig.UI.IDS.ACTIVE_BLIZZARD; 
-
-            blizzardContainer.innerHTML = `
-                <div class="${UiClasses.SNOW_LAYER_BACK}"></div>
-                <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
-                <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
-            `;
-            
-            enemyArea.appendChild(blizzardContainer);
-
-            await new Promise(r => requestAnimationFrame(r));
-            blizzardContainer.style.opacity = UiStyle.OPACITY_VISIBLE;
-        }
-
-        this.ui.addLog("猛吹雪が吹き荒れる！", UiColors.LOG_BLIZZARD);
-        await new Promise(r => setTimeout(r, GameConfig.TIMING.BLIZZARD_WAIT_MS));
     }
     
     async playDespairAndRevival(party) {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
-        this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", UiColors.LOG_DRAGON_DESPAIR);
+        const log2 = "覚醒アイスドラゴン『無ニ帰ス・・・絶対零度！！』";
+        this.ui.addLog(log2, UiColors.LOG_DRAGON_DESPAIR);
+        this._startIceDragonEventOverlay(log2);
         this.music.playDragon_voice();
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
-        this._showCanvasCutinImage(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT, { displayMs: 10000 });
         this.music.stopBGM();
 
-        this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_WHITEOUT);
+        const log3 = "猛吹雪が吹き荒れる。";
+        this._refreshAwakenedEnemyAppearance();
+        this.ui.addLog(log3, UiColors.LOG_BLIZZARD);
+        this._updateIceDragonEventSubtitle(log3);
+        const blizzardOverlay = this._ensureActiveBlizzardOverlay();
+        if (blizzardOverlay) {
+            await new Promise(r => requestAnimationFrame(r));
+            blizzardOverlay.style.opacity = UiStyle.OPACITY_VISIBLE;
+        }
+        this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_NORMAL);
         document.body.classList.add(UiClasses.SCREEN_SHAKE);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_SHAKE_WAIT_MS));
 
@@ -565,14 +632,19 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_AFTER_WIPE_WAIT_MS));
         document.body.classList.remove(UiClasses.SCREEN_SHAKE);
 
-        this.ui.addLog("パーティは全滅した...", UiColors.LOG_DESPAIR);
+        const log4 = "パーティは全滅した";
+        this.ui.addLog(log4, UiColors.LOG_DESPAIR);
+        this._updateIceDragonEventSubtitle(log4);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LOG_WAIT_MS));
-        this.ui.addLog("もうだめかと思ったその時...", UiColors.LOG_DEFAULT);
+        const log5 = "もうだめかと思ったその時・・・";
+        this.ui.addLog(log5, UiColors.LOG_DEFAULT);
+        this._updateIceDragonEventSubtitle(log5);
         this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
-        this._setFullscreenBlizzardMode(UiClasses.BLIZZARD_MODE_NORMAL);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
         
-        this.ui.addLog("？？？『にゃにを諦めているにゃ！？』", UiColors.LOG_ATTACK);
+        const log6 = "？？？『にゃにをあきらめているにゃ！？』";
+        this.ui.addLog(log6, UiColors.LOG_ATTACK);
+        this._updateIceDragonEventSubtitle(log6);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
         
         const goldFlash = document.createElement('div');
@@ -583,6 +655,11 @@ export class BattleDirector {
         zabochiImg.src = GameConfig.ASSETS.IMAGES.ZABOCHI; 
         zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
         document.body.appendChild(zabochiImg);
+
+        const log7 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
+        this.ui.addLog(log7, UiColors.LOG_ATTACK);
+        this._updateIceDragonEventSubtitle(log7);
+        
 
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
         
@@ -605,18 +682,15 @@ export class BattleDirector {
             if (hpBar)  hpBar.style.width = UiStyle.FULL_HP_PERCENT;
             if (card)   card.style.opacity = UiStyle.CARD_OPACITY_ALIVE;
         });
-
+        
+        await this._fadeOutIceDragonEventOverlay();
         this.music.playHeal();
-        this.ui.addLog("伝説の神猫『ざぼち』が降臨し、奇跡を起こした！", UiColors.LOG_ATTACK);
-        this.ui.addLog("味方全員のHP・MPが全回復！", UiColors.LOG_ATTACK);
         
         const hasZabochi = party.some(m => m instanceof GodCat);
         if (!hasZabochi) {
             const zabochi = new GodCat();
             zabochi.resetActionValue(); 
             party.push(zabochi);
-            
-            this.ui.addLog("ざぼちが共闘してくれる！", UiColors.LOG_ATTACK);
         }
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_JOIN_WAIT_MS)); 
         
