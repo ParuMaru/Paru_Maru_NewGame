@@ -147,7 +147,7 @@ export class UIManager {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = UiText.TURN_SELECT_TEMPLATE.replace('{name}', actor.name); 
 
-        this._createButton(UiText.COMMAND_ATTACK, GameConfig.UI.COLORS.BUTTON_ATTACK, () => onSelect({ type: 'attack' }));
+        this._createButton(UiText.COMMAND_ATTACK, UiColors.BUTTON_ATTACK, () => onSelect({ type: 'attack' }));
 
         actor.skills.forEach(id => {
             const skill = SkillData[id];
@@ -157,17 +157,17 @@ export class UIManager {
 
             if (skill.menu === GameConfig.SKILL_MENUS.MAIN) {
                 const mainColor = skill.id === GameConfig.SKILL_IDS.MEDITATION
-                    ? GameConfig.UI.COLORS.BUTTON_MAIN_MAGIC
-                    : GameConfig.UI.COLORS.BUTTON_MAIN_SKILL;
+                    ? UiColors.BUTTON_MAIN_MAGIC
+                    : UiColors.BUTTON_MAIN_SKILL;
                 this._createButton(skill.name, mainColor, () => onSelect({ type: 'skill', detail: skill }));
             } else if (skill.menu === GameConfig.SKILL_MENUS.MAGIC && !this._hasButton(UiText.COMMAND_MAGIC)) {
                 this._createButton(UiText.COMMAND_MAGIC, btnColor, () => this.showSubMenu(GameConfig.SKILL_MENUS.MAGIC, onSelect));
             } else if (skill.menu === GameConfig.SKILL_MENUS.SKILL && !this._hasButton(UiText.COMMAND_SKILL)) {
-                this._createButton(UiText.COMMAND_SKILL, GameConfig.UI.COLORS.BUTTON_SKILL, () => this.showSubMenu(GameConfig.SKILL_MENUS.SKILL, onSelect));
+                this._createButton(UiText.COMMAND_SKILL, UiColors.BUTTON_SKILL, () => this.showSubMenu(GameConfig.SKILL_MENUS.SKILL, onSelect));
             }
         });
 
-        this._createButton(UiText.COMMAND_ITEM, GameConfig.UI.COLORS.BUTTON_ITEM, () => this.showItemMenu(onSelect));
+        this._createButton(UiText.COMMAND_ITEM, UiColors.BUTTON_ITEM, () => this.showItemMenu(onSelect));
     }
 
     initAllOutUI() {
@@ -275,7 +275,7 @@ export class UIManager {
                 
                 if (skill.id === GameConfig.SKILL_IDS.RAISE && this.currentActor.mp < skill.cost) {
                     btnText = UiText.RAISE_FALLBACK;
-                    btnColor = GameConfig.UI.COLORS.BUTTON_RAISE; 
+                    btnColor = UiColors.BUTTON_RAISE; 
                 }
                 
                 this._createButton(
@@ -287,7 +287,7 @@ export class UIManager {
             }
         });
 
-        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
 
     showItemMenu(onSelect) {
@@ -308,7 +308,7 @@ export class UIManager {
             );
         });
 
-        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
     
     /**
@@ -369,23 +369,23 @@ export class UIManager {
         targets.forEach((target, i) => {
             this._createButton(
                 target.name,
-                target.job ? GameConfig.UI.COLORS.TARGET_ALLY : GameConfig.UI.COLORS.TARGET_ENEMY, 
+                target.job ? UiColors.TARGET_ALLY : UiColors.TARGET_ENEMY, 
                 () => wrappedOnSelect(target)
             );
         });
 
-        this._createButton(UiText.COMMAND_BACK, GameConfig.UI.COLORS.BUTTON_BACK, wrappedOnBack);
+        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, wrappedOnBack);
     }
 
     _createButton(text, color, action, enabled = true) {
         const btn = document.createElement('button');
         btn.innerText = text;
         btn.className = UiClasses.COMMAND_BTN;
-        btn.style.backgroundColor = enabled ? color : GameConfig.UI.COLORS.BUTTON_DISABLED_BG;
-        const textColor = enabled ? this._getButtonTextColor(color) : GameConfig.UI.COLORS.BUTTON_DISABLED_TEXT;
+        btn.style.backgroundColor = enabled ? color : UiColors.BUTTON_DISABLED_BG;
+        const textColor = enabled ? this._getButtonTextColor(color) : UiColors.BUTTON_DISABLED_TEXT;
         btn.style.color = textColor;
         btn.style.textShadow = enabled
-            ? (textColor === GameConfig.UI.COLORS.BUTTON_TEXT_DARK
+            ? (textColor === UiColors.BUTTON_TEXT_DARK
                 ? UiStyle.TEXT_SHADOW_LIGHT
                 : UiStyle.TEXT_SHADOW_DARK)
             : UiStyle.TEXT_SHADOW_NONE;
@@ -399,7 +399,7 @@ export class UIManager {
     }
 
     _getButtonTextColor(color) {
-        if (!color || color[0] !== UiStyle.COLOR_HASH || color.length < GameConfig.UI.LIMITS.HEX_COLOR_MIN_LENGTH) return GameConfig.UI.COLORS.BUTTON_TEXT_LIGHT;
+        if (!color || color[0] !== UiStyle.COLOR_HASH || color.length < GameConfig.UI.LIMITS.HEX_COLOR_MIN_LENGTH) return UiColors.BUTTON_TEXT_LIGHT;
         const hex = color.replace(UiStyle.COLOR_HASH, "");
         const r = parseInt(hex.substring(0, 2), 16);
         const g = parseInt(hex.substring(2, 4), 16);
@@ -407,8 +407,8 @@ export class UIManager {
         const luminance = (UiLuminance.RED_WEIGHT * r + UiLuminance.GREEN_WEIGHT * g + UiLuminance.BLUE_WEIGHT * b)
             / GameConfig.UI.LIMITS.LUMINANCE_DENOMINATOR;
         return luminance > GameConfig.UI.LIMITS.LUMINANCE_THRESHOLD
-            ? GameConfig.UI.COLORS.BUTTON_TEXT_DARK
-            : GameConfig.UI.COLORS.BUTTON_TEXT_LIGHT;
+            ? UiColors.BUTTON_TEXT_DARK
+            : UiColors.BUTTON_TEXT_LIGHT;
     }
 
     refreshEnemyGraphics(enemies) {
