@@ -63,6 +63,8 @@ export const UiClasses = {
     ICE_DRAGON_CUTIN: 'ice-dragon-cutin',
     ICE_DRAGON_CUTIN_ACTIVE: 'is-active',
     ICE_DRAGON_CUTIN_FADEOUT: 'is-fadeout',
+    ICE_DRAGON_FLASH: 'ice-dragon-flash',
+    ICE_DRAGON_FLASH_FADEOUT: 'is-fadeout',
     ICE_DRAGON_EVENT_OVERLAY: 'ice-dragon-event-overlay',
     ICE_DRAGON_EVENT_ACTIVE: 'is-active',
     ICE_DRAGON_EVENT_FADEOUT: 'is-fadeout',

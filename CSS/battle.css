@@ -124,6 +124,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .ice-dragon-event-overlay.is-fadeout {
     opacity: 0;
 }
+.ice-dragon-flash {
+    position: absolute;
+    inset: 0;
+    background: #fff;
+    opacity: 1;
+    transition: opacity 1s ease;
+    z-index: 95000;
+    pointer-events: none;
+}
+.ice-dragon-flash.is-fadeout {
+    opacity: 0;
+}
 .ice-dragon-event-bar {
     flex: 0 0 18%;
     background: #000;
