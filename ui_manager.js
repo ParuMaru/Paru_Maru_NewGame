@@ -4,7 +4,6 @@ import { RelicData } from './relics.js';
 import { UiClasses } from './ui_classes.js';
 import { UiColors } from './ui_colors.js';
 import { UiLuminance, UiStyle } from './ui_style.js';
-import { UiText } from './ui_text.js';
 import { GameConfig } from './game_config.js';
 
 export class UIManager {
@@ -33,7 +32,7 @@ export class UIManager {
         const roundInfo = document.createElement('div');
         roundInfo.className = UiClasses.ROUND_INFO;
         roundInfo.id = GameConfig.UI.IDS.ROUND_INFO_TEXT;
-        roundInfo.innerText = UiText.NEXT_LABEL;
+        roundInfo.innerText = "▶ NEXT";
         panel.appendChild(roundInfo);
 
 
@@ -109,14 +108,14 @@ export class UIManager {
 
     getWeaknessLabel(tag) {
         const labelMap = {
-            [GameConfig.WEAKNESS_TAGS.FIRE]: UiText.WEAKNESS_FIRE,
-            [GameConfig.WEAKNESS_TAGS.ICE]: UiText.WEAKNESS_ICE,
-            [GameConfig.WEAKNESS_TAGS.HOLY]: UiText.WEAKNESS_HOLY,
-            [GameConfig.WEAKNESS_TAGS.SLASH]: UiText.WEAKNESS_SLASH
+            [GameConfig.WEAKNESS_TAGS.FIRE]: "炎",
+            [GameConfig.WEAKNESS_TAGS.ICE]: "氷",
+            [GameConfig.WEAKNESS_TAGS.HOLY]: "聖",
+            [GameConfig.WEAKNESS_TAGS.SLASH]: "斬"
         };
         return labelMap[tag]
-            ? `${UiText.WEAKNESS_PREFIX}${labelMap[tag]}`
-            : UiText.WEAKNESS_NONE;
+            ? `弱点:${labelMap[tag]}`
+            : "弱点:なし";
     }
 
     setInventory(inventory) {
@@ -145,9 +144,9 @@ export class UIManager {
             this.commandOptions = {};
         }
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = UiText.TURN_SELECT_TEMPLATE.replace('{name}', actor.name); 
+        this.turnLabel.innerText = "▼ {name} の行動選択".replace('{name}', actor.name); 
 
-        this._createButton(UiText.COMMAND_ATTACK, UiColors.BUTTON_ATTACK, () => onSelect({ type: 'attack' }));
+        this._createButton("攻撃", UiColors.BUTTON_ATTACK, () => onSelect({ type: 'attack' }));
 
         actor.skills.forEach(id => {
             const skill = SkillData[id];
@@ -160,14 +159,14 @@ export class UIManager {
                     ? UiColors.BUTTON_MAIN_MAGIC
                     : UiColors.BUTTON_MAIN_SKILL;
                 this._createButton(skill.name, mainColor, () => onSelect({ type: 'skill', detail: skill }));
-            } else if (skill.menu === GameConfig.SKILL_MENUS.MAGIC && !this._hasButton(UiText.COMMAND_MAGIC)) {
-                this._createButton(UiText.COMMAND_MAGIC, btnColor, () => this.showSubMenu(GameConfig.SKILL_MENUS.MAGIC, onSelect));
-            } else if (skill.menu === GameConfig.SKILL_MENUS.SKILL && !this._hasButton(UiText.COMMAND_SKILL)) {
-                this._createButton(UiText.COMMAND_SKILL, UiColors.BUTTON_SKILL, () => this.showSubMenu(GameConfig.SKILL_MENUS.SKILL, onSelect));
+            } else if (skill.menu === GameConfig.SKILL_MENUS.MAGIC && !this._hasButton("魔法")) {
+                this._createButton("魔法", btnColor, () => this.showSubMenu(GameConfig.SKILL_MENUS.MAGIC, onSelect));
+            } else if (skill.menu === GameConfig.SKILL_MENUS.SKILL && !this._hasButton("スキル")) {
+                this._createButton("スキル", UiColors.BUTTON_SKILL, () => this.showSubMenu(GameConfig.SKILL_MENUS.SKILL, onSelect));
             }
         });
 
-        this._createButton(UiText.COMMAND_ITEM, UiColors.BUTTON_ITEM, () => this.showItemMenu(onSelect));
+        this._createButton("どうぐ", UiColors.BUTTON_ITEM, () => this.showItemMenu(onSelect));
     }
 
     initAllOutUI() {
@@ -198,10 +197,10 @@ export class UIManager {
         prompt.id = GameConfig.UI.IDS.ALLOUT_PROMPT;
         prompt.innerHTML = `
             <div class="${UiClasses.ALL_OUT_PROMPT_BOX}">
-                <div class="${UiClasses.ALL_OUT_PROMPT_TITLE}">${UiText.ALL_OUT_TITLE}</div>
+                <div class="${UiClasses.ALL_OUT_PROMPT_TITLE}">トリニティアタックのチャンス！</div>
                 <div class="${UiClasses.ALL_OUT_PROMPT_BUTTONS}">
-                    <button class="${UiClasses.ALL_OUT_CONFIRM}">${UiText.ALL_OUT_CONFIRM}</button>
-                    <button class="${UiClasses.ALL_OUT_CANCEL}">${UiText.ALL_OUT_CANCEL}</button>
+                    <button class="${UiClasses.ALL_OUT_CONFIRM}">トリニティアタック</button>
+                    <button class="${UiClasses.ALL_OUT_CANCEL}">しない</button>
                 </div>
             </div>
         `;
@@ -260,21 +259,21 @@ export class UIManager {
     showSubMenu(menuType, onSelect) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = menuType === GameConfig.SKILL_MENUS.MAGIC
-            ? UiText.SELECT_MAGIC
-            : UiText.SELECT_SKILL;
+            ? "魔法を選択"
+            : "スキルを選択";
 
         this.currentActor.skills.forEach(id => {
             const skill = SkillData[id];
             if (skill && skill.menu === menuType) {
                 const canUse = (this.currentActor.mp >= skill.cost) || (skill.id === GameConfig.SKILL_IDS.RAISE);
                 
-                let btnText = UiText.SKILL_COST_TEMPLATE
+                let btnText = "{name} ({cost})"
                     .replace('{name}', skill.name)
                     .replace('{cost}', skill.cost);
                 let btnColor = skill.color;
                 
                 if (skill.id === GameConfig.SKILL_IDS.RAISE && this.currentActor.mp < skill.cost) {
-                    btnText = UiText.RAISE_FALLBACK;
+                    btnText = "命の代償";
                     btnColor = UiColors.BUTTON_RAISE; 
                 }
                 
@@ -287,19 +286,19 @@ export class UIManager {
             }
         });
 
-        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton("戻る", UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
 
     showItemMenu(onSelect) {
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = UiText.ITEM_SELECT;
+        this.turnLabel.innerText = "アイテムを選択";
         
         const items = this.inventory || ItemData;
 
         Object.values(items).forEach(item => {
             const canUse = item.count > 0;
             this._createButton(
-                UiText.ITEM_COUNT_TEMPLATE
+                "{name} ({count})"
                     .replace('{name}', item.name)
                     .replace('{count}', item.count),
                 item.color,
@@ -308,7 +307,7 @@ export class UIManager {
             );
         });
 
-        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
+        this._createButton("戻る", UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
     
     /**
@@ -317,7 +316,7 @@ export class UIManager {
      */
     showTargetMenu(targets, onSelect, onBack) {
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = UiText.TARGET_SELECT;
+        this.turnLabel.innerText = "対象を選択してください";
 
         // --- クリック選択機能 ---
 
@@ -374,7 +373,7 @@ export class UIManager {
             );
         });
 
-        this._createButton(UiText.COMMAND_BACK, UiColors.BUTTON_BACK, wrappedOnBack);
+        this._createButton("戻る", UiColors.BUTTON_BACK, wrappedOnBack);
     }
 
     _createButton(text, color, action, enabled = true) {
@@ -471,7 +470,7 @@ export class UIManager {
 
             const downDiv = document.createElement('div');
             downDiv.className = UiClasses.ENEMY_DOWN;
-            downDiv.innerText = UiText.LOG_DOWN;
+            downDiv.innerText = "DOWN";
             downDiv.style.display = enemy.down ? UiStyle.DISPLAY_INLINE_FLEX : UiStyle.DISPLAY_NONE;
 
             infoDiv.appendChild(weaknessDiv);
@@ -583,8 +582,8 @@ export class UIManager {
             const icon = document.createElement('div');
             icon.className = UiClasses.RELIC_ICON;
             // アイコン文字（なければ💎）
-            icon.innerText = data.icon || UiText.RELIC_FALLBACK_ICON; 
-            icon.title = UiText.RELIC_TITLE_TEMPLATE
+            icon.innerText = data.icon || "💎"; 
+            icon.title = "{name}\n{desc}"
                 .replace('{name}', data.name)
                 .replace('{desc}', data.desc);
             
