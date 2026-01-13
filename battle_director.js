@@ -530,8 +530,8 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
         this.ui.addLog("覚醒アイスドラゴン『無ニ帰ス...絶対零度！！』", UiColors.LOG_DRAGON_DESPAIR);
         this.music.playDragon_voice();
-        this._showCanvasCutinImage(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT, { displayMs: 1100 });
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_LINE_WAIT_MS));
+        this._showCanvasCutinImage(GameConfig.ASSETS.IMAGES.ICE_DRAGON_EVENT, { displayMs: 10000 });
         this.music.stopBGM();
 
         this._showFullscreenBlizzard(UiClasses.BLIZZARD_MODE_WHITEOUT);
