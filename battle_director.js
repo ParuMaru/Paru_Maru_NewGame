@@ -700,7 +700,7 @@ export class BattleDirector {
 
     showItemUse(actor, item) {
         this.ui.addLog(
-            "{name}は {item} を使った！"
+            "{name}は {item} を使った！”
                 .replace('{name}', actor.name)
                 .replace('{item}', item.name),
             UiColors.LOG_ITEM,
