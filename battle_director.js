@@ -32,7 +32,8 @@ export class BattleDirector {
     }
 
     _ensureFullscreenBlizzardOverlay() {
-        if (!document || !document.body) return null;
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea) return null;
         let overlay = document.getElementById(GameConfig.UI.IDS.DESPAIR_BLIZZARD);
         if (!overlay) {
             overlay = document.createElement('div');
@@ -43,8 +44,8 @@ export class BattleDirector {
                 <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
                 <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
             `;
-            document.body.appendChild(overlay);
         }
+        canvasArea.appendChild(overlay);
         return overlay;
     }
 
@@ -54,7 +55,6 @@ export class BattleDirector {
         overlay.classList.remove(UiClasses.BLIZZARD_WHITEOUT, UiClasses.BLIZZARD_NORMAL);
         overlay.classList.add(`${UiClasses.BLIZZARD_PREFIX}${mode}`);
         overlay.classList.add(UiClasses.BLIZZARD_ACTIVE);
-        this._setLogWhiteout(mode === UiClasses.BLIZZARD_MODE_WHITEOUT);
     }
 
     _showFullscreenBlizzard(mode = UiClasses.BLIZZARD_MODE_WHITEOUT) {
@@ -64,7 +64,6 @@ export class BattleDirector {
         overlay.classList.add(`${UiClasses.BLIZZARD_PREFIX}${mode}`);
         overlay.classList.remove(UiClasses.BLIZZARD_ACTIVE);
         requestAnimationFrame(() => overlay.classList.add(UiClasses.BLIZZARD_ACTIVE));
-        this._setLogWhiteout(mode === UiClasses.BLIZZARD_MODE_WHITEOUT);
     }
 
     _hideFullscreenBlizzard() {
@@ -75,16 +74,9 @@ export class BattleDirector {
             UiClasses.BLIZZARD_WHITEOUT,
             UiClasses.BLIZZARD_NORMAL
         );
-        this._setLogWhiteout(false);
         const removeOverlay = () => overlay.remove();
         overlay.addEventListener('transitionend', removeOverlay, { once: true });
         setTimeout(removeOverlay, GameConfig.TIMING.BLIZZARD_OVERLAY_REMOVE_MS);
-    }
-
-    _setLogWhiteout(isActive) {
-        const log = document.getElementById(GameConfig.UI.IDS.LOG);
-        if (!log) return;
-        log.classList.toggle(UiClasses.LOG_WHITEOUT, isActive);
     }
 
     // --- 攻撃系の演出 ---

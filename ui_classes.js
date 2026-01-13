@@ -6,7 +6,6 @@ export const UiClasses = {
     BLIZZARD_WHITEOUT: 'blizzard--whiteout',
     BLIZZARD_NORMAL: 'blizzard--normal',
     BLIZZARD_ACTIVE: 'is-active',
-    LOG_WHITEOUT: 'log-whiteout',
     SNOW_LAYER_BACK: 'snow-layer back',
     SNOW_LAYER_MIDDLE: 'snow-layer middle',
     SNOW_LAYER_FRONT: 'snow-layer front',

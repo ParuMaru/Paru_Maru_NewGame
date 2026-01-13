@@ -9,6 +9,7 @@ import { BattleCalculator } from './battle_calculator.js';
 import { GodCat } from './entities.js';
 import { RelicData } from './relics.js';
 import { UiColors } from './ui_colors.js';
+import { UiClasses } from './ui_classes.js';
 import { GameConfig } from './game_config.js';
 
 export class BattleManager {
@@ -833,23 +834,23 @@ export class BattleManager {
             el.remove();
         });
 
-        const log = document.getElementById('log');
-        if (log) log.classList.remove('log-whiteout');
     }
 
     _ensureDespairBlizzardOverlay() {
-        let overlay = document.getElementById('despair-blizzard');
+        const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
+        if (!canvasArea) return null;
+        let overlay = document.getElementById(GameConfig.UI.IDS.DESPAIR_BLIZZARD);
         if (!overlay) {
             overlay = document.createElement('div');
-            overlay.id = 'despair-blizzard';
-            overlay.className = 'blizzard-container';
+            overlay.id = GameConfig.UI.IDS.DESPAIR_BLIZZARD;
+            overlay.className = UiClasses.BLIZZARD_CONTAINER;
             overlay.innerHTML = `
-                <div class="snow-layer back"></div>
-                <div class="snow-layer middle"></div>
-                <div class="snow-layer front"></div>
+                <div class="${UiClasses.SNOW_LAYER_BACK}"></div>
+                <div class="${UiClasses.SNOW_LAYER_MIDDLE}"></div>
+                <div class="${UiClasses.SNOW_LAYER_FRONT}"></div>
             `;
-            document.body.appendChild(overlay);
         }
+        canvasArea.appendChild(overlay);
         return overlay;
     }
 
