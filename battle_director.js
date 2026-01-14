@@ -600,7 +600,7 @@ export class BattleDirector {
             enemyEl.classList.remove(UiClasses.SWAY_SLOW);
             enemyEl.classList.add(UiClasses.FLASH_RAPID);
         }
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1000));
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_WAIT_MS));
     }
     
@@ -673,6 +673,7 @@ export class BattleDirector {
         const log7 = "？？？『にゃにをあきらめているにゃ！？』";
         this.ui.addLog(log7, UiColors.LOG_ATTACK);
         this._updateIceDragonEventSubtitle(log7);
+        await new Promise(r => setTimeout(r, 2000));
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_WAIT_MS));
         
         const goldFlash = document.createElement('div');
@@ -682,10 +683,15 @@ export class BattleDirector {
         const zabochiImg = document.createElement('img');
         zabochiImg.src = GameConfig.ASSETS.IMAGES.ZABOCHI; 
         zabochiImg.className = UiClasses.ZABOCHI_APPEAR;   
-        document.body.appendChild(zabochiImg);
-
+        //document.body.appendChild(zabochiImg);
+        
+        const gameArea = document.getElementById('canvas-area');
+        gameArea.appendChild(zabochiImg);
+       
+        
         const log8 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
         this.ui.addLog(log8, UiColors.LOG_ATTACK);
+        await new Promise(r => setTimeout(r, 2000));
         this._updateIceDragonEventSubtitle(log8);
         
 

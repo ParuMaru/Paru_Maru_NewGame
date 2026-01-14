@@ -54,6 +54,7 @@
     .enemy-unit.dragon-size.boss-lift {
         transform: translateY(clamp(-22px, -2.6vh, -14px));
     }
+    .ice-dragon-event-image {height: 100%; width: 100%;}
     
     /* 5. エンディング調整 */
     .ending-cat-img { width: 30%; min-width: 80px; margin-bottom: 5px; }

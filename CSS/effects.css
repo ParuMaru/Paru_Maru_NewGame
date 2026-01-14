@@ -334,7 +334,7 @@
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     
     /* 【修正】外側を transparent（透明）にして、ゲーム画面が見えるようにする */
-    background: radial-gradient(circle, rgba(255, 255, 200, 0.8) 0%, rgba(255, 215, 0, 0.3) 40%, transparent 80%);
+    background: radial-gradient(circle, rgba(255, 255, 200, 0.7) 0%, rgba(255, 215, 0, 0.3) 40%, transparent 80%);
     
     z-index: 99999; pointer-events: none;
     mix-blend-mode: screen; /* 光を重ねるモード */
@@ -351,7 +351,8 @@
 /* 3. 神猫ざぼち降臨 */
 .zabochi-appear {
     position: fixed !important;
-    top: 50%; left: 50%;
+    top: 35%; left: 50%;
+    align-items: center;
     transform: translate(-50%, -50%);
     max-width: 60%; 
     max-height: 60%;
@@ -360,7 +361,10 @@
     filter: drop-shadow(0 0 20px gold);
     opacity: 0;
     animation: zabochi-anim 3.0s ease-in-out forwards;
+    order: 2;
 }
+
+
 @keyframes zabochi-anim {
     0%   { opacity: 0; transform: translate(-50%, -40%) scale(0.5); }
     20%  { opacity: 1; transform: translate(-50%, -50%) scale(1.0); }

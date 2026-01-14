@@ -109,14 +109,12 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
     opacity: 0.6;
 }
 .ice-dragon-event-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    opacity: 0;
-    transition: opacity 1s ease;
-    z-index: 90000;
-    pointer-events: none;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  z-index: 2000; /* turn-order-panel より上に */
 }
 .ice-dragon-event-overlay.is-active {
     opacity: 1;
@@ -139,29 +137,56 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 .ice-dragon-event-bar {
     flex: 0 0 18%;
     background: #000;
+    
+    /* 重要: 中身を「横並び」から「縦並び」に変更 */
     display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding: 12px 20px;
+    flex-direction: column; 
+    
+    /* 上下の配置：両端にスペースを空けつつ配置 */
+    justify-content: space-between;
+    
+    padding: 0; /* パディングは一旦リセット（必要なら微調整） */
     box-sizing: border-box;
+    overflow: hidden; /* はみ出し防止 */
 }
+
 .ice-dragon-event-image {
-    flex: 1 1 auto;
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
+    /* 横幅は少し余裕を持たせる */
+    width: 90%;
+    
+    /* 重要: 高さを75%くらいに制限し、上下に隙間（黒幕）を強制的に作る */
+    height: 75%; 
+    
+    /* 縦横比を変えてもいいなら fill、崩したくないなら contain */
+    object-fit: contain; 
+    
+    /* 上の黒幕を作るために、上マージンをオートにするか、flexの配置に任せる */
+    margin: auto; 
+    
     background: #000;
 }
+
 .ice-dragon-event-caption {
+    width: 100%;
+    
+    /* 下の黒幕エリアの高さ設定 */
+    /* 画像が75%なので、残りのスペース等を使って配置されます */
+    padding: 8px 5px; 
+    
     color: #fff;
-    font-size: clamp(12px, 2.4vw, 16px);
+    text-align: center;
+    font-size: clamp(10px, 2vw, 14px); /* 文字サイズ */
     font-weight: bold;
-    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.8);
-    letter-spacing: 1px;
+    
+    /* 背景を確実に黒にするなら指定（親が黒なのでなくてもOK） */
+    background: #000; 
+    
+    /* 長文対策 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    
+    order: 1;
 }
 .ice-dragon-cutin {
     position: absolute;
