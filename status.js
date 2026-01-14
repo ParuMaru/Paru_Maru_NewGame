@@ -8,6 +8,7 @@ export class StatusScreen {
         this.selectedIndex = 0;
         this.activeTab = 'status';
         this.pendingAction = null;
+        this.selectedSkillId = null;
 
         this._overlay = null;
         this._partyEl = null;
@@ -89,9 +90,9 @@ export class StatusScreen {
                 return;
             }
 
-            const useSkillBtn = e.target.closest('[data-action="use-skill"]');
-            if (useSkillBtn) {
-                const skillId = useSkillBtn.dataset.skillId;
+            const skillRow = e.target.closest('[data-action="select-skill"]');
+            if (skillRow) {
+                const skillId = skillRow.dataset.skillId;
                 if (!skillId) return;
                 this._handleSkillSelect(skillId);
                 return;
@@ -145,6 +146,7 @@ export class StatusScreen {
         const next = ['status', 'skills', 'items'].includes(tab) ? tab : 'status';
         this.activeTab = next;
         this.pendingAction = null;
+        if (next !== 'skills') this.selectedSkillId = null;
         this._setMessage('');
         this._render();
     }
@@ -153,6 +155,7 @@ export class StatusScreen {
         // キャラ選択変更とUI再描画（UI更新のみ）
         this.selectedIndex = index;
         this.pendingAction = null;
+        this.selectedSkillId = null;
         this._setMessage('');
         this._render();
     }
@@ -189,6 +192,40 @@ export class StatusScreen {
 
         const arr = candidates.find(v => Array.isArray(v));
         return Array.isArray(arr) ? arr : [];
+    }
+
+    _isUniqueSkill(skill) {
+        const menu = skill?.menu;
+        return menu === GameConfig.SKILL_MENUS.MAIN || menu === 'main';
+    }
+
+    _isMapExecutableSkill(skill) {
+        const skillId = skill?.id ?? skill;
+        const recoveryIds = new Set(['heal', 'medica', 'raise']);
+        if (recoveryIds.has(skillId)) return !this._isUniqueSkill(skill);
+        return false;
+    }
+
+    _getSkillTags(skill) {
+        const tags = [];
+        const targetType = skill?.target ?? 'single';
+        const targetLabel = targetType === 'all' ? '全体' : '単体';
+        tags.push(targetLabel);
+
+        const isAttackSkill = ['physical', 'magic'].includes(skill?.type);
+        if (isAttackSkill) {
+            const elementTag = skill?.attackTag ?? skill?.elementTag ?? '';
+            const elementLabelMap = {
+                fire: '炎',
+                ice: '氷',
+                holy: '聖',
+                slash: '斬'
+            };
+            const elementLabel = elementLabelMap[elementTag];
+            if (elementLabel) tags.push(elementLabel);
+        }
+
+        return tags;
     }
 
     _getMemberFace(member) {
@@ -326,56 +363,68 @@ export class StatusScreen {
 
     _renderSkills(member) {
         const skills = this._getSkills(member);
-        const actorIndex = this.selectedIndex;
-
-        const rows = skills.map((s) => {
+        const entries = skills.map((s) => {
             const skillObj = typeof s === 'string' ? (SkillData?.[s] || { id: s }) : s;
             const skillId = skillObj?.id ?? s;
             const name = skillObj?.name ?? skillId ?? 'skill';
             const mpCost = this._safeNum(skillObj?.cost ?? skillObj?.mp_cost ?? skillObj?.mpCost, 0);
             const desc = skillObj?.desc ?? skillObj?.description ?? '';
-            const targetType = skillObj?.target ?? 'single';
-            const tags = [];
-            const targetLabel = targetType === 'all' ? '全体' : '単体';
-            tags.push(targetLabel);
+            const tags = this._getSkillTags(skillObj);
+            const isUnique = this._isUniqueSkill(skillObj);
+            return { id: skillId, skill: skillObj, name, mpCost, desc, tags, isUnique };
+        }).filter(entry => entry.id);
 
-            const elementTag = skillObj?.attackTag ?? skillObj?.elementTag ?? '';
-            const elementLabelMap = {
-                fire: '炎',
-                ice: '氷',
-                holy: '聖',
-                slash: '斬'
-            };
-            const elementLabel = elementLabelMap[elementTag];
-            if (elementLabel) tags.push(elementLabel);
-
-            const isRecovery = ['heal', 'res', 'regen', 'mp_recovery', 'hp_mp_recovery'].includes(skillObj?.type);
-            const info = this.game.getSkillMapInfo(actorIndex, skillId);
-            const canUse = isRecovery && info.usable;
-            const disabled = !canUse;
-            const useBtn = `
-                <button class="status-row-action ${disabled ? 'is-disabled' : ''}" type="button"
-                    data-action="use-skill" data-skill-id="${skillId}" ${disabled ? 'disabled' : ''}>
-                    使用
-                </button>
+        if (!entries.length) {
+            this._detailEl.innerHTML = `
+                ${this._renderPendingBanner()}
+                <div class="status-section">
+                    <div class="status-section-title">スキル一覧</div>
+                    <div class="status-empty">スキルが見つかりません</div>
+                </div>
             `;
-            return this._buildRow({
-                title: name,
-                right: `MP ${mpCost}`,
-                tags,
-                desc,
-                action: useBtn,
-                rowClass: disabled ? 'status-skill--disabled' : ''
-            });
-        }).filter(Boolean).join('');
+            return;
+        }
 
-        const content = rows || `<div class="status-empty">スキルが見つかりません</div>`;
+        if (!entries.find(entry => entry.id === this.selectedSkillId)) {
+            this.selectedSkillId = entries[0].id;
+        }
+        const selectedSkill = entries.find(entry => entry.id === this.selectedSkillId) || entries[0];
+
+        const uniqueRows = entries
+            .filter(entry => entry.isUnique)
+            .map(entry => this._buildSkillRow(entry))
+            .join('');
+        const normalRows = entries
+            .filter(entry => !entry.isUnique)
+            .map(entry => this._buildSkillRow(entry))
+            .join('');
+
+        const detailHtml = selectedSkill
+            ? this._buildRow({
+                title: selectedSkill.name,
+                right: `MP ${selectedSkill.mpCost}`,
+                tags: selectedSkill.tags,
+                desc: selectedSkill.desc
+            })
+            : '';
 
         this._detailEl.innerHTML = `
             ${this._renderPendingBanner()}
             <div class="status-section">
-                <div class="status-section-title">スキル一覧</div>
-                <div class="status-list">${content}</div>
+                <div class="status-section-title">スキル詳細</div>
+                ${detailHtml || `<div class="status-empty">スキルを選んでください</div>`}
+            </div>
+            <div class="status-section">
+                <div class="status-section-title">固有スキル</div>
+                <div class="status-list">
+                    ${uniqueRows || `<div class="status-empty">固有スキルがありません</div>`}
+                </div>
+            </div>
+            <div class="status-section">
+                <div class="status-section-title">通常スキル</div>
+                <div class="status-list">
+                    ${normalRows || `<div class="status-empty">通常スキルがありません</div>`}
+                </div>
             </div>
         `;
     }
@@ -438,6 +487,27 @@ export class StatusScreen {
         `;
     }
 
+    _buildSkillRow(entry) {
+        const tagHtml = entry.tags.length
+            ? `<div class="status-row-tags">${entry.tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`
+            : '';
+        const descHtml = entry.desc ? `<div class="status-row-desc">${entry.desc}</div>` : '';
+        const isSelected = entry.id === this.selectedSkillId;
+
+        return `
+            <button type="button"
+                class="status-row status-row--clickable ${isSelected ? 'is-selected' : ''}"
+                data-action="select-skill" data-skill-id="${entry.id}">
+                <div class="status-row-top">
+                    <div class="status-row-title">${entry.name}</div>
+                    <div class="status-row-right">MP ${entry.mpCost}</div>
+                </div>
+                ${tagHtml}
+                ${descHtml}
+            </button>
+        `;
+    }
+
     _renderPendingBanner() {
         if (!this.pendingAction) return '';
         return `
@@ -479,10 +549,19 @@ export class StatusScreen {
     }
 
     _handleSkillSelect(skillId) {
-        // スキル使用の対象選択や即時実行（HP/MP変更あり）
+        // スキル選択と実行判定（回復スキルのみ実行）
+        const skillObj = SkillData?.[skillId] || { id: skillId };
+        this.selectedSkillId = skillObj?.id ?? skillId;
+        this.pendingAction = null;
+        this._setMessage('');
+
+        if (!this._isMapExecutableSkill(skillObj)) {
+            this._render();
+            return;
+        }
+
         const info = this.game.getSkillMapInfo(this.selectedIndex, skillId);
         if (!info.skill) {
-            this._setMessage('使用できません');
             this._render();
             return;
         }
