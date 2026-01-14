@@ -22,6 +22,7 @@ export class StatusScreen {
     }
 
     init() {
+        // 描画: UI要素の生成と初期化
         const existing = document.getElementById('status-overlay');
         if (existing) {
             this._overlay = existing;
@@ -61,6 +62,7 @@ export class StatusScreen {
         this._detailEl = overlay.querySelector('.status-content');
         this._msgEl = overlay.querySelector('.status-message');
 
+        // クリック処理: タブ/行/キャンセルなどのイベントを集約
         overlay.addEventListener('click', (e) => {
             if (e.target === overlay) this.close();
         });
@@ -98,9 +100,9 @@ export class StatusScreen {
                 return;
             }
 
-            const useItemBtn = e.target.closest('[data-action="use-item"]');
-            if (useItemBtn) {
-                const itemId = useItemBtn.dataset.itemId;
+            const itemRow = e.target.closest('[data-action="select-item"]');
+            if (itemRow) {
+                const itemId = itemRow.dataset.item;
                 if (!itemId) return;
                 this._handleItemSelect(itemId);
                 return;
@@ -117,10 +119,12 @@ export class StatusScreen {
         this._render();
     }
 
+    // 描画: 表示状態
     isOpen() {
         return !!(this._overlay && this._overlay.classList.contains('is-open'));
     }
 
+    // 描画: 開閉
     open() {
         if (!this._overlay) this.init();
         this._overlay.classList.add('is-open');
@@ -141,6 +145,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // 描画: タブ切替
     setTab(tab) {
         // タブ切替とUI再描画（UI更新のみ）
         const next = ['status', 'skills', 'items'].includes(tab) ? tab : 'status';
@@ -151,6 +156,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // 描画: メンバー切替
     setMember(index) {
         // キャラ選択変更とUI再描画（UI更新のみ）
         this.selectedIndex = index;
@@ -160,6 +166,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // ユーティリティ
     _setMessage(text) {
         if (!this._msgEl) return;
         this._msgEl.textContent = text || '';
@@ -236,6 +243,7 @@ export class StatusScreen {
         return member?.img || GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK;
     }
 
+    // 描画: ステータス画面全体
     _render() {
         // ステータス画面全体を描画（UI更新のみ）
         if (!this._partyEl || !this._detailEl) return;
@@ -439,23 +447,26 @@ export class StatusScreen {
 
         const listHtml = entries.length
             ? entries.map(({ id, data }) => {
-                    const base = ItemData?.[id] || {};
-                    const item = { id, ...base, ...data };
-                    const name = item?.name ?? id;
-                    const desc = item?.desc ?? item?.description ?? '';
-                    const count = this._safeNum(data?.count, 0);
-                    const { targets } = this.game.getItemMapInfo(id);
-                    const isDisabled = targets.length === 0 || count <= 0;
-                    const action = isDisabled
-                        ? `<button class="status-row-action is-disabled" type="button" disabled>使用不可</button>`
-                        : `<button class="status-row-action" type="button" data-action="use-item" data-item-id="${id}">使用</button>`;
-                    return this._buildRow({
-                        title: name,
-                        right: `×${count}`,
-                        desc,
-                        action
-                    });
-                }).join('')
+                const base = ItemData?.[id] || {};
+                const item = { id, ...base, ...data };
+                const name = item?.name ?? id;
+                const desc = item?.desc ?? item?.description ?? '';
+                const count = this._safeNum(data?.count, 0);
+                const { targets } = this.game.getItemMapInfo(id);
+                const isDisabled = targets.length === 0 || count <= 0;
+                const rowClass = isDisabled ? 'status-skill--disabled' : '';
+                return `
+                    <button type="button"
+                        class="status-row status-row--clickable ${rowClass}"
+                        data-action="select-item" data-item="${id}" ${isDisabled ? 'disabled' : ''}>
+                        <div class="status-row-top">
+                            <div class="status-row-title">${name}</div>
+                            <div class="status-row-right">×${count}</div>
+                        </div>
+                        <div class="status-row-desc">${desc}</div>
+                    </button>
+                `;
+            }).join('')
             : `<div class="status-empty">どうぐがありません</div>`;
 
         this._detailEl.innerHTML = `
@@ -488,10 +499,7 @@ export class StatusScreen {
     }
 
     _buildSkillRow(entry) {
-        const tagHtml = entry.tags.length
-            ? `<div class="status-row-tags">${entry.tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`
-            : '';
-        const descHtml = entry.desc ? `<div class="status-row-desc">${entry.desc}</div>` : '';
+        const tagHtml = `<div class="status-row-tags">${entry.tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`;
         const isSelected = entry.id === this.selectedSkillId;
 
         return `
@@ -503,7 +511,6 @@ export class StatusScreen {
                     <div class="status-row-right">MP ${entry.mpCost}</div>
                 </div>
                 ${tagHtml}
-                ${descHtml}
             </button>
         `;
     }
@@ -518,6 +525,7 @@ export class StatusScreen {
         `;
     }
 
+    // ターゲット選択: どうぐ
     _handleItemSelect(itemId) {
         // どうぐ使用の対象選択や即時実行（HP/MP・所持数変更あり）
         const info = this.game.getItemMapInfo(itemId);
@@ -548,6 +556,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // ターゲット選択: スキル
     _handleSkillSelect(skillId) {
         // スキル選択と実行判定（回復スキルのみ実行）
         const skillObj = SkillData?.[skillId] || { id: skillId };
@@ -587,6 +596,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // ターゲット選択: 実行
     _executePending(targetIndex) {
         const pending = this.pendingAction;
         if (!pending) return;
@@ -601,6 +611,7 @@ export class StatusScreen {
         }
     }
 
+    // 実行: どうぐ
     _executeItem(itemId, targetIndex) {
         // どうぐ効果を適用してUIを更新（HP/MP・所持数変更あり）
         const result = this.game.useItemOnMap(itemId, targetIndex);
@@ -613,6 +624,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // 実行: スキル
     _executeSkill(skillId, targetIndex, actorIndex = this.selectedIndex) {
         // スキル効果を適用してUIを更新（HP/MP変更あり）
         const result = this.game.useSkillOnMap(actorIndex, skillId, targetIndex);
@@ -625,6 +637,7 @@ export class StatusScreen {
         this._render();
     }
 
+    // ユーティリティ: 対象候補
     _getPendingInfo() {
         const pending = this.pendingAction;
         if (!pending) return null;

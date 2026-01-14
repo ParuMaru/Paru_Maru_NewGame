@@ -493,7 +493,6 @@ body {
 }
 .status-skill--disabled {
     opacity: 0.45;
-    filter: grayscale(0.35);
 }
 .status-row-top {
     display: grid;
@@ -519,6 +518,7 @@ body {
     display:flex;
     gap: 8px;
     flex-wrap:wrap;
+    min-height: 18px;
 }
 .status-tag {
     font-size: 12px;
@@ -596,8 +596,16 @@ body {
         grid-template-rows: auto 1fr;
     }
     .status-party {
-        max-height: 34vh;
+        max-height: 42vh;
         padding-right: 2px;
+    }
+    .status-member-top {
+        grid-template-columns: 1fr;
+        gap: 2px;
+        margin-bottom: 4px;
+    }
+    .status-member-job {
+        justify-self: start;
     }
     .status-tabs { gap: 6px; }
     .status-tab { height: 44px; font-size: 13px; }
