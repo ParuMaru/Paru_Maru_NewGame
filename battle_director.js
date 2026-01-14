@@ -691,7 +691,6 @@ export class BattleDirector {
         
         const log8 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
         this.ui.addLog(log8, UiColors.LOG_ATTACK);
-        await new Promise(r => setTimeout(r, 2000));
         this._updateIceDragonEventSubtitle(log8);
         
 
