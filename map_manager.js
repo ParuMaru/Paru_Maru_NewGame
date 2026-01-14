@@ -18,6 +18,7 @@ export class MapManager {
         
         this.initUI();
         this.initEventUI(); // 汎用イベント画面の初期化
+        this.initStatusUI();
     }
 
     initUI() {
@@ -38,6 +39,13 @@ export class MapManager {
         title.innerText = "🗺️ 冒険の地図";
         header.appendChild(title);
 
+        const btnBox = document.createElement('div');
+        Object.assign(btnBox.style, {
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center'
+        });
+
         // セーブボタン
         const saveBtn = document.createElement('button');
         saveBtn.innerText = "セーブ";
@@ -50,7 +58,22 @@ export class MapManager {
             e.stopPropagation();
             this.game.saveGame();
         };
-        header.appendChild(saveBtn);
+        btnBox.appendChild(saveBtn);
+
+        const statusBtn = document.createElement('button');
+        statusBtn.innerText = "ステータス";
+        Object.assign(statusBtn.style, {
+            fontSize: '12px', padding: '5px 10px', background: '#2980b9',
+            border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer',
+            width: 'auto', height: 'auto'
+        });
+        statusBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.showStatusOverlay();
+        };
+        btnBox.appendChild(statusBtn);
+
+        header.appendChild(btnBox);
         
         this.container.appendChild(header);
 
@@ -96,6 +119,178 @@ export class MapManager {
         overlay.appendChild(content);
         document.body.appendChild(overlay);
         this.eventOverlay = overlay;
+    }
+
+    initStatusUI() {
+        if (document.getElementById('status-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'status-overlay';
+        overlay.style.display = 'none';
+
+        const panel = document.createElement('div');
+        panel.className = 'status-panel';
+
+        const head = document.createElement('div');
+        head.className = 'status-head';
+
+        const title = document.createElement('div');
+        title.className = 'status-title';
+        title.innerText = "ステータス";
+
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'status-close';
+        closeBtn.innerText = "閉じる";
+
+        const body = document.createElement('div');
+        body.className = 'status-body';
+
+        closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.hideStatusOverlay();
+        };
+
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                this.hideStatusOverlay();
+            }
+        };
+
+        panel.onclick = (e) => e.stopPropagation();
+
+        head.appendChild(title);
+        head.appendChild(closeBtn);
+        panel.appendChild(head);
+        panel.appendChild(body);
+        overlay.appendChild(panel);
+
+        this.statusOverlay = overlay;
+        this.statusBody = body;
+
+        document.body.appendChild(overlay);
+    }
+
+    showStatusOverlay() {
+        if (!this.statusOverlay) this.initStatusUI();
+        this._renderStatusContent();
+        this.statusOverlay.style.display = 'flex';
+        requestAnimationFrame(() => this.statusOverlay.classList.add('is-active'));
+    }
+
+    hideStatusOverlay() {
+        if (!this.statusOverlay) return;
+        this.statusOverlay.classList.remove('is-active');
+        const overlay = this.statusOverlay;
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 180);
+    }
+
+    _renderStatusContent() {
+        const party = this.game.party ?? [];
+        const inv = this.game.inventory ?? {};
+        this.statusBody.innerHTML = '';
+
+        const partyGrid = document.createElement('div');
+        partyGrid.className = 'status-grid';
+
+        party.forEach(member => {
+            const card = document.createElement('div');
+            card.className = 'status-card';
+
+            if (member.is_dead || member.dead || member.isDead) {
+                card.style.opacity = '0.6';
+                card.style.filter = 'grayscale(0.4)';
+            }
+
+            const name = document.createElement('div');
+            name.className = 'status-name';
+            name.innerText = member.name ?? '---';
+
+            const job = document.createElement('div');
+            job.className = 'status-sub';
+            const jobLabel = member.job === 'hero'
+                ? '勇者'
+                : member.job === 'wizard'
+                    ? '魔法使い'
+                    : member.job === 'healer'
+                        ? 'ヒーラー'
+                        : (member.job ?? '---');
+            job.innerText = `職: ${jobLabel}`;
+
+            const hpCurrent = member._hp ?? member.hp ?? 0;
+            const hpMax = member.max_hp ?? 0;
+            const mpCurrent = member._mp ?? member.mp ?? 0;
+            const mpMax = member.max_mp ?? 0;
+
+            const hpLine = document.createElement('div');
+            hpLine.className = 'status-line';
+            hpLine.innerText = `HP: ${hpCurrent}/${hpMax}`;
+
+            const hpBarBg = document.createElement('div');
+            hpBarBg.className = 'status-bar-bg';
+            const hpBar = document.createElement('div');
+            hpBar.className = 'status-bar-hp';
+            const hpPercent = hpMax > 0 ? Math.max(0, Math.min(100, Math.round((hpCurrent / hpMax) * 100))) : 0;
+            hpBar.style.width = `${hpPercent}%`;
+            hpBarBg.appendChild(hpBar);
+
+            const mpLine = document.createElement('div');
+            mpLine.className = 'status-line';
+            mpLine.innerText = `MP: ${mpCurrent}/${mpMax}`;
+
+            const mpBarBg = document.createElement('div');
+            mpBarBg.className = 'status-bar-bg';
+            const mpBar = document.createElement('div');
+            mpBar.className = 'status-bar-mp';
+            const mpPercent = mpMax > 0 ? Math.max(0, Math.min(100, Math.round((mpCurrent / mpMax) * 100))) : 0;
+            mpBar.style.width = `${mpPercent}%`;
+            mpBarBg.appendChild(mpBar);
+
+            card.appendChild(name);
+            card.appendChild(job);
+            card.appendChild(hpLine);
+            card.appendChild(hpBarBg);
+            card.appendChild(mpLine);
+            card.appendChild(mpBarBg);
+
+            partyGrid.appendChild(card);
+        });
+
+        this.statusBody.appendChild(partyGrid);
+
+        const inventoryBlock = document.createElement('div');
+        inventoryBlock.className = 'inventory-block';
+
+        const inventoryTitle = document.createElement('div');
+        inventoryTitle.className = 'inventory-title';
+        inventoryTitle.innerText = '所持品';
+        inventoryBlock.appendChild(inventoryTitle);
+
+        const entries = Object.entries(inv).filter(([, value]) => (value?.count ?? 0) > 0);
+        if (entries.length === 0) {
+            const empty = document.createElement('div');
+            empty.className = 'status-line';
+            empty.innerText = 'なし';
+            inventoryBlock.appendChild(empty);
+        } else {
+            entries.forEach(([, value]) => {
+                const row = document.createElement('div');
+                row.className = 'inventory-row';
+
+                const name = document.createElement('div');
+                name.innerText = value.name ?? '---';
+
+                const count = document.createElement('div');
+                count.innerText = `x${value.count ?? 0}`;
+
+                row.appendChild(name);
+                row.appendChild(count);
+                inventoryBlock.appendChild(row);
+            });
+        }
+
+        this.statusBody.appendChild(inventoryBlock);
     }
 
     // --- イベント表示用ヘルパー ---
