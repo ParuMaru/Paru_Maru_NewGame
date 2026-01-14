@@ -10,9 +10,9 @@ export class GameManager {
     constructor() {
         // パーティ初期化
         this.party = [
-            new Hero("勇者ぱるむ"),
-            new Wizard("魔法使いはな"),
-            new Healer("癒し手なつ")
+            new Hero("ぱるむ"),
+            new Wizard("はな"),
+            new Healer("なつ")
         ];
         
         // インベントリ初期化
