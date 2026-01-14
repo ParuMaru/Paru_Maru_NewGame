@@ -159,7 +159,7 @@ export class Hero extends Entity {
        　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
         super(name, 280, 80, 80, 65, 20, 30, 105, 30);
         this.job = "hero";
-        this.skills = ["cover", "encourage", "whirlwind_slash"]; 
+        this.skills = ["cover", "encourage", "flash_strike" , "whirlwind_slash"]; 
     }
 }
 
@@ -335,7 +335,7 @@ export class IceDragon extends Entity {
 // ★追加：ファイアゴーレム（氷弱点）
 export class FireGolem extends Entity {
     constructor() {
-        super("ファイアゴーレム", 720, 0, 75, 85, 25, 10, 60, 0, './resource/fire_golem.webp');
+        super("ファイアゴーレム", 700, 0, 75, 85, 25, 10, 60, 0, './resource/fire_golem.webp');
         this.enemyType = "fire_golem";
         this.weaknessTag = "ice";
         this.skills = ["lava_spray"];

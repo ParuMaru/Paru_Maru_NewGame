@@ -2,12 +2,13 @@ export const SkillData = {
     // --- 勇者（Hero） ---
     cover:     { id: "cover",     name: "かばう", menu: "skill", cost: 10, type: "buff", target: "all", color: "#3498db" },
     encourage: { id: "encourage", name: "鼓舞",   menu: "skill", cost: 15, type: "buff", target: "all",  color: "#e74c3c" },
-    whirlwind_slash: { id: "whirlwind_slash", name: "旋風斬り", menu: "skill", cost: 15, power: 1.0, type: "physical", target: "all", color: "#c0392b", attackTag: "slash" },
-
-    // --- 魔法使い（Wizard） ---
+    whirlwind_slash: { id: "whirlwind_slash", name: "旋風斬り", menu: "skill", cost: 15, power: 1.2, type: "physical", target: "all", color: "#c0392b", attackTag: "slash" },
+    flash_strike: { id: "flash_strike", name: "一閃", menu: "skill", cost: 20, power: 2.0, type: "physical", target: "single", color: "#c0392b", attackTag: "slash" },
+    
+        // --- 魔法使い（Wizard） ---
     fire:   { id: "fire",   name: "ファイア", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire" },
     fira:   { id: "fira",   name: "ファイラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all",    color: "#e74c3c", attackTag: "fire" },
-    meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire" },
+    meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#c03ce7", attackTag: "fire" },
     blizzard: { id: "blizzard", name: "ブリザド", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#3498db", attackTag: "ice" },
     blizzara: { id: "blizzara", name: "ブリザラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all", color: "#3498db", attackTag: "ice" },
     meditation: { id: "meditation", name: "瞑想", menu: "main", cost: 0, value: 30, type: "mp_recovery", target: "self", color: "#9b59b6" },
@@ -15,8 +16,8 @@ export const SkillData = {
     // --- 癒し手（Healer） ---
     heal:   { id: "heal",   name: "ケアル",   menu: "magic", cost: 15, power: 1.5, type: "heal", target: "single", color: "#2ecc71" },
     medica: { id: "medica", name: "メディカ", menu: "magic", cost: 30, power: 1.2, type: "heal", target: "all",    color: "#2ecc71" },
-    holy_strike: { id: "holy_strike", name: "聖撃", menu: "magic", cost: 18, power: 1.2, type: "magic", target: "single", color: "#f7e37a", attackTag: "holy" },
-    holy: { id: "holy", name: "ホーリー", menu: "magic", cost: 25, power: 1.9, type: "magic", target: "all", color: "#f7e37a", attackTag: "holy" },
+    holy_strike: { id: "holy_strike", name: "聖撃", menu: "magic", cost: 18, power: 1.5, type: "magic", target: "single", color: "#f7e37a", attackTag: "holy" },
+    holy: { id: "holy", name: "ホーリー", menu: "magic", cost: 25, power: 1.3, type: "magic", target: "all", color: "#f7e37a", attackTag: "holy" },
     prayer: { id: "prayer", name: "いのり",  menu: "main", cost: 0, value: 0.1, duration: 3, type: "regen", target: "all", color: "#8e44ad"},
     raise:  { id: "raise",  name: "レイズ",   menu: "magic", cost: 40, power: 0.5, type: "res",   target: "single", color: "#2ecc71" },
 
@@ -42,5 +43,5 @@ export const SkillData = {
 
     //ファイアゴーレム
     lava_charge:    {id: "lava_charge", name: "溶岩を集める", type: "buff", target: "self", cost: 0, color: "#e67e22"},
-    lava_spray:     {id: "lava_spray", name: "溶岩撒き", power: 1.6, type: "magic", target: "all", cost: 0, color: "#e67e22", attackTag: "fire"}
+    lava_spray:     {id: "lava_spray", name: "溶岩撒き", power: 4.0, type: "magic", target: "all", cost: 0, color: "#e67e22", attackTag: "fire"}
 };
