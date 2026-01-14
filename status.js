@@ -1,10 +1,12 @@
 import { ItemData } from './items.js';
+import { SkillData } from './skills.js';
+import { GameConfig } from './game_config.js';
 
 export class StatusScreen {
   constructor(game) {
     this.game = game;
     this.selectedIndex = 0;
-    this.activeTab = 'status'; // 'status' | 'items'
+    this.activeTab = 'status'; // 'status' | 'skills' | 'items'
     this.pendingItemId = null;
 
     this._overlay = null;
@@ -38,16 +40,17 @@ export class StatusScreen {
           <button class="status-close" type="button" aria-label="閉じる">✕</button>
         </div>
 
-        <div class="status-tabs">
-          <button class="status-tab is-active" type="button" data-tab="status">ステータス</button>
-          <button class="status-tab" type="button" data-tab="items">どうぐ</button>
-        </div>
-
-        <div class="status-message" aria-live="polite"></div>
-
         <div class="status-body">
           <div class="status-party"></div>
-          <div class="status-detail"></div>
+          <div class="status-main">
+            <div class="status-tabs">
+              <button class="status-tab is-active" type="button" data-tab="status">ステータス</button>
+              <button class="status-tab" type="button" data-tab="skills">スキル</button>
+              <button class="status-tab" type="button" data-tab="items">どうぐ</button>
+            </div>
+            <div class="status-message" aria-live="polite"></div>
+            <div class="status-detail"></div>
+          </div>
         </div>
       </div>
     `;
@@ -73,10 +76,7 @@ export class StatusScreen {
       const tabBtn = e.target.closest('.status-tab');
       if (tabBtn) {
         const tab = tabBtn.dataset.tab;
-        this.activeTab = tab;
-        this.pendingItemId = null;
-        this._setMessage('');
-        this._render();
+        this.setTab(tab);
         return;
       }
 
@@ -90,9 +90,7 @@ export class StatusScreen {
           return;
         }
 
-        this.selectedIndex = idx;
-        this._setMessage('');
-        this._render();
+        this.setMember(idx);
         return;
       }
 
@@ -100,9 +98,7 @@ export class StatusScreen {
       if (itemBtn) {
         const itemId = itemBtn.dataset.itemId;
         if (!itemId) return;
-        this.pendingItemId = itemId;
-        this._setMessage('使う相手を選んでください');
-        this._render();
+        this._handleItemSelect(itemId);
         return;
       }
 
@@ -143,6 +139,25 @@ export class StatusScreen {
     else this.open();
   }
 
+  refresh() {
+    this._render();
+  }
+
+  setTab(tab) {
+    const next = ['status', 'skills', 'items'].includes(tab) ? tab : 'status';
+    this.activeTab = next;
+    this.pendingItemId = null;
+    this._setMessage('');
+    this._render();
+  }
+
+  setMember(index) {
+    this.selectedIndex = index;
+    this.pendingItemId = null;
+    this._setMessage('');
+    this._render();
+  }
+
   _setMessage(text) {
     if (!this._msgEl) return;
     this._msgEl.textContent = text || '';
@@ -177,6 +192,57 @@ export class StatusScreen {
     return Array.isArray(arr) ? arr : [];
   }
 
+  _getMemberFace(member) {
+    const job = member?.job;
+    if (job === GameConfig.JOBS.HERO) return GameConfig.ASSETS.IMAGES.HERO_ICON;
+    if (job === GameConfig.JOBS.WIZARD) return GameConfig.ASSETS.IMAGES.WIZARD_ICON;
+    if (job === GameConfig.JOBS.HEALER) return GameConfig.ASSETS.IMAGES.HEALER_ICON;
+    return member?.img || GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK;
+  }
+
+  _getStatusEntries(member) {
+    return [
+      { label: 'ATK', value: this._safeNum(member?.atk, 0) },
+      { label: 'DEF', value: this._safeNum(member?.def, 0) },
+      { label: 'MATK', value: this._safeNum(member?.matk, 0) },
+      { label: 'MDEF', value: this._safeNum(member?.mdef, 0) },
+      { label: 'SPD', value: this._safeNum(member?.spd, 0) },
+      { label: 'REC', value: this._safeNum(member?.rec, 0) }
+    ];
+  }
+
+  _getInventory() {
+    return this.game?.inventory && typeof this.game.inventory === 'object'
+      ? this.game.inventory
+      : {};
+  }
+
+  _getItemData(itemId) {
+    const inv = this._getInventory();
+    const invData = inv[itemId] || {};
+    const base = (ItemData && ItemData[itemId]) ? ItemData[itemId] : {};
+    return { id: itemId, ...base, ...invData };
+  }
+
+  _isReviveItem(item) {
+    return item?.id === 'phoenix' || item?.type === 'revive' || item?.effect === 'revive';
+  }
+
+  _getItemTargetType(item) {
+    if (item?.target === 'all' || item?.scope === 'all' || item?.targetType === 'all') return 'all';
+    if (item?.target === 'self') return 'self';
+    return 'single';
+  }
+
+  _getValidItemTargets(item, party) {
+    const alive = party.filter(m => (typeof m?.is_alive === 'function') ? m.is_alive() : !(m?.is_dead) && this._getHP(m) > 0);
+    const dead = party.filter(m => (typeof m?.is_alive === 'function') ? !m.is_alive() : (m?.is_dead || this._getHP(m) <= 0));
+
+    if (this._isReviveItem(item)) return dead;
+    if (this._getItemTargetType(item) === 'self') return [party[this.selectedIndex]].filter(Boolean);
+    return alive;
+  }
+
   _render() {
     if (!this._partyEl || !this._detailEl) return;
 
@@ -197,6 +263,10 @@ export class StatusScreen {
       btn.classList.toggle('is-active', isActive);
     });
 
+    const pendingItem = this.pendingItemId ? this._getItemData(this.pendingItemId) : null;
+    const pendingTargets = pendingItem ? this._getValidItemTargets(pendingItem, party) : [];
+    const pendingTargetSet = new Set(pendingTargets.map(m => party.indexOf(m)).filter(i => i >= 0));
+
     // party list
     this._partyEl.innerHTML = party.map((m, i) => {
       const hp = this._getHP(m);
@@ -208,69 +278,71 @@ export class StatusScreen {
       const mpPct = this._pct(mp, maxMp);
 
       const isSelected = i === this.selectedIndex;
-      const isTargetable = !!this.pendingItemId;
+      const isTargeting = !!this.pendingItemId;
+      const isTargetable = isTargeting ? pendingTargetSet.has(i) : false;
+      const isUntargetable = isTargeting && !isTargetable;
 
       const dead = (typeof m?.is_alive === 'function') ? !m.is_alive() : (!!m?.is_dead || hp <= 0);
+      const face = this._getMemberFace(m);
 
       return `
         <button type="button"
-          class="status-member ${isSelected ? 'is-selected' : ''} ${isTargetable ? 'is-targetable' : ''} ${dead ? 'is-dead' : ''}"
-          data-index="${i}">
-          <div class="status-member-top">
-            <div class="status-member-name">${m?.name ?? `Member ${i+1}`}</div>
-            <div class="status-member-job">${m?.job ?? ''}</div>
+          class="status-member ${isSelected ? 'is-selected' : ''} ${isTargetable ? 'is-targetable' : ''} ${isUntargetable ? 'is-untargetable' : ''} ${dead ? 'is-dead' : ''}"
+          data-index="${i}" ${isUntargetable ? 'disabled' : ''}>
+          <div class="status-member-face">
+            <img src="${face}" alt="${m?.name ?? `Member ${i + 1}`}">
           </div>
+          <div class="status-member-info">
+            <div class="status-member-top">
+              <div class="status-member-name">${m?.name ?? `Member ${i + 1}`}</div>
+              <div class="status-member-job">${m?.job ?? ''}</div>
+            </div>
 
-          <div class="status-bar">
-            <div class="status-bar-label">HP</div>
-            <div class="status-bar-track"><div class="status-bar-fill" style="width:${hpPct}%"></div></div>
-            <div class="status-bar-num">${hp}/${maxHp}</div>
-          </div>
+            <div class="status-bar">
+              <div class="status-bar-label">HP</div>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:${hpPct}%"></div></div>
+              <div class="status-bar-num">${hp}/${maxHp}</div>
+            </div>
 
-          <div class="status-bar">
-            <div class="status-bar-label">MP</div>
-            <div class="status-bar-track"><div class="status-bar-fill mp" style="width:${mpPct}%"></div></div>
-            <div class="status-bar-num">${mp}/${maxMp}</div>
-          </div>
-
-          <div class="status-substats">
-            <span>ATK ${this._safeNum(m?.atk, 0)}</span>
-            <span>DEF ${this._safeNum(m?.def, 0)}</span>
-            <span>MATK ${this._safeNum(m?.matk, 0)}</span>
+            <div class="status-bar">
+              <div class="status-bar-label">MP</div>
+              <div class="status-bar-track"><div class="status-bar-fill mp" style="width:${mpPct}%"></div></div>
+              <div class="status-bar-num">${mp}/${maxMp}</div>
+            </div>
           </div>
         </button>
       `;
     }).join('');
 
-    // detail
-    if (this.activeTab === 'items') {
-      this._renderItems();
-      return;
+    this._renderTabContent(party[this.selectedIndex]);
+  }
+
+  _renderTabContent(member) {
+    if (!member) return;
+
+    switch (this.activeTab) {
+      case 'skills':
+        this._renderSkills(member);
+        break;
+      case 'items':
+        this._renderItems();
+        break;
+      case 'status':
+      default:
+        this._renderStatus(member);
+        break;
     }
+  }
 
-    const member = party[this.selectedIndex];
-    const skills = this._getSkills(member);
+  _renderStatus(member) {
+    const stats = this._getStatusEntries(member);
 
-    const skillHtml = skills.length
-      ? skills.map(s => {
-          if (typeof s === 'string') {
-            return `<div class="status-skill"><div class="status-skill-name">${s}</div></div>`;
-          }
-          const name = s?.name ?? s?.id ?? 'skill';
-          const mp = (s?.mp_cost ?? s?.mpCost ?? s?.cost);
-          const mpTxt = Number.isFinite(Number(mp)) ? `MP ${Number(mp)}` : '';
-          const desc = s?.desc ?? s?.description ?? '';
-          return `
-            <div class="status-skill">
-              <div class="status-skill-row">
-                <div class="status-skill-name">${name}</div>
-                <div class="status-skill-mp">${mpTxt}</div>
-              </div>
-              ${desc ? `<div class="status-skill-desc">${desc}</div>` : ``}
-            </div>
-          `;
-        }).join('')
-      : `<div class="status-empty">スキルが見つかりません</div>`;
+    const statHtml = stats.map(stat => `
+      <div class="status-stat">
+        <div class="status-stat-label">${stat.label}</div>
+        <div class="status-stat-value">${stat.value}</div>
+      </div>
+    `).join('');
 
     this._detailEl.innerHTML = `
       <div class="status-detail-head">
@@ -279,21 +351,61 @@ export class StatusScreen {
       </div>
 
       <div class="status-detail-section">
-        <div class="status-section-title">スキル</div>
-        <div class="status-skill-list">${skillHtml}</div>
+        <div class="status-section-title">基礎能力</div>
+        <div class="status-stat-list">${statHtml}</div>
+      </div>
+    `;
+  }
+
+  _renderSkills(member) {
+    const skills = this._getSkills(member);
+    const currentMp = this._getMP(member);
+
+    const skillHtml = skills.length
+      ? skills.map(s => this._renderSkillCard(s, currentMp)).join('')
+      : `<div class="status-empty">スキルが見つかりません</div>`;
+
+    this._detailEl.innerHTML = `
+      <div class="status-detail-head">
+        <div class="status-detail-title">${member?.name ?? ''}</div>
+        <div class="status-detail-hint">スキル一覧</div>
       </div>
 
       <div class="status-detail-section">
-        <div class="status-section-title">拡張枠</div>
-        <div class="status-empty">装備／付け替えはここに追加</div>
+        <div class="status-section-title">スキル</div>
+        <div class="status-skill-list">${skillHtml}</div>
+      </div>
+    `;
+  }
+
+  _renderSkillCard(skill, currentMp) {
+    const skillObj = typeof skill === 'string' ? (SkillData?.[skill] || { id: skill }) : skill;
+    const name = skillObj?.name ?? skillObj?.id ?? 'skill';
+    const mpCost = this._safeNum(skillObj?.cost ?? skillObj?.mp_cost ?? skillObj?.mpCost, 0);
+    const target = skillObj?.target ?? '';
+
+    const mpTxt = mpCost > 0 ? `MP ${mpCost}` : 'MP 0';
+    const targetTxt = target === 'all' ? '全体' : target === 'self' ? '自分' : target ? '単体' : '';
+    const desc = skillObj?.desc ?? skillObj?.description ?? '';
+    const isDisabled = mpCost > 0 && currentMp < mpCost;
+
+    return `
+      <div class="status-skill ${isDisabled ? 'is-disabled' : ''}">
+        <div class="status-skill-row">
+          <div class="status-skill-name">${name}</div>
+          <div class="status-skill-meta">
+            <span class="status-skill-mp">${mpTxt}</span>
+            ${targetTxt ? `<span class="status-skill-target">${targetTxt}</span>` : ''}
+          </div>
+        </div>
+        ${desc ? `<div class="status-skill-desc">${desc}</div>` : ''}
+        ${isDisabled ? `<div class="status-skill-reason">MP不足</div>` : ''}
       </div>
     `;
   }
 
   _renderItems() {
-    const inv = this.game?.inventory && typeof this.game.inventory === 'object'
-      ? this.game.inventory
-      : {};
+    const inv = this._getInventory();
 
     const entries = Object.entries(inv)
       .map(([id, data]) => ({ id, data }))
@@ -301,16 +413,23 @@ export class StatusScreen {
 
     const listHtml = entries.length
       ? entries.map(({ id, data }) => {
+          const item = this._getItemData(id);
           const name = data?.name ?? ItemData?.[id]?.name ?? id;
           const desc = data?.desc ?? data?.description ?? ItemData?.[id]?.desc ?? '';
           const count = this._safeNum(data?.count, 0);
+          const targets = this._getValidItemTargets(item, Array.isArray(this.game?.party) ? this.game.party : []);
+          const isDisabled = targets.length === 0;
+          const targetType = this._getItemTargetType(item);
+          const targetLabel = targetType === 'all' ? '全体' : targetType === 'self' ? '自分' : '単体';
           return `
-            <button type="button" class="status-item" data-item-id="${id}">
+            <button type="button" class="status-item ${isDisabled ? 'is-disabled' : ''}" data-item-id="${id}" ${isDisabled ? 'disabled' : ''}>
               <div class="status-item-row">
                 <div class="status-item-name">${name}</div>
                 <div class="status-item-count">×${count}</div>
               </div>
+              <div class="status-item-meta">${targetLabel}</div>
               ${desc ? `<div class="status-item-desc">${desc}</div>` : ``}
+              ${isDisabled ? `<div class="status-item-reason">使用不可</div>` : ``}
             </button>
           `;
         }).join('')
@@ -335,14 +454,73 @@ export class StatusScreen {
     `;
   }
 
+  _handleItemSelect(itemId) {
+    const item = this._getItemData(itemId);
+    const party = Array.isArray(this.game?.party) ? this.game.party : [];
+    const targets = this._getValidItemTargets(item, party);
+    if (targets.length === 0) {
+      this._setMessage('使用できる相手がいません');
+      this._render();
+      return;
+    }
+
+    const targetType = this._getItemTargetType(item);
+    if (targetType === 'self') {
+      this._useItemOnTargets(item, targets);
+      return;
+    }
+    if (targetType === 'all') {
+      this._useItemOnTargets(item, targets);
+      return;
+    }
+
+    this.pendingItemId = itemId;
+    this._setMessage('使う相手を選んでください');
+    this._render();
+  }
+
+  _useItemOnTargets(item, targets) {
+    if (!targets.length) return;
+
+    const inv = this._getInventory();
+    const invData = inv[item.id];
+    const count = this._safeNum(invData?.count, 0);
+    if (count <= 0) {
+      this.pendingItemId = null;
+      this._setMessage('在庫がありません');
+      this._render();
+      return;
+    }
+
+    let appliedAny = false;
+    targets.forEach(target => {
+      if (this._applyItemEffect(item, target)) {
+        appliedAny = true;
+      }
+    });
+
+    if (!appliedAny) {
+      this.pendingItemId = null;
+      this._setMessage('このどうぐは未対応');
+      this._render();
+      return;
+    }
+
+    invData.count = count - 1;
+    if (invData.count <= 0) delete inv[item.id];
+
+    this.pendingItemId = null;
+    this._setMessage('');
+    this._render();
+  }
+
   _tryUseItem(itemId, targetIndex) {
     const party = Array.isArray(this.game?.party) ? this.game.party : [];
     const target = party[targetIndex];
     if (!target) return;
 
-    const inv = this.game?.inventory && typeof this.game.inventory === 'object'
-      ? this.game.inventory
-      : {};
+    const item = this._getItemData(itemId);
+    const inv = this._getInventory();
     const invData = inv[itemId];
 
     const count = this._safeNum(invData?.count, 0);
@@ -353,8 +531,12 @@ export class StatusScreen {
       return;
     }
 
-    const base = (ItemData && ItemData[itemId]) ? ItemData[itemId] : {};
-    const item = { id: itemId, ...base, ...(invData || {}) };
+    const validTargets = this._getValidItemTargets(item, party);
+    if (!validTargets.includes(target)) {
+      this._setMessage('その相手には使えません');
+      this._render();
+      return;
+    }
 
     const applied = this._applyItemEffect(item, target);
     if (!applied) {
@@ -364,7 +546,6 @@ export class StatusScreen {
       return;
     }
 
-    // 消費
     invData.count = count - 1;
     if (invData.count <= 0) delete inv[itemId];
 
@@ -374,41 +555,39 @@ export class StatusScreen {
   }
 
   _applyItemEffect(item, target) {
-    // 1) 関数があればそれを優先
     if (typeof item?.use === 'function') {
-      try {
-        const r = item.use(target, this.game);
-        return r !== false;
-      } catch (_) {
-        return false;
-      }
+      const r = item.use(target, this.game);
+      return r !== false;
     }
 
-    // 2) よくあるキーだけ最小対応（存在する時だけ動く）
-    const hpAdd = item?.hp ?? item?.heal ?? item?.healHp ?? item?.hpRestore;
-    const mpAdd = item?.mp ?? item?.healMp ?? item?.mpRestore;
-    const full = !!(item?.fullHeal ?? item?.isFullHeal);
+    if (item.id === 'phoenix') {
+      if (typeof target?.revive === 'function') {
+        target.revive(Math.floor(this._getMaxHP(target) * (item.value ?? 0.5)));
+        return true;
+      }
+      return false;
+    }
 
-    const reviveFlag = !!(item?.revive ?? item?.isRevive);
-
-    let did = false;
-
-    if (full) {
-      if (typeof target?.revive === 'function') target.revive(this._getMaxHP(target));
+    if (item.id === 'elixir') {
       if (typeof target?.add_hp === 'function') target.add_hp(this._getMaxHP(target));
       if (typeof target?.add_mp === 'function') target.add_mp(this._getMaxMP(target));
-      did = true;
+      return true;
     }
 
-    if (!did && reviveFlag) {
-      const hp = this._getHP(target);
-      const dead = (typeof target?.is_alive === 'function') ? !target.is_alive() : (target?.is_dead || hp <= 0);
-      if (dead && typeof target?.revive === 'function') {
-        target.revive(Math.max(1, Math.floor(this._getMaxHP(target) * 0.5)));
-        did = true;
-      }
+    if (item.type === 'hp_heal' && typeof target?.add_hp === 'function') {
+      target.add_hp(this._safeNum(item.value, 0));
+      return true;
     }
 
+    if (item.type === 'mp_heal' && typeof target?.add_mp === 'function') {
+      target.add_mp(this._safeNum(item.value, 0));
+      return true;
+    }
+
+    const hpAdd = item?.hp ?? item?.heal ?? item?.healHp ?? item?.hpRestore;
+    const mpAdd = item?.mp ?? item?.healMp ?? item?.mpRestore;
+
+    let did = false;
     if (Number.isFinite(Number(hpAdd)) && typeof target?.add_hp === 'function') {
       target.add_hp(Number(hpAdd));
       did = true;
