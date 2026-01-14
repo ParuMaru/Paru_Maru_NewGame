@@ -1,4 +1,6 @@
 import { ItemData } from './items.js';
+import { GameConfig } from './game_config.js';
+import { RelicData } from './relics.js';
 
 export class MapManager {
     constructor(gameManager) {
@@ -203,6 +205,25 @@ export class MapManager {
                 card.style.filter = 'grayscale(0.4)';
             }
 
+            const head = document.createElement('div');
+            head.className = 'status-card-head';
+
+            const avatar = document.createElement('img');
+            avatar.className = 'status-avatar';
+            if (member.job === GameConfig.JOBS.HERO) {
+                avatar.src = GameConfig.ASSETS.IMAGES.HERO_ICON;
+                avatar.alt = 'Hero';
+            } else if (member.job === GameConfig.JOBS.WIZARD) {
+                avatar.src = GameConfig.ASSETS.IMAGES.WIZARD_ICON;
+                avatar.alt = 'Wizard';
+            } else if (member.job === GameConfig.JOBS.HEALER) {
+                avatar.src = GameConfig.ASSETS.IMAGES.HEALER_ICON;
+                avatar.alt = 'Healer';
+            }
+
+            const identity = document.createElement('div');
+            identity.className = 'status-identity';
+
             const name = document.createElement('div');
             name.className = 'status-name';
             name.innerText = member.name ?? '---';
@@ -247,17 +268,79 @@ export class MapManager {
             mpBar.style.width = `${mpPercent}%`;
             mpBarBg.appendChild(mpBar);
 
-            card.appendChild(name);
-            card.appendChild(job);
+            if (avatar.src) {
+                head.appendChild(avatar);
+            }
+            identity.appendChild(name);
+            identity.appendChild(job);
+            head.appendChild(identity);
+
+            card.appendChild(head);
             card.appendChild(hpLine);
             card.appendChild(hpBarBg);
             card.appendChild(mpLine);
             card.appendChild(mpBarBg);
 
+            const stats = document.createElement('div');
+            stats.className = 'status-stats';
+
+            const statItems = [
+                { label: 'ATK', value: member.atk ?? 0 },
+                { label: 'DEF', value: member.def ?? 0 },
+                { label: 'MATK', value: member.matk ?? 0 },
+                { label: 'MDEF', value: member.mdef ?? 0 },
+                { label: 'SPD', value: member.spd ?? 0 },
+                { label: 'REC', value: member.rec ?? 0 }
+            ];
+
+            statItems.forEach(stat => {
+                const statLine = document.createElement('div');
+                statLine.className = 'status-stat';
+                statLine.innerText = `${stat.label}: ${stat.value}`;
+                stats.appendChild(statLine);
+            });
+            card.appendChild(stats);
+
             partyGrid.appendChild(card);
         });
 
         this.statusBody.appendChild(partyGrid);
+
+        const relicBlock = document.createElement('div');
+        relicBlock.className = 'inventory-block';
+
+        const relicTitle = document.createElement('div');
+        relicTitle.className = 'inventory-title';
+        relicTitle.innerText = '所持レリック';
+        relicBlock.appendChild(relicTitle);
+
+        const relics = this.game.relics ?? [];
+        if (relics.length === 0) {
+            const emptyRelic = document.createElement('div');
+            emptyRelic.className = 'status-line';
+            emptyRelic.innerText = 'なし';
+            relicBlock.appendChild(emptyRelic);
+        } else {
+            relics.forEach(relicId => {
+                const relic = RelicData[relicId];
+                if (!relic) return;
+                const row = document.createElement('div');
+                row.className = 'relic-row';
+
+                const icon = document.createElement('div');
+                icon.className = 'relic-icon-text';
+                icon.innerText = relic.icon ?? '💎';
+
+                const name = document.createElement('div');
+                name.innerText = relic.name ?? relicId;
+
+                row.appendChild(icon);
+                row.appendChild(name);
+                relicBlock.appendChild(row);
+            });
+        }
+
+        this.statusBody.appendChild(relicBlock);
 
         const inventoryBlock = document.createElement('div');
         inventoryBlock.className = 'inventory-block';
