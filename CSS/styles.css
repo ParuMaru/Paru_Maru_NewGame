@@ -475,6 +475,10 @@ body {
     flex-direction: column;
     gap: 6px;
 }
+.status-skill--disabled {
+    opacity: 0.45;
+    filter: grayscale(0.35);
+}
 .status-row-top {
     display: grid;
     grid-template-columns: 1fr auto;

@@ -159,7 +159,7 @@ export class Hero extends Entity {
        　　 // 名称, HP, MP, ATK, DEF, MATK, MDEF, SPD, REC
         super(name, 280, 80, 80, 65, 20, 30, 105, 30);
         this.job = "hero";
-        this.skills = ["cover", "encourage", "flash_strike" , "whirlwind_slash"]; 
+        this.skills = ["cover", "encourage", "flash_strike", "whirlwind_slash", "grooming"];
     }
 }
 

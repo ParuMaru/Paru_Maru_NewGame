@@ -102,6 +102,9 @@ export class GameManager {
             case 'mp_recovery':
                 if (!actor) return [];
                 return actor.mp < actor.max_mp ? [actor] : [];
+            case 'hp_mp_recovery':
+                if (!actor) return [];
+                return (actor.hp < actor.max_hp || actor.mp < actor.max_mp) ? [actor] : [];
             case 'regen':
                 return alive;
             default:

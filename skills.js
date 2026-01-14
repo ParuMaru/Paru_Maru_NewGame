@@ -1,9 +1,12 @@
+import { GameConfig } from './game_config.js';
+
 export const SkillData = {
     // --- 勇者（Hero） ---
     cover:     { id: "cover",     name: "かばう", menu: "skill", cost: 10, type: "buff", target: "all", color: "#3498db" },
     encourage: { id: "encourage", name: "鼓舞",   menu: "skill", cost: 15, type: "buff", target: "all",  color: "#e74c3c" },
     whirlwind_slash: { id: "whirlwind_slash", name: "旋風斬り", menu: "skill", cost: 15, power: 1.2, type: "physical", target: "all", color: "#c0392b", attackTag: "slash" },
     flash_strike: { id: "flash_strike", name: "一閃", menu: "skill", cost: 20, power: 2.0, type: "physical", target: "single", color: "#c0392b", attackTag: "slash" },
+    grooming: { id: GameConfig.SKILL_IDS.GROOMING, name: "毛づくろい", menu: "main", cost: 0, type: "hp_mp_recovery", target: "self", color: "#f1c40f", hpRate: GameConfig.SKILL_EFFECTS.GROOMING_HP_RATE, mpRate: GameConfig.SKILL_EFFECTS.GROOMING_MP_RATE, desc: "HPを20%回復、MPを10%回復" },
     
         // --- 魔法使い（Wizard） ---
     fire:   { id: "fire",   name: "ファイア", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire" },
