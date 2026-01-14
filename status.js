@@ -340,8 +340,14 @@ export class StatusScreen {
       const isRecovery = ['heal', 'res', 'regen', 'mp_recovery'].includes(skillObj?.type);
       if (isRecovery) {
         const info = this.game.getSkillMapInfo(actorIndex, skillId);
-        if (!info.usable) return '';
-        const useBtn = `<button class="status-row-action" type="button" data-action="use-skill" data-skill-id="${skillId}">使用</button>`;
+        const disabled = !info.usable;
+        const label = disabled ? (info.reason || '使用不可') : '使用';
+        const useBtn = `
+          <button class="status-row-action ${disabled ? 'is-disabled' : ''}" type="button"
+            data-action="use-skill" data-skill-id="${skillId}" ${disabled ? 'disabled' : ''}>
+            ${label}
+          </button>
+        `;
         return this._buildRow({
           title: name,
           right: `MP ${mpCost}`,
@@ -351,11 +357,17 @@ export class StatusScreen {
         });
       }
 
+      const disabledBtn = `
+        <button class="status-row-action is-disabled" type="button" disabled>
+          使用不可
+        </button>
+      `;
       return this._buildRow({
         title: name,
         right: `MP ${mpCost}`,
         tags,
-        desc
+        desc,
+        action: disabledBtn
       });
     }).filter(Boolean).join('');
 
@@ -376,8 +388,7 @@ export class StatusScreen {
       : {};
 
     const entries = Object.entries(inv)
-      .map(([id, data]) => ({ id, data }))
-      .filter(x => this._safeNum(x.data?.count, 0) > 0);
+      .map(([id, data]) => ({ id, data }));
 
     const listHtml = entries.length
       ? entries.map(({ id, data }) => {
@@ -387,12 +398,12 @@ export class StatusScreen {
           const desc = item?.desc ?? item?.description ?? '';
           const count = this._safeNum(data?.count, 0);
           const { targets, targetType } = this.game.getItemMapInfo(id);
-          const isDisabled = targets.length === 0;
+          const isDisabled = targets.length === 0 || count <= 0;
           const targetLabel = targetType === 'all' ? '全体' : targetType === 'self' ? '自分' : '単体';
           const tags = [targetLabel];
           if (item?.type) tags.push(item.type);
           const action = isDisabled
-            ? `<span class="status-row-right status-row-note">使用不可</span>`
+            ? `<button class="status-row-action is-disabled" type="button" disabled>使用不可</button>`
             : `<button class="status-row-action" type="button" data-action="use-item" data-item-id="${id}">使用</button>`;
           return this._buildRow({
             title: name,
@@ -520,7 +531,7 @@ export class StatusScreen {
     if (!result.success) {
       this._setMessage(result.message || '使用できません');
     } else {
-      this._setMessage('');
+      this._setMessage(result.message || '');
     }
     this.pendingAction = null;
     this._render();
@@ -531,7 +542,7 @@ export class StatusScreen {
     if (!result.success) {
       this._setMessage(result.message || '使用できません');
     } else {
-      this._setMessage('');
+      this._setMessage(result.message || '');
     }
     this.pendingAction = null;
     this._render();

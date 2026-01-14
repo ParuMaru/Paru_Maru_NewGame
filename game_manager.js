@@ -162,7 +162,10 @@ export class GameManager {
         invData.count -= 1;
         if (invData.count <= 0) delete this.inventory[itemId];
         this.statusScreen?.refresh();
-        return { success: true };
+        const targetNames = targetList.map(t => t?.name).filter(Boolean);
+        const targetText = targetType === 'all' ? '全体' : targetNames.join('、');
+        const itemName = item?.name ?? itemId;
+        return { success: true, message: `${itemName}を使用：${targetText}` };
     }
 
     useSkillOnMap(actorIndex, skillId, targetIndex) {
@@ -186,7 +189,10 @@ export class GameManager {
         const applied = executor.applyRecoverySkill(info.actor, targetList, info.skill, { showEffects: false });
         if (!applied) return { success: false, message: '使用できません' };
         this.statusScreen?.refresh();
-        return { success: true };
+        const targetNames = targetList.map(t => t?.name).filter(Boolean);
+        const targetText = info.targetType === 'all' ? '全体' : targetNames.join('、');
+        const skillName = info.skill?.name ?? skillId;
+        return { success: true, message: `${skillName}を使用：${targetText}` };
     }
 
     start() {
