@@ -1,4 +1,5 @@
 import { ItemData } from './items.js';
+import { StatusScreen } from './status.js';
 
 export class MapManager {
     constructor(gameManager) {
@@ -18,6 +19,8 @@ export class MapManager {
         
         this.initUI();
         this.initEventUI(); // 汎用イベント画面の初期化
+        this.statusScreen = new StatusScreen(this.game);
+        this.statusScreen.init();
     }
 
     initUI() {
@@ -38,6 +41,13 @@ export class MapManager {
         title.innerText = "🗺️ 冒険の地図";
         header.appendChild(title);
 
+        const btnWrap = document.createElement('div');
+        Object.assign(btnWrap.style, {
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center'
+        });
+
         // セーブボタン
         const saveBtn = document.createElement('button');
         saveBtn.innerText = "セーブ";
@@ -50,7 +60,22 @@ export class MapManager {
             e.stopPropagation();
             this.game.saveGame();
         };
-        header.appendChild(saveBtn);
+        btnWrap.appendChild(saveBtn);
+
+        const statusBtn = document.createElement('button');
+        statusBtn.innerText = "ステータス";
+        Object.assign(statusBtn.style, {
+            fontSize: '12px', padding: '5px 10px', background: '#2980b9',
+            border: 'none', borderRadius: '4px', color: 'white', cursor: 'pointer',
+            width: 'auto', height: 'auto'
+        });
+        statusBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.statusScreen?.open();
+        };
+        btnWrap.appendChild(statusBtn);
+
+        header.appendChild(btnWrap);
         
         this.container.appendChild(header);
 
@@ -97,6 +122,7 @@ export class MapManager {
         document.body.appendChild(overlay);
         this.eventOverlay = overlay;
     }
+
 
     // --- イベント表示用ヘルパー ---
     showEvent({ title, icon, desc, mainBtnText, onMainAction, closeBtnText = "立ち去る" }) {
