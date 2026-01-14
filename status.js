@@ -1,14 +1,15 @@
 import { ItemData } from './items.js';
+import { SkillData } from './skills.js';
+import { GameConfig } from './game_config.js';
 
 export class StatusScreen {
   constructor(game) {
     this.game = game;
     this.selectedIndex = 0;
-    this.activeTab = 'status'; // 'status' | 'items'
-    this.pendingItemId = null;
+    this.activeTab = 'status';
+    this.pendingAction = null;
 
     this._overlay = null;
-    this._panel = null;
     this._partyEl = null;
     this._detailEl = null;
     this._msgEl = null;
@@ -20,43 +21,43 @@ export class StatusScreen {
   }
 
   init() {
-    if (document.getElementById('status-overlay')) {
-      this._overlay = document.getElementById('status-overlay');
-      this._panel = this._overlay.querySelector('.status-panel');
-      this._partyEl = this._overlay.querySelector('.status-party');
-      this._detailEl = this._overlay.querySelector('.status-detail');
-      this._msgEl = this._overlay.querySelector('.status-message');
+    const existing = document.getElementById('status-overlay');
+    if (existing) {
+      this._overlay = existing;
+      this._partyEl = existing.querySelector('.status-party');
+      this._detailEl = existing.querySelector('.status-content');
+      this._msgEl = existing.querySelector('.status-message');
       return;
     }
 
     const overlay = document.createElement('div');
     overlay.id = 'status-overlay';
+    overlay.className = 'status-overlay';
     overlay.innerHTML = `
-      <div class="status-panel" role="dialog" aria-modal="true">
-        <div class="status-panel-header">
-          <div class="status-panel-title">ステータス</div>
+      <div class="status-window" role="dialog" aria-modal="true" aria-labelledby="status-title">
+        <div class="status-header">
+          <div class="status-title" id="status-title">ステータス</div>
           <button class="status-close" type="button" aria-label="閉じる">✕</button>
         </div>
-
-        <div class="status-tabs">
-          <button class="status-tab is-active" type="button" data-tab="status">ステータス</button>
-          <button class="status-tab" type="button" data-tab="items">どうぐ</button>
-        </div>
-
-        <div class="status-message" aria-live="polite"></div>
-
         <div class="status-body">
           <div class="status-party"></div>
-          <div class="status-detail"></div>
+          <div class="status-panel">
+            <div class="status-tabs">
+              <button class="status-tab is-active" type="button" data-tab="status">ステータス</button>
+              <button class="status-tab" type="button" data-tab="skills">スキル</button>
+              <button class="status-tab" type="button" data-tab="items">どうぐ</button>
+            </div>
+            <div class="status-message" aria-live="polite"></div>
+            <div class="status-content"></div>
+          </div>
         </div>
       </div>
     `;
     document.body.appendChild(overlay);
 
     this._overlay = overlay;
-    this._panel = overlay.querySelector('.status-panel');
     this._partyEl = overlay.querySelector('.status-party');
-    this._detailEl = overlay.querySelector('.status-detail');
+    this._detailEl = overlay.querySelector('.status-content');
     this._msgEl = overlay.querySelector('.status-message');
 
     overlay.addEventListener('click', (e) => {
@@ -72,11 +73,7 @@ export class StatusScreen {
 
       const tabBtn = e.target.closest('.status-tab');
       if (tabBtn) {
-        const tab = tabBtn.dataset.tab;
-        this.activeTab = tab;
-        this.pendingItemId = null;
-        this._setMessage('');
-        this._render();
+        this.setTab(tabBtn.dataset.tab);
         return;
       }
 
@@ -84,34 +81,35 @@ export class StatusScreen {
       if (memberBtn) {
         const idx = Number(memberBtn.dataset.index);
         if (!Number.isFinite(idx)) return;
-
-        if (this.pendingItemId) {
-          this._tryUseItem(this.pendingItemId, idx);
+        if (this.pendingAction?.targetType === 'single') {
+          this._executePending(idx);
           return;
         }
-
-        this.selectedIndex = idx;
-        this._setMessage('');
-        this._render();
+        this.setMember(idx);
         return;
       }
 
-      const itemBtn = e.target.closest('.status-item');
-      if (itemBtn) {
-        const itemId = itemBtn.dataset.itemId;
+      const useSkillBtn = e.target.closest('[data-action="use-skill"]');
+      if (useSkillBtn) {
+        const skillId = useSkillBtn.dataset.skillId;
+        if (!skillId) return;
+        this._handleSkillSelect(skillId);
+        return;
+      }
+
+      const useItemBtn = e.target.closest('[data-action="use-item"]');
+      if (useItemBtn) {
+        const itemId = useItemBtn.dataset.itemId;
         if (!itemId) return;
-        this.pendingItemId = itemId;
-        this._setMessage('使う相手を選んでください');
-        this._render();
+        this._handleItemSelect(itemId);
         return;
       }
 
-      const cancelTargetBtn = e.target.closest('.status-cancel-target');
-      if (cancelTargetBtn) {
-        this.pendingItemId = null;
+      const cancelBtn = e.target.closest('.status-cancel-target');
+      if (cancelBtn) {
+        this.pendingAction = null;
         this._setMessage('');
         this._render();
-        return;
       }
     });
 
@@ -119,12 +117,12 @@ export class StatusScreen {
   }
 
   isOpen() {
-    return !!(this._overlay && this._overlay.classList.contains('is-active'));
+    return !!(this._overlay && this._overlay.classList.contains('is-open'));
   }
 
   open() {
     if (!this._overlay) this.init();
-    this._overlay.classList.add('is-active');
+    this._overlay.classList.add('is-open');
     document.addEventListener('keydown', this._onKeyDown);
     this._setMessage('');
     this._render();
@@ -132,15 +130,29 @@ export class StatusScreen {
 
   close() {
     if (!this._overlay) return;
-    this._overlay.classList.remove('is-active');
+    this._overlay.classList.remove('is-open');
     document.removeEventListener('keydown', this._onKeyDown);
-    this.pendingItemId = null;
+    this.pendingAction = null;
     this._setMessage('');
   }
 
-  toggle() {
-    if (this.isOpen()) this.close();
-    else this.open();
+  refresh() {
+    this._render();
+  }
+
+  setTab(tab) {
+    const next = ['status', 'skills', 'items'].includes(tab) ? tab : 'status';
+    this.activeTab = next;
+    this.pendingAction = null;
+    this._setMessage('');
+    this._render();
+  }
+
+  setMember(index) {
+    this.selectedIndex = index;
+    this.pendingAction = null;
+    this._setMessage('');
+    this._render();
   }
 
   _setMessage(text) {
@@ -177,11 +189,19 @@ export class StatusScreen {
     return Array.isArray(arr) ? arr : [];
   }
 
+  _getMemberFace(member) {
+    const job = member?.job;
+    if (job === GameConfig.JOBS.HERO) return GameConfig.ASSETS.IMAGES.HERO_ICON;
+    if (job === GameConfig.JOBS.WIZARD) return GameConfig.ASSETS.IMAGES.WIZARD_ICON;
+    if (job === GameConfig.JOBS.HEALER) return GameConfig.ASSETS.IMAGES.HEALER_ICON;
+    return member?.img || GameConfig.ASSETS.IMAGES.ENEMY_FALLBACK;
+  }
+
   _render() {
     if (!this._partyEl || !this._detailEl) return;
 
     const party = Array.isArray(this.game?.party) ? this.game.party : [];
-    if (party.length === 0) {
+    if (!party.length) {
       this._partyEl.innerHTML = `<div class="status-empty">パーティが見つかりません</div>`;
       this._detailEl.innerHTML = ``;
       return;
@@ -190,102 +210,174 @@ export class StatusScreen {
     if (this.selectedIndex < 0) this.selectedIndex = 0;
     if (this.selectedIndex >= party.length) this.selectedIndex = party.length - 1;
 
-    // tabs active
     const tabs = this._overlay.querySelectorAll('.status-tab');
     tabs.forEach(btn => {
       const isActive = btn.dataset.tab === this.activeTab;
       btn.classList.toggle('is-active', isActive);
     });
 
-    // party list
+    const pendingInfo = this._getPendingInfo();
+    const pendingTargets = pendingInfo?.targets || [];
+    const pendingTargetSet = new Set(pendingTargets.map(m => party.indexOf(m)).filter(i => i >= 0));
+
     this._partyEl.innerHTML = party.map((m, i) => {
       const hp = this._getHP(m);
       const mp = this._getMP(m);
       const maxHp = this._getMaxHP(m);
       const maxMp = this._getMaxMP(m);
-
       const hpPct = this._pct(hp, maxHp);
       const mpPct = this._pct(mp, maxMp);
 
       const isSelected = i === this.selectedIndex;
-      const isTargetable = !!this.pendingItemId;
+      const isTargeting = this.pendingAction?.targetType === 'single';
+      const isTargetable = isTargeting ? pendingTargetSet.has(i) : false;
+      const isUntargetable = isTargeting && !isTargetable;
 
       const dead = (typeof m?.is_alive === 'function') ? !m.is_alive() : (!!m?.is_dead || hp <= 0);
+      const face = this._getMemberFace(m);
 
       return `
         <button type="button"
-          class="status-member ${isSelected ? 'is-selected' : ''} ${isTargetable ? 'is-targetable' : ''} ${dead ? 'is-dead' : ''}"
-          data-index="${i}">
-          <div class="status-member-top">
-            <div class="status-member-name">${m?.name ?? `Member ${i+1}`}</div>
-            <div class="status-member-job">${m?.job ?? ''}</div>
+          class="status-member ${isSelected ? 'is-selected' : ''} ${isTargetable ? 'is-targetable' : ''} ${isUntargetable ? 'is-untargetable' : ''} ${dead ? 'is-dead' : ''}"
+          data-index="${i}" ${isUntargetable ? 'disabled' : ''}>
+          <div class="status-member-face">
+            <img src="${face}" alt="${m?.name ?? `Member ${i + 1}`}">
           </div>
+          <div class="status-member-info">
+            <div class="status-member-top">
+              <div class="status-member-name">${m?.name ?? `Member ${i + 1}`}</div>
+              <div class="status-member-job">${m?.job ?? ''}</div>
+            </div>
 
-          <div class="status-bar">
-            <div class="status-bar-label">HP</div>
-            <div class="status-bar-track"><div class="status-bar-fill" style="width:${hpPct}%"></div></div>
-            <div class="status-bar-num">${hp}/${maxHp}</div>
-          </div>
+            <div class="status-bar">
+              <div class="status-bar-label">HP</div>
+              <div class="status-bar-track"><div class="status-bar-fill" style="width:${hpPct}%"></div></div>
+              <div class="status-bar-num">${hp}/${maxHp}</div>
+            </div>
 
-          <div class="status-bar">
-            <div class="status-bar-label">MP</div>
-            <div class="status-bar-track"><div class="status-bar-fill mp" style="width:${mpPct}%"></div></div>
-            <div class="status-bar-num">${mp}/${maxMp}</div>
-          </div>
-
-          <div class="status-substats">
-            <span>ATK ${this._safeNum(m?.atk, 0)}</span>
-            <span>DEF ${this._safeNum(m?.def, 0)}</span>
-            <span>MATK ${this._safeNum(m?.matk, 0)}</span>
+            <div class="status-bar">
+              <div class="status-bar-label">MP</div>
+              <div class="status-bar-track"><div class="status-bar-fill mp" style="width:${mpPct}%"></div></div>
+              <div class="status-bar-num">${mp}/${maxMp}</div>
+            </div>
           </div>
         </button>
       `;
     }).join('');
 
-    // detail
-    if (this.activeTab === 'items') {
-      this._renderItems();
-      return;
+    this._renderTabContent(party[this.selectedIndex]);
+  }
+
+  _renderTabContent(member) {
+    if (!member) return;
+
+    switch (this.activeTab) {
+      case 'skills':
+        this._renderSkills(member);
+        break;
+      case 'items':
+        this._renderItems();
+        break;
+      case 'status':
+      default:
+        this._renderStatus(member);
+        break;
     }
+  }
 
-    const member = party[this.selectedIndex];
-    const skills = this._getSkills(member);
+  _renderStatus(member) {
+    const stats = [
+      { label: 'ATK', value: this._safeNum(member?.atk, 0) },
+      { label: 'DEF', value: this._safeNum(member?.def, 0) },
+      { label: 'MATK', value: this._safeNum(member?.matk, 0) },
+      { label: 'MDEF', value: this._safeNum(member?.mdef, 0) },
+      { label: 'SPD', value: this._safeNum(member?.spd, 0) },
+      { label: 'REC', value: this._safeNum(member?.rec, 0) }
+    ];
 
-    const skillHtml = skills.length
-      ? skills.map(s => {
-          if (typeof s === 'string') {
-            return `<div class="status-skill"><div class="status-skill-name">${s}</div></div>`;
-          }
-          const name = s?.name ?? s?.id ?? 'skill';
-          const mp = (s?.mp_cost ?? s?.mpCost ?? s?.cost);
-          const mpTxt = Number.isFinite(Number(mp)) ? `MP ${Number(mp)}` : '';
-          const desc = s?.desc ?? s?.description ?? '';
-          return `
-            <div class="status-skill">
-              <div class="status-skill-row">
-                <div class="status-skill-name">${name}</div>
-                <div class="status-skill-mp">${mpTxt}</div>
-              </div>
-              ${desc ? `<div class="status-skill-desc">${desc}</div>` : ``}
-            </div>
-          `;
-        }).join('')
-      : `<div class="status-empty">スキルが見つかりません</div>`;
+    const statRows = stats.map(stat => `
+      <div class="status-row">
+        <div class="status-row-top">
+          <div class="status-row-title">${stat.label}</div>
+          <div class="status-row-right">${stat.value}</div>
+        </div>
+      </div>
+    `).join('');
 
     this._detailEl.innerHTML = `
-      <div class="status-detail-head">
-        <div class="status-detail-title">${member?.name ?? ''}</div>
-        <div class="status-detail-hint">キャラを押すと切り替え</div>
+      <div class="status-section">
+        <div class="status-section-title">${member?.name ?? ''}</div>
+        <div class="status-row">
+          <div class="status-row-top">
+            <div class="status-row-title">職業</div>
+            <div class="status-row-right">${member?.job ?? ''}</div>
+          </div>
+        </div>
       </div>
-
-      <div class="status-detail-section">
-        <div class="status-section-title">スキル</div>
-        <div class="status-skill-list">${skillHtml}</div>
+      <div class="status-section">
+        <div class="status-section-title">基礎能力</div>
+        <div class="status-list">${statRows}</div>
       </div>
+    `;
+  }
 
-      <div class="status-detail-section">
-        <div class="status-section-title">拡張枠</div>
-        <div class="status-empty">装備／付け替えはここに追加</div>
+  _renderSkills(member) {
+    const skills = this._getSkills(member);
+    const actorIndex = this.selectedIndex;
+
+    const rows = skills.map((s) => {
+      const skillObj = typeof s === 'string' ? (SkillData?.[s] || { id: s }) : s;
+      const skillId = skillObj?.id ?? s;
+      const name = skillObj?.name ?? skillId ?? 'skill';
+      const mpCost = this._safeNum(skillObj?.cost ?? skillObj?.mp_cost ?? skillObj?.mpCost, 0);
+      const desc = skillObj?.desc ?? skillObj?.description ?? '';
+      const targetType = skillObj?.target ?? 'single';
+      const tags = [];
+
+      if (skillObj?.type) tags.push(skillObj.type);
+      tags.push(targetType === 'all' ? '全体' : targetType === 'self' ? '自分' : '単体');
+
+      const isRecovery = ['heal', 'res', 'regen', 'mp_recovery'].includes(skillObj?.type);
+      if (isRecovery) {
+        const info = this.game.getSkillMapInfo(actorIndex, skillId);
+        const disabled = !info.usable;
+        const label = disabled ? (info.reason || '使用不可') : '使用';
+        const useBtn = `
+          <button class="status-row-action ${disabled ? 'is-disabled' : ''}" type="button"
+            data-action="use-skill" data-skill-id="${skillId}" ${disabled ? 'disabled' : ''}>
+            ${label}
+          </button>
+        `;
+        return this._buildRow({
+          title: name,
+          right: `MP ${mpCost}`,
+          tags,
+          desc,
+          action: useBtn
+        });
+      }
+
+      const disabledBtn = `
+        <button class="status-row-action is-disabled" type="button" disabled>
+          使用不可
+        </button>
+      `;
+      return this._buildRow({
+        title: name,
+        right: `MP ${mpCost}`,
+        tags,
+        desc,
+        action: disabledBtn
+      });
+    }).filter(Boolean).join('');
+
+    const content = rows || `<div class="status-empty">スキルが見つかりません</div>`;
+
+    this._detailEl.innerHTML = `
+      ${this._renderPendingBanner()}
+      <div class="status-section">
+        <div class="status-section-title">スキル一覧</div>
+        <div class="status-list">${content}</div>
       </div>
     `;
   }
@@ -296,129 +388,178 @@ export class StatusScreen {
       : {};
 
     const entries = Object.entries(inv)
-      .map(([id, data]) => ({ id, data }))
-      .filter(x => this._safeNum(x.data?.count, 0) > 0);
+      .map(([id, data]) => ({ id, data }));
 
     const listHtml = entries.length
       ? entries.map(({ id, data }) => {
-          const name = data?.name ?? ItemData?.[id]?.name ?? id;
-          const desc = data?.desc ?? data?.description ?? ItemData?.[id]?.desc ?? '';
+          const base = ItemData?.[id] || {};
+          const item = { id, ...base, ...data };
+          const name = item?.name ?? id;
+          const desc = item?.desc ?? item?.description ?? '';
           const count = this._safeNum(data?.count, 0);
-          return `
-            <button type="button" class="status-item" data-item-id="${id}">
-              <div class="status-item-row">
-                <div class="status-item-name">${name}</div>
-                <div class="status-item-count">×${count}</div>
-              </div>
-              ${desc ? `<div class="status-item-desc">${desc}</div>` : ``}
-            </button>
-          `;
+          const { targets, targetType } = this.game.getItemMapInfo(id);
+          const isDisabled = targets.length === 0 || count <= 0;
+          const targetLabel = targetType === 'all' ? '全体' : targetType === 'self' ? '自分' : '単体';
+          const tags = [targetLabel];
+          if (item?.type) tags.push(item.type);
+          const action = isDisabled
+            ? `<button class="status-row-action is-disabled" type="button" disabled>使用不可</button>`
+            : `<button class="status-row-action" type="button" data-action="use-item" data-item-id="${id}">使用</button>`;
+          return this._buildRow({
+            title: name,
+            right: `×${count}`,
+            tags,
+            desc,
+            action
+          });
         }).join('')
       : `<div class="status-empty">どうぐがありません</div>`;
 
-    const pending = this.pendingItemId
-      ? `
-        <div class="status-targeting">
-          <div class="status-targeting-text">対象を選択中</div>
-          <button type="button" class="status-cancel-target">キャンセル</button>
-        </div>
-      `
-      : ``;
-
     this._detailEl.innerHTML = `
-      <div class="status-detail-head">
-        <div class="status-detail-title">どうぐ</div>
-        <div class="status-detail-hint">どうぐ→相手</div>
+      ${this._renderPendingBanner()}
+      <div class="status-section">
+        <div class="status-section-title">どうぐ</div>
+        <div class="status-list">${listHtml}</div>
       </div>
-      ${pending}
-      <div class="status-item-list">${listHtml}</div>
     `;
   }
 
-  _tryUseItem(itemId, targetIndex) {
-    const party = Array.isArray(this.game?.party) ? this.game.party : [];
-    const target = party[targetIndex];
-    if (!target) return;
+  _buildRow({ title, right, tags = [], desc = '', action = '' }) {
+    const tagHtml = tags.length
+      ? `<div class="status-row-tags">${tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`
+      : '';
+    const descHtml = desc ? `<div class="status-row-desc">${desc}</div>` : '';
+    const actionHtml = action ? `<div class="status-row-actions">${action}</div>` : '';
 
-    const inv = this.game?.inventory && typeof this.game.inventory === 'object'
-      ? this.game.inventory
-      : {};
-    const invData = inv[itemId];
+    return `
+      <div class="status-row">
+        <div class="status-row-top">
+          <div class="status-row-title">${title}</div>
+          <div class="status-row-right">${right}</div>
+        </div>
+        ${tagHtml}
+        ${descHtml}
+        ${actionHtml}
+      </div>
+    `;
+  }
 
-    const count = this._safeNum(invData?.count, 0);
-    if (count <= 0) {
-      this.pendingItemId = null;
-      this._setMessage('在庫がありません');
+  _renderPendingBanner() {
+    if (!this.pendingAction) return '';
+    return `
+      <div class="status-targeting">
+        <div class="status-targeting-text">対象を選択中</div>
+        <button type="button" class="status-cancel-target">キャンセル</button>
+      </div>
+    `;
+  }
+
+  _handleItemSelect(itemId) {
+    const info = this.game.getItemMapInfo(itemId);
+    if (!info.item) {
+      this._setMessage('使用できません');
       this._render();
       return;
     }
 
-    const base = (ItemData && ItemData[itemId]) ? ItemData[itemId] : {};
-    const item = { id: itemId, ...base, ...(invData || {}) };
-
-    const applied = this._applyItemEffect(item, target);
-    if (!applied) {
-      this.pendingItemId = null;
-      this._setMessage('このどうぐは未対応');
+    if (info.targets.length === 0) {
+      this._setMessage('使用できる相手がいません');
       this._render();
       return;
     }
 
-    // 消費
-    invData.count = count - 1;
-    if (invData.count <= 0) delete inv[itemId];
+    if (info.targetType === 'self') {
+      this._executeItem(itemId, this.selectedIndex);
+      return;
+    }
 
-    this.pendingItemId = null;
-    this._setMessage('');
+    if (info.targetType === 'all') {
+      this._executeItem(itemId, null);
+      return;
+    }
+
+    this.pendingAction = { type: 'item', id: itemId, targetType: 'single' };
+    this._setMessage('使う相手を選んでください');
     this._render();
   }
 
-  _applyItemEffect(item, target) {
-    // 1) 関数があればそれを優先
-    if (typeof item?.use === 'function') {
-      try {
-        const r = item.use(target, this.game);
-        return r !== false;
-      } catch (_) {
-        return false;
-      }
+  _handleSkillSelect(skillId) {
+    const info = this.game.getSkillMapInfo(this.selectedIndex, skillId);
+    if (!info.skill) {
+      this._setMessage('使用できません');
+      this._render();
+      return;
     }
 
-    // 2) よくあるキーだけ最小対応（存在する時だけ動く）
-    const hpAdd = item?.hp ?? item?.heal ?? item?.healHp ?? item?.hpRestore;
-    const mpAdd = item?.mp ?? item?.healMp ?? item?.mpRestore;
-    const full = !!(item?.fullHeal ?? item?.isFullHeal);
-
-    const reviveFlag = !!(item?.revive ?? item?.isRevive);
-
-    let did = false;
-
-    if (full) {
-      if (typeof target?.revive === 'function') target.revive(this._getMaxHP(target));
-      if (typeof target?.add_hp === 'function') target.add_hp(this._getMaxHP(target));
-      if (typeof target?.add_mp === 'function') target.add_mp(this._getMaxMP(target));
-      did = true;
+    if (!info.usable) {
+      this._setMessage(info.reason);
+      this._render();
+      return;
     }
 
-    if (!did && reviveFlag) {
-      const hp = this._getHP(target);
-      const dead = (typeof target?.is_alive === 'function') ? !target.is_alive() : (target?.is_dead || hp <= 0);
-      if (dead && typeof target?.revive === 'function') {
-        target.revive(Math.max(1, Math.floor(this._getMaxHP(target) * 0.5)));
-        did = true;
-      }
+    if (info.targetType === 'self') {
+      this._executeSkill(skillId, this.selectedIndex);
+      return;
     }
 
-    if (Number.isFinite(Number(hpAdd)) && typeof target?.add_hp === 'function') {
-      target.add_hp(Number(hpAdd));
-      did = true;
+    if (info.targetType === 'all') {
+      this._executeSkill(skillId, null);
+      return;
     }
 
-    if (Number.isFinite(Number(mpAdd)) && typeof target?.add_mp === 'function') {
-      target.add_mp(Number(mpAdd));
-      did = true;
+    this.pendingAction = { type: 'skill', id: skillId, actorIndex: this.selectedIndex, targetType: 'single' };
+    this._setMessage('対象を選んでください');
+    this._render();
+  }
+
+  _executePending(targetIndex) {
+    const pending = this.pendingAction;
+    if (!pending) return;
+
+    if (pending.type === 'item') {
+      this._executeItem(pending.id, targetIndex);
+      return;
     }
 
-    return did;
+    if (pending.type === 'skill') {
+      this._executeSkill(pending.id, targetIndex, pending.actorIndex ?? this.selectedIndex);
+    }
+  }
+
+  _executeItem(itemId, targetIndex) {
+    const result = this.game.useItemOnMap(itemId, targetIndex);
+    if (!result.success) {
+      this._setMessage(result.message || '使用できません');
+    } else {
+      this._setMessage(result.message || '');
+    }
+    this.pendingAction = null;
+    this._render();
+  }
+
+  _executeSkill(skillId, targetIndex, actorIndex = this.selectedIndex) {
+    const result = this.game.useSkillOnMap(actorIndex, skillId, targetIndex);
+    if (!result.success) {
+      this._setMessage(result.message || '使用できません');
+    } else {
+      this._setMessage(result.message || '');
+    }
+    this.pendingAction = null;
+    this._render();
+  }
+
+  _getPendingInfo() {
+    const pending = this.pendingAction;
+    if (!pending) return null;
+
+    if (pending.type === 'item') {
+      return this.game.getItemMapInfo(pending.id);
+    }
+
+    if (pending.type === 'skill') {
+      return this.game.getSkillMapInfo(pending.actorIndex ?? this.selectedIndex, pending.id);
+    }
+
+    return null;
   }
 }

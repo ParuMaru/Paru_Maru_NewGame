@@ -352,26 +352,84 @@ export class ActionExecutor {
     async _executeItem(actor, target, item) {
         this.director.showItemUse(actor, item);
         item.count--;
+        this.applyItemEffect(item, target, { showEffects: true });
+    }
+
+    applyItemEffect(item, target, { showEffects = true } = {}) {
         if (item.id === 'phoenix') {
             target.revive(Math.floor(target.max_hp * item.value));
-            this.director.showResurrection(target, false);
+            if (showEffects) this.director.showResurrection(target, false);
+            return true;
         }
-        else if (item.id === 'elixir') {
-            // 回復処理
+        if (item.id === 'elixir') {
             target.add_hp(target.max_hp);
             target.add_mp(target.max_mp);
-            
-            //  ここで専用演出を呼ぶだけにする
-            this.director.showFullHeal(target); 
+            if (showEffects) this.director.showFullHeal(target);
+            return true;
         }
-        
-        else if (item.type === 'hp_heal') {
+
+        if (item.type === 'hp_heal') {
             target.add_hp(item.value);
-            this.director.showHeal(target, item.value, false);
-        } 
-        else if (item.type === 'mp_heal') {
+            if (showEffects) this.director.showHeal(target, item.value, false);
+            return true;
+        }
+        if (item.type === 'mp_heal') {
             target.add_mp(item.value);
-            this.director.showHeal(target, item.value, true);
+            if (showEffects) this.director.showHeal(target, item.value, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    applyRecoverySkill(actor, targets, skill, { showEffects = true } = {}) {
+        const targetList = Array.isArray(targets) ? targets : [targets];
+
+        switch (skill.type) {
+            case 'heal':
+                actor.add_mp(-skill.cost);
+                targetList.forEach(t => {
+                    if (t.is_alive()) {
+                        let { amount } = BattleCalculator.calculateHeal(actor, skill);
+                        t.add_hp(amount);
+                        if (showEffects) this.director.showHeal(t, amount, false, false);
+                    }
+                });
+                return true;
+            case 'res':
+                if (actor.mp < skill.cost) return false;
+                actor.add_mp(-skill.cost);
+                targetList.forEach(t => {
+                    const reviveHp = Math.floor(t.max_hp * 0.5);
+                    t.revive(reviveHp);
+                    if (showEffects) this.director.showResurrection(t, false);
+                });
+                return true;
+            case 'regen':
+                actor.add_mp(-skill.cost);
+                if (showEffects) this.director.showRegen(actor);
+                targetList.forEach(t => {
+                    if (t.is_alive()) {
+                        t.buffs.regen = skill.duration;
+                        t.regen_value = skill.value;
+                        if (showEffects) {
+                            const tId = this.director._getTargetId(t);
+                            this.director.effects.healEffect(tId);
+                        }
+                    }
+                });
+                if (actor.job === 'healer') {
+                    actor.buffs.mp_regen = 3;
+                }
+                return true;
+            case 'mp_recovery':
+                actor.add_mp(-skill.cost);
+                const mpRec = Math.floor(skill.value * (0.9 + Math.random() * 0.2));
+                actor.add_mp(mpRec);
+                if (showEffects) this.director.showHeal(actor, mpRec, true);
+                return true;
+            default:
+                return false;
         }
     }
     
