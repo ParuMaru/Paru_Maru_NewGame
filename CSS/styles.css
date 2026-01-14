@@ -475,6 +475,26 @@ body {
     flex-direction: column;
     gap: 6px;
 }
+.status-row--clickable {
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    font: inherit;
+    color: inherit;
+}
+.status-row--clickable:hover {
+    border-color: rgba(255,255,255,.25);
+    background: rgba(255,255,255,.08);
+}
+.status-row.is-selected {
+    border-color: rgba(241, 196, 15, 0.6);
+    box-shadow: 0 0 0 1px rgba(241, 196, 15, 0.2);
+}
+.status-skill--disabled {
+    opacity: 0.45;
+    filter: grayscale(0.35);
+}
 .status-row-top {
     display: grid;
     grid-template-columns: 1fr auto;
