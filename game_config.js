@@ -212,6 +212,7 @@ export const GameConfig = {
         LAVA_SPRAY: 'lava_spray',
         CHAOS_WAVE: 'chaos_wave',
         MEDITATION: 'meditation',
+        GROOMING: 'grooming',
         RAISE: 'raise',
     },
 
@@ -219,6 +220,11 @@ export const GameConfig = {
         MAIN: 'main',
         MAGIC: 'magic',
         SKILL: 'skill',
+    },
+
+    SKILL_EFFECTS: {
+        GROOMING_HP_RATE: 0.2,
+        GROOMING_MP_RATE: 0.1,
     },
 
     JOBS: {

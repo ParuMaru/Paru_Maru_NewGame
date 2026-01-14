@@ -206,6 +206,21 @@ export class ActionExecutor {
                 actor.add_mp(mpRec);
                 this.director.showHeal(actor, mpRec, true); 
                 break;
+            case 'hp_mp_recovery': {
+                const hpRate = Number.isFinite(skill.hpRate) ? skill.hpRate : 0;
+                const mpRate = Number.isFinite(skill.mpRate) ? skill.mpRate : 0;
+                const hpAmount = Math.floor(actor.max_hp * hpRate);
+                const mpAmount = Math.floor(actor.max_mp * mpRate);
+                if (hpAmount > 0) {
+                    actor.add_hp(hpAmount);
+                    this.director.showHeal(actor, hpAmount, false);
+                }
+                if (mpAmount > 0) {
+                    actor.add_mp(mpAmount);
+                    this.director.showHeal(actor, mpAmount, true);
+                }
+                break;
+            }
                 
             case 'buff':
                 if (skill.id === 'cover') {
@@ -428,6 +443,22 @@ export class ActionExecutor {
                 actor.add_mp(mpRec);
                 if (showEffects) this.director.showHeal(actor, mpRec, true);
                 return true;
+            case 'hp_mp_recovery': {
+                actor.add_mp(-skill.cost);
+                const hpRate = Number.isFinite(skill.hpRate) ? skill.hpRate : 0;
+                const mpRate = Number.isFinite(skill.mpRate) ? skill.mpRate : 0;
+                const hpAmount = Math.floor(actor.max_hp * hpRate);
+                const mpAmount = Math.floor(actor.max_mp * mpRate);
+                if (hpAmount > 0) {
+                    actor.add_hp(hpAmount);
+                    if (showEffects) this.director.showHeal(actor, hpAmount, false);
+                }
+                if (mpAmount > 0) {
+                    actor.add_mp(mpAmount);
+                    if (showEffects) this.director.showHeal(actor, mpAmount, true);
+                }
+                return hpAmount > 0 || mpAmount > 0;
+            }
             default:
                 return false;
         }
