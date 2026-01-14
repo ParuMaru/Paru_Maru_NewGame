@@ -11,7 +11,7 @@
     #canvas-area { height: auto; flex: 1; min-height: 200px; }
 
     /* ログ・ステータス */
-    #log { height: 14vh; min-height: 70px; font-size: 10px; line-height: 1.3; padding: 5px; }
+    #log { height: 14vh; min-height: 70px; font-size: 12px; line-height: 1.3; padding: 5px; }
     #log div { padding: 1px 0; border-bottom-width: 1px; }
     #status-area { height: 15vh; min-height: 80px;}
     .status-container { top: -20px; }

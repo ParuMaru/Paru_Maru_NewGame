@@ -264,6 +264,7 @@ body {
     z-index: 3500;
     opacity: 0;
     pointer-events: none;
+<<<<<<< Updated upstream
     filter: drop-shadow(0 0 10px gold);
 }
 
@@ -531,4 +532,151 @@ body {
 .status-cancel-target:hover { filter: brightness(1.10); }
 
 .status-empty { opacity: 0.8; font-size: 12px; padding: 8px 2px; }
+=======
+    filter: drop-shadow(0 0 10px gold);
+}
+
+#status-overlay {
+  position: fixed;
+  inset: 0;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.78);
+  z-index: 2500;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  backdrop-filter: blur(3px);
+}
+#status-overlay.is-active { opacity: 1; }
+
+.status-panel {
+  width: min(520px, 94vw);
+  max-height: 86vh;
+  background: rgba(15, 24, 38, 0.92);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+  overflow: hidden;
+  transform: translateY(10px) scale(0.98);
+  transition: transform 0.18s ease;
+}
+#status-overlay.is-active .status-panel { transform: translateY(0) scale(1); }
+
+.status-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.12);
+}
+.status-title {
+  font-weight: bold;
+  color: #f1c40f;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+}
+.status-close {
+  width: auto;
+  height: auto;
+  padding: 6px 10px;
+  font-size: 12px;
+  background: #7f8c8d;
+  border-radius: 8px;
+}
+
+.status-body {
+  padding: 12px 14px 16px;
+  overflow: auto;
+  max-height: calc(86vh - 52px);
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+@media (min-width: 520px) {
+  .status-grid { grid-template-columns: 1fr 1fr; }
+}
+
+.status-card {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(136,182,255,0.25);
+  border-radius: 12px;
+  padding: 10px;
+}
+.status-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.status-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 7px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.3);
+}
+.status-identity {
+  display: flex;
+  flex-direction: column;
+}
+.status-name { font-weight: bold; margin-bottom: 6px; color: #ecf0f1; }
+.status-sub  { font-size: 12px; color: rgba(236,240,241,0.85); margin-bottom: 8px; }
+
+.status-bar-bg {
+  height: 8px;
+  background: rgba(255,255,255,0.12);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.status-bar-hp { height: 100%; background: #2ecc71; }
+.status-bar-mp { height: 100%; background: #2e95cc; }
+.status-line { font-size: 12px; color: rgba(236,240,241,0.9); margin-top: 6px; }
+.status-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(236,240,241,0.8);
+}
+.status-stat {
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.inventory-block {
+  margin-top: 12px;
+  border-top: 1px dashed rgba(255,255,255,0.2);
+  padding-top: 10px;
+}
+.inventory-title { font-weight: bold; color: #f1c40f; margin-bottom: 6px; }
+.inventory-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 4px 0;
+  margin: 10px;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+  color: rgba(236,240,241,0.9);
+}
+.relic-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(255,255,255,0.1);
+  color: rgba(236,240,241,0.9);
+}
+.relic-icon-text {
+  width: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+>>>>>>> Stashed changes
 

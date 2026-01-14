@@ -80,7 +80,7 @@ export class ActionExecutor {
                 const drainAmount = Math.ceil(damage * GameConfig.RELIC.VAMPIRE_DRAIN_RATE); // ダメージの10%
                 if (drainAmount > 0) {
                     actor.add_hp(drainAmount);
-                    // 回復演出（ログはうるさいので出さなくてもOK、数字だけ出す）
+                    // 回復演出
                     this.director.ui.addLog(`> ${actor.name}はHPを${drainAmount}吸収した`, UiColors.HEAL_HP);
                     this.director.effects.damagePopup(drainAmount, this.director._getTargetId(actor), UiColors.HEAL_HP);
                 }
