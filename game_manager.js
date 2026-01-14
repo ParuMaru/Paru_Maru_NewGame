@@ -5,6 +5,8 @@ import { Hero, Wizard, Healer } from './entities.js';
 import { ItemData } from './items.js';
 import { DebugManager } from './debug_manager.js';
 import { RelicData } from './relics.js';
+import { SkillData } from './skills.js';
+import { StatusScreen } from './status.js';
 
 export class GameManager {
     constructor() {
@@ -34,11 +36,157 @@ export class GameManager {
         this.mapManager = new MapManager(this);       
         this.rewardManager = new RewardManager(this);
         this.debugManager = new DebugManager(this);
+        this.statusScreen = new StatusScreen(this);
+        this.statusScreen.init();
         
         this.initMessageUI();
         
         // ★重要: これがないと判定エラーになります
         this.currentEnemyType = null; 
+    }
+
+    openStatusScreen() {
+        this.statusScreen?.open();
+    }
+
+    closeStatusScreen() {
+        this.statusScreen?.close();
+    }
+
+    _getItemTargetType(item) {
+        if (item?.target === 'all' || item?.scope === 'all' || item?.targetType === 'all') return 'all';
+        if (item?.target === 'self') return 'self';
+        return 'single';
+    }
+
+    _getItemMapTargets(item) {
+        const party = Array.isArray(this.party) ? this.party : [];
+        const alive = party.filter(m => (typeof m?.is_alive === 'function') ? m.is_alive() : !m?.is_dead);
+        const dead = party.filter(m => (typeof m?.is_alive === 'function') ? !m.is_alive() : !!m?.is_dead);
+
+        if (item?.id === 'phoenix' || item?.type === 'revive') return dead;
+        if (item?.id === 'elixir') {
+            return alive.filter(m => m.hp < m.max_hp || m.mp < m.max_mp);
+        }
+        if (item?.type === 'hp_heal') return alive.filter(m => m.hp < m.max_hp);
+        if (item?.type === 'mp_heal') return alive.filter(m => m.mp < m.max_mp);
+        return alive;
+    }
+
+    getItemMapInfo(itemId) {
+        const invData = this.inventory?.[itemId];
+        if (!invData) return { item: null, targets: [], targetType: 'single' };
+        const base = ItemData?.[itemId] || { id: itemId };
+        const item = { id: itemId, ...base, ...invData };
+        const targetType = this._getItemTargetType(item);
+        const targets = this._getItemMapTargets(item);
+        return { item, targets, targetType };
+    }
+
+    _getSkillTargetType(skill) {
+        if (skill?.target === 'all') return 'all';
+        if (skill?.target === 'self') return 'self';
+        return 'single';
+    }
+
+    _getSkillMapTargets(actor, skill) {
+        const party = Array.isArray(this.party) ? this.party : [];
+        const alive = party.filter(m => (typeof m?.is_alive === 'function') ? m.is_alive() : !m?.is_dead);
+        const dead = party.filter(m => (typeof m?.is_alive === 'function') ? !m.is_alive() : !!m?.is_dead);
+
+        switch (skill?.type) {
+            case 'res':
+                return dead;
+            case 'heal':
+                return alive.filter(m => m.hp < m.max_hp);
+            case 'mp_recovery':
+                if (!actor) return [];
+                return actor.mp < actor.max_mp ? [actor] : [];
+            case 'regen':
+                return alive;
+            default:
+                return [];
+        }
+    }
+
+    getSkillMapInfo(actorIndex, skillId) {
+        const actor = this.party?.[actorIndex];
+        const skill = typeof skillId === 'string' ? SkillData?.[skillId] : skillId;
+        if (!actor || !skill) {
+            return { actor: null, skill: null, targets: [], targetType: 'single', usable: false, reason: '使用不可' };
+        }
+
+        const targetType = this._getSkillTargetType(skill);
+        const targets = this._getSkillMapTargets(actor, skill);
+        const mpCost = Number.isFinite(Number(skill.cost)) ? Number(skill.cost) : 0;
+        const hasMp = actor.mp >= mpCost;
+        const usable = hasMp && targets.length > 0;
+        const reason = !hasMp ? 'MP不足' : '対象がいません';
+        return { actor, skill, targets, targetType, usable, reason };
+    }
+
+    useItemOnMap(itemId, targetIndex) {
+        const invData = this.inventory?.[itemId];
+        if (!invData || invData.count <= 0) {
+            return { success: false, message: '在庫がありません' };
+        }
+
+        const { item, targets, targetType } = this.getItemMapInfo(itemId);
+        if (!item) return { success: false, message: '使用できません' };
+
+        let targetList = targets;
+        if (targetType === 'self') {
+            targetList = [this.party?.[targetIndex]].filter(Boolean);
+        } else if (targetType === 'single') {
+            const target = this.party?.[targetIndex];
+            targetList = target ? [target] : [];
+        }
+
+        if (!targetList.length) {
+            return { success: false, message: '使える相手がいません' };
+        }
+
+        const executor = this.battleManager?.executor;
+        let applied = false;
+        targetList.forEach(target => {
+            if (executor?.applyItemEffect) {
+                const did = executor.applyItemEffect(item, target, { showEffects: false });
+                applied = applied || did;
+            }
+        });
+
+        if (!applied) {
+            return { success: false, message: '使用できません' };
+        }
+
+        invData.count -= 1;
+        if (invData.count <= 0) delete this.inventory[itemId];
+        this.statusScreen?.refresh();
+        return { success: true };
+    }
+
+    useSkillOnMap(actorIndex, skillId, targetIndex) {
+        const info = this.getSkillMapInfo(actorIndex, skillId);
+        if (!info.actor || !info.skill) return { success: false, message: '使用できません' };
+        if (!info.usable) return { success: false, message: info.reason };
+
+        let targetList = info.targets;
+        if (info.targetType === 'self') {
+            targetList = [info.actor];
+        } else if (info.targetType === 'single') {
+            const target = this.party?.[targetIndex];
+            if (!target) return { success: false, message: '対象がいません' };
+            if (!info.targets.includes(target)) return { success: false, message: 'その相手には使えません' };
+            targetList = [target];
+        }
+
+        const executor = this.battleManager?.executor;
+        if (!executor?.applyRecoverySkill) return { success: false, message: '使用できません' };
+
+        const applied = executor.applyRecoverySkill(info.actor, targetList, info.skill, { showEffects: false });
+        if (!applied) return { success: false, message: '使用できません' };
+        this.statusScreen?.refresh();
+        return { success: true };
     }
 
     start() {
