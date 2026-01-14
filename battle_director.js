@@ -101,7 +101,7 @@ export class BattleDirector {
         return blizzardContainer;
     }
 
-    _startIceDragonEventOverlay(subtitleText) {
+    _startIceDragonEventOverlay(subtitleText,color=null,fontSize = null) {
         const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         if (!canvasArea) return;
         if (this._iceDragonEventOverlay?.container) {
@@ -157,9 +157,26 @@ export class BattleDirector {
         }, 1000);
     }
 
-    _updateIceDragonEventSubtitle(subtitleText) {
+    _updateIceDragonEventSubtitle(subtitleText, color = null, fontSize = null) {
         if (!this._iceDragonEventOverlay?.caption) return;
+        
+        // テキスト更新
         this._iceDragonEventOverlay.caption.textContent = subtitleText ?? '';
+        
+        // 色が指定されていれば変更、なければ元（CSSの色）に戻す
+        if (color) {
+            this._iceDragonEventOverlay.caption.style.color = color;
+        } else {
+            this._iceDragonEventOverlay.caption.style.color = ''; // 指定がなければリセット
+        }
+        //サイズ指定
+        if (fontSize) {
+            // '24px', '2em', '150%' などの文字列が入る
+            this._iceDragonEventOverlay.caption.style.fontSize = fontSize;
+        } else {
+            // 指定がなければCSSのデフォルト(clamp設定など)に戻す
+            this._iceDragonEventOverlay.caption.style.fontSize = ''; 
+        }
     }
 
     _fadeOutIceDragonEventOverlay() {
@@ -657,8 +674,8 @@ export class BattleDirector {
 
         const log4 = "パーティは全滅した･･･";
         this.ui.addLog(log4, UiColors.LOG_DESPAIR);
-        this._updateIceDragonEventSubtitle(log4);
-        await new Promise(r => setTimeout(r, 2000));
+        this._updateIceDragonEventSubtitle(log4,'red','24px');
+        await new Promise(r => setTimeout(r, 2500));
         const log5 = "もうだめかと思った･･･";
         this.ui.addLog(log5, UiColors.LOG_DEFAULT);
         this._updateIceDragonEventSubtitle(log5);
@@ -666,7 +683,7 @@ export class BattleDirector {
         const log6 = "その時･･･";
         this.ui.addLog(log6, UiColors.LOG_DEFAULT);
         this._updateIceDragonEventSubtitle(log6);
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 2500));
         this.music.playBGM(GameConfig.AUDIO.BGM_TYPES.BOSS2);
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_HOPE_WAIT_MS));
         
@@ -692,6 +709,7 @@ export class BattleDirector {
         const log8 = "伝説の猫神『ざぼち』が降臨し、軌跡を起こした！";
         this.ui.addLog(log8, UiColors.LOG_ATTACK);
         this._updateIceDragonEventSubtitle(log8);
+        await new Promise(r => setTimeout(r, 1000));
         
 
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_ZABOCHI_APPEAR_MS));
