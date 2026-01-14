@@ -12,9 +12,9 @@ export class GameManager {
     constructor() {
         // パーティ初期化
         this.party = [
-            new Hero("勇者ぱるむ"),
-            new Wizard("魔法使いはな"),
-            new Healer("癒し手なつ")
+            new Hero("ぱるむ"),
+            new Wizard("はな"),
+            new Healer("なつ")
         ];
         
         // インベントリ初期化
@@ -102,9 +102,6 @@ export class GameManager {
             case 'mp_recovery':
                 if (!actor) return [];
                 return actor.mp < actor.max_mp ? [actor] : [];
-            case 'hp_mp_recovery':
-                if (!actor) return [];
-                return (actor.hp < actor.max_hp || actor.mp < actor.max_mp) ? [actor] : [];
             case 'regen':
                 return alive;
             default:
@@ -565,8 +562,8 @@ export class GameManager {
         // name: 話者名 (""ならナレーション), text: セリフ
         const script = [
             { name: "", text: "決戦の前夜、一行は焚き火を囲んでいた。" },
-            { name: "勇者ぱるむ", text: "いよいよ明日だね……。\nここまで長かったけど、みんなのおかげだよ。" },
-            { name: "魔法使いはな", text: "ふん、当然でしょ。\nあんた一人じゃ最初のゴブリンで死んでたわよ。" },
+            { name: "勇者ぱるむ", text: "いよいよ明日だね……。\nみんなのおかげでここまでこれたよ。" },
+            { name: "魔法使いはな", text: "ふん、当然でしょ。\nあんた一人じゃ最初のゴブリンにやられてたわよ。" },
             { name: "癒し手なつ", text: "まあまあ。\nでも、みんな本当に強くなったね。" },
             { name: "勇者ぱるむ", text: "ありがとう。\n……よし、絶対に勝とう！ 世界を取り戻すんだ！" },
             { name: "", text: "決意を新たに、体力を回復した。" }
