@@ -254,6 +254,11 @@ export class StatusScreen {
             this._detailEl.innerHTML = ``;
             return;
         }
+        const JOB_NAMES = {
+            'hero': '勇者',
+            'wizard': '魔法使い',
+            'healer': '癒し手',
+        };
 
         if (this.selectedIndex < 0) this.selectedIndex = 0;
         if (this.selectedIndex >= party.length) this.selectedIndex = party.length - 1;
@@ -283,6 +288,8 @@ export class StatusScreen {
 
             const dead = (typeof m?.is_alive === 'function') ? !m.is_alive() : (!!m?.is_dead || hp <= 0);
             const face = this._getMemberFace(m);
+            
+            const jobDisplayName = JOB_NAMES[m?.job] || m?.job || '';
 
             return `
                 <button type="button"
@@ -294,7 +301,7 @@ export class StatusScreen {
                     <div class="status-member-info">
                         <div class="status-member-top">
                             <div class="status-member-name">${m?.name ?? `Member ${i + 1}`}</div>
-                            <div class="status-member-job">${m?.job ?? ''}</div>
+                            <div class="status-member-job">${jobDisplayName}</div>
                         </div>
 
                         <div class="status-bar">
@@ -342,6 +349,13 @@ export class StatusScreen {
             { label: 'SPD', value: this._safeNum(member?.spd, 0) },
             { label: 'REC', value: this._safeNum(member?.rec, 0) }
         ];
+        const JOB_NAMES = {
+            'hero': '勇者',
+            'wizard': '魔法使い',
+            'healer': '癒し手',
+        };
+        const jobDisplayName = JOB_NAMES[member?.job] || member?.job || '';
+        
 
         const statRows = stats.map(stat => `
             <div class="status-row">
@@ -358,7 +372,7 @@ export class StatusScreen {
                 <div class="status-row">
                     <div class="status-row-top">
                         <div class="status-row-title">職業</div>
-                        <div class="status-row-right">${member?.job ?? ''}</div>
+                        <div class="status-row-right">${jobDisplayName}</div>
                     </div>
                 </div>
             </div>
