@@ -482,6 +482,7 @@ body {
     appearance: none;
     font: inherit;
     color: inherit;
+    height: auto;
 }
 .status-row--clickable:hover {
     border-color: rgba(255,255,255,.25);
@@ -493,6 +494,12 @@ body {
 }
 .status-skill--disabled {
     opacity: 0.45;
+    filter: grayscale(0.35);
+}
+.status-row.is-disabled {
+    opacity: 0.45;
+    cursor: default;
+    filter: grayscale(0.2);
 }
 .status-row-top {
     display: grid;
