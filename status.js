@@ -100,9 +100,9 @@ export class StatusScreen {
                 return;
             }
 
-            const itemRow = e.target.closest('[data-action="select-item"]');
-            if (itemRow) {
-                const itemId = itemRow.dataset.item;
+            const useItemBtn = e.target.closest('[data-action="use-item"]');
+            if (useItemBtn) {
+                const itemId = useItemBtn.dataset.itemId;
                 if (!itemId) return;
                 this._handleItemSelect(itemId);
                 return;
