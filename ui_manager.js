@@ -314,13 +314,19 @@ export class UIManager {
      * ターゲット選択メニュー
      * 敵も味方もクリックで選べるように改良
      */
-    showTargetMenu(targets, onSelect, onBack) {
+    showTargetMenu(targets, onSelect, onBack, action=NULL) {
         this.commandContainer.innerHTML = "";
-        this.turnLabel.innerText = "対象を選択してください";
+        
+        
+        if (action && action.detail.desc) {
+            this.turnLabel.innerText = action.detail.desc;
+        } else {
+            this.turnLabel.innerText = "対象を選択してください";
+        }
 
         // --- クリック選択機能 ---
 
-        // 1. まず変数を定義する（ここが重要！）
+        // 1. まず変数を定義する
         const enemyUnits = document.querySelectorAll(`.${UiClasses.ENEMY_UNIT}`);
         const memberCards = document.querySelectorAll(`.${UiClasses.MEMBER_CARD}`);
 

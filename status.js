@@ -376,7 +376,7 @@ export class StatusScreen {
             const skillId = skillObj?.id ?? s;
             const name = skillObj?.name ?? skillId ?? 'skill';
             const mpCost = this._safeNum(skillObj?.cost ?? skillObj?.mp_cost ?? skillObj?.mpCost, 0);
-            const desc = skillObj?.desc ?? skillObj?.description ?? '';
+            const desc = skillObj?.desc ?? skillObj?.desc ?? '';
             const tags = this._getSkillTags(skillObj);
             const isUnique = this._isUniqueSkill(skillObj);
             return { id: skillId, skill: skillObj, name, mpCost, desc, tags, isUnique };
@@ -436,7 +436,7 @@ export class StatusScreen {
                 const base = ItemData?.[id] || {};
                 const item = { id, ...base, ...data };
                 const name = item?.name ?? id;
-                const desc = item?.desc ?? item?.description ?? '';
+                const desc = item?.desc ?? item?.desc ?? '';
                 const count = this._safeNum(data?.count, 0);
                 const { targets } = this.game.getItemMapInfo(id);
                 const isDisabled = targets.length === 0 || count <= 0;

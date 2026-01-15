@@ -444,7 +444,8 @@ export class BattleManager {
                         action.target = selectedTarget;
                         this._startExecute(actor, action);
                     },
-                    () => this.showCommandMenu(actor)
+                    () => this.showCommandMenu(actor),
+                    action
                 );
             }
             return;
@@ -457,7 +458,8 @@ export class BattleManager {
                     action.target = selectedTarget;
                     this._startExecute(actor, action);
                 },
-                () => this.showCommandMenu(actor)
+                () => this.showCommandMenu(actor),
+                action
             );
             return;
         }
@@ -473,7 +475,8 @@ export class BattleManager {
                     action.target = selectedTarget;
                     this._startExecute(actor, action);
                 },
-                () => this.ui.showItemMenu((act) => this.handlePlayerAction(actor, act))
+                () => this.ui.showItemMenu((act) => this.handlePlayerAction(actor, act)),
+                action
             );
             return;
         }
