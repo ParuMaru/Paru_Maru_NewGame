@@ -396,7 +396,6 @@ export class StatusScreen {
         if (!entries.find(entry => entry.id === this.selectedSkillId)) {
             this.selectedSkillId = entries[0].id;
         }
-        const selectedSkill = entries.find(entry => entry.id === this.selectedSkillId) || entries[0];
 
         const uniqueRows = entries
             .filter(entry => entry.isUnique)
@@ -407,21 +406,8 @@ export class StatusScreen {
             .map(entry => this._buildSkillRow(entry))
             .join('');
 
-        const detailHtml = selectedSkill
-            ? this._buildRow({
-                title: selectedSkill.name,
-                right: `MP ${selectedSkill.mpCost}`,
-                tags: selectedSkill.tags,
-                desc: selectedSkill.desc
-            })
-            : '';
-
         this._detailEl.innerHTML = `
             ${this._renderPendingBanner()}
-            <div class="status-section">
-                <div class="status-section-title">スキル詳細</div>
-                ${detailHtml || `<div class="status-empty">スキルを選んでください</div>`}
-            </div>
             <div class="status-section">
                 <div class="status-section-title">固有スキル</div>
                 <div class="status-list">
@@ -429,7 +415,7 @@ export class StatusScreen {
                 </div>
             </div>
             <div class="status-section">
-                <div class="status-section-title">通常スキル</div>
+                <div class="status-section-title">スキル一覧</div>
                 <div class="status-list">
                     ${normalRows || `<div class="status-empty">通常スキルがありません</div>`}
                 </div>
@@ -454,18 +440,13 @@ export class StatusScreen {
                 const count = this._safeNum(data?.count, 0);
                 const { targets } = this.game.getItemMapInfo(id);
                 const isDisabled = targets.length === 0 || count <= 0;
-                const rowClass = isDisabled ? 'status-skill--disabled' : '';
-                return `
-                    <button type="button"
-                        class="status-row status-row--clickable ${rowClass}"
-                        data-action="select-item" data-item="${id}" ${isDisabled ? 'disabled' : ''}>
-                        <div class="status-row-top">
-                            <div class="status-row-title">${name}</div>
-                            <div class="status-row-right">×${count}</div>
-                        </div>
-                        <div class="status-row-desc">${desc}</div>
-                    </button>
-                `;
+                return this._buildItemRow({
+                    id,
+                    name,
+                    desc,
+                    count,
+                    isDisabled
+                });
             }).join('')
             : `<div class="status-empty">どうぐがありません</div>`;
 
@@ -499,7 +480,10 @@ export class StatusScreen {
     }
 
     _buildSkillRow(entry) {
-        const tagHtml = `<div class="status-row-tags">${entry.tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`;
+        const tagHtml = entry.tags.length
+            ? `<div class="status-row-tags">${entry.tags.map(t => `<span class="status-tag">${t}</span>`).join('')}</div>`
+            : '';
+        const descHtml = entry.desc ? `<div class="status-row-desc">${entry.desc}</div>` : '';
         const isSelected = entry.id === this.selectedSkillId;
 
         return `
@@ -511,6 +495,38 @@ export class StatusScreen {
                     <div class="status-row-right">MP ${entry.mpCost}</div>
                 </div>
                 ${tagHtml}
+                ${descHtml}
+            </button>
+        `;
+    }
+
+    _buildItemRow(entry) {
+        // どうぐは「名前 + 説明 + 所持数」を1枚のカードにまとめる
+        // 使用できない場合はクリック不可＆薄く表示
+        const right = `×${entry.count}`;
+        const descHtml = entry.desc ? `<div class="status-row-desc">${entry.desc}</div>` : '';
+
+        if (entry.isDisabled) {
+            return `
+                <div class="status-row is-disabled">
+                    <div class="status-row-top">
+                        <div class="status-row-title">${entry.name}</div>
+                        <div class="status-row-right">${right}</div>
+                    </div>
+                    ${descHtml}
+                </div>
+            `;
+        }
+
+        return `
+            <button type="button"
+                class="status-row status-row--clickable"
+                data-action="use-item" data-item-id="${entry.id}">
+                <div class="status-row-top">
+                    <div class="status-row-title">${entry.name}</div>
+                    <div class="status-row-right">${right}</div>
+                </div>
+                ${descHtml}
             </button>
         `;
     }
