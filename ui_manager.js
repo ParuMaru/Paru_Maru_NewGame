@@ -314,11 +314,11 @@ export class UIManager {
      * ターゲット選択メニュー
      * 敵も味方もクリックで選べるように改良
      */
-    showTargetMenu(targets, onSelect, onBack, action=NULL) {
+    showTargetMenu(targets, onSelect, onBack, action = null) {
         this.commandContainer.innerHTML = "";
         
         
-        if (action && action.detail.desc) {
+        if (action?.detail?.desc) {
             this.turnLabel.innerText = action.detail.desc;
         } else {
             this.turnLabel.innerText = "対象を選択してください";

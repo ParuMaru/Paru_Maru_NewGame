@@ -11,7 +11,7 @@ export const SkillData = {
         // --- 魔法使い（Wizard） ---
     fire:   { id: "fire",   name: "ファイア", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#e74c3c", attackTag: "fire", desc: "炎属性で単体を攻撃する" },
     fira:   { id: "fira",   name: "ファイラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all",    color: "#e74c3c", attackTag: "fire", desc: "炎属性で全体を攻撃する" },
-    meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#c03ce7", attackTag: "fire", desc: "隕石で単体に大ダメージを与える" },
+    meteor: { id: "meteor", name: "メテオ",   menu: "magic", cost: 50, power: 2.5, type: "magic", target: "single", color: "#c03ce7", attackTag: "none", desc: "隕石で単体に大ダメージを与える" },
     blizzard: { id: "blizzard", name: "ブリザド", menu: "magic", cost: 20, power: 1.5, type: "magic", target: "single", color: "#3498db", attackTag: "ice", desc: "氷属性で単体を攻撃する" },
     blizzara: { id: "blizzara", name: "ブリザラ", menu: "magic", cost: 35, power: 1.1, type: "magic", target: "all", color: "#3498db", attackTag: "ice", desc: "氷属性で全体を攻撃する" },
     meditation: { id: "meditation", name: "瞑想", menu: "main", cost: 0, value: 30, type: "mp_recovery", target: "self", color: "#9b59b6", desc: "MPを回復する" },
