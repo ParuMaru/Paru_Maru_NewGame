@@ -1,0 +1,16 @@
+flowchart TD
+  A["GameManager.startBattle\ncurrentEnemyType"] --> B["BattleManager.setupBattle\nstate.party/state.enemies"]
+  B --> C["BattleManager.runTurn\nstate.actionValue"]
+  C --> D{actor.job?}
+  D -- player --> E["UIManager.showCommands\ncommand UI"]
+  E --> F["BattleManager.handlePlayerAction\naction.type/target"]
+  F --> G["BattleManager._startExecute\ncurrentActor"]
+  D -- enemy --> H["EnemyAI.think\n未確認: AI detail"]
+  H --> G
+  G --> I["ActionExecutor.execute\nHP/MP/buffs/debuffs"]
+  I --> J["BattleManager.handleAllOutChance\nallOut state"]
+  J --> K["BattleManager.processTurnEnd\nbuffs/debuffs"]
+  K --> L["BattleManager.nextTurn\nresetActionValue"]
+  L --> C
+  C --> M["BattleManager.processEndGame\nresult UI"]
+  M --> N["GameManager.onBattleWin\nreward/clear"]

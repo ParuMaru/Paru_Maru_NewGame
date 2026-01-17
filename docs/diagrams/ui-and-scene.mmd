@@ -1,0 +1,24 @@
+flowchart TD
+  A["Title screen\nindex.html"] --> B{Continue?}
+  B -- Yes --> C["GameManager.loadGame\nrelics/inventory/party/map"]
+  C --> D["GameManager.showMap\nmap UI"]
+  B -- No --> E["Start click\nGameManager.start"]
+  E --> D
+
+  D --> F["MapManager.onNodeSelect\ncurrentFloor/currentNodeIndex"]
+  F --> G{node.type}
+  G -- battle/elite/boss --> H["GameManager.startBattle\ncurrentEnemyType"]
+  G -- treasure/rest/fountain --> I["MapManager.showEvent\nイベントUI"]
+
+  H --> J["BattleManager.setupBattle\nstate.party/state.enemies"]
+  J --> K["BattleManager.processEndGame\nresult overlay"]
+  K --> L{win?}
+  L -- Yes --> M["GameManager.onBattleWin\nreward/clear"]
+  M --> N["RewardManager.showRewards\nreward UI"]
+  L -- No --> O["retry/title\nUI buttons"]
+
+  D --> P["Status button\nGameManager.openStatusScreen"]
+  P --> Q["StatusScreen.open\nstatus UI"]
+  Q --> R["StatusScreen.close\nstatus UI"]
+
+  X["MapManager.showEvent\n未確認: イベントの内部状態遷移"]
