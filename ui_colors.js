@@ -1,3 +1,9 @@
+///
+/// 役割: UI表示で使う色定義を集中管理する。
+/// 入出力: UI層から参照される定数データ。
+/// 関連: ui_manager.js, ui_style.js
+///
+/** UI色定義の辞書。 */
 export const UiColors = {
     DAMAGE: "#ff4757",
     HEAL_HP: "#2ecc71",

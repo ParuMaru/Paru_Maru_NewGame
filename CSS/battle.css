@@ -1,3 +1,8 @@
+/*
+  役割: 戦闘画面のUIレイアウトと演出スタイルを定義する。
+  入出力: 戦闘中のDOM要素に適用される。
+  関連: ui_manager.js, battle_director.js, CSS/effects.css
+*/
 /* battle.css - バトルUI・レイアウト */
 
 #game-wrapper { position: relative; }

@@ -1,3 +1,9 @@
+///
+/// 役割: ゲーム全体のバランス定数やUI設定を集約する。
+/// 入出力: 各種マネージャー/計算ロジックから参照される。
+/// 関連: battle_calculator.js, reward_manager.js, map_manager.js
+///
+/** ゲーム定数の集約。 */
 export const GameConfig = {
     // --- 戦闘バランス計算用 ---
     BATTLE: {

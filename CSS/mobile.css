@@ -1,3 +1,8 @@
+/*
+  役割: モバイル向けのレスポンシブ調整を定義する。
+  入出力: 画面幅に応じたスタイル上書き。
+  関連: CSS/styles.css, CSS/battle.css, CSS/map.css
+*/
 /* mobile.css - スマホ・モバイル用レスポンシブ調整 */
 
 @media (max-width: 600px) {

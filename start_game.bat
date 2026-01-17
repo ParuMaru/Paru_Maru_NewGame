@@ -1,3 +1,6 @@
+REM 役割: Windows向けにローカル起動を簡易化するバッチ。
+REM 入出力: 必要な起動コマンドを呼び出す。
+REM 関連: README.md
 @echo off
 echo ゲームを起動しています...
 

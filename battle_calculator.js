@@ -1,8 +1,22 @@
+///
+/// 役割: 戦闘時のダメージ/回復量など数値計算をまとめる。
+/// 入出力: actor/target/skillとGameConfigの定数を参照する。
+/// 関連: battle_manager.js, action_executor.js, game_config.js
+///
 import { GameConfig } from './game_config.js'; // ★Configをインポート
 
+/**
+ * 戦闘の数値計算（ダメージ/回復/毒）を担当する。
+ * @class
+ */
 export class BattleCalculator {
     /**
-     * ダメージ計算
+     * ダメージ量を計算する。
+     * @param {object} actor - 攻撃者。
+     * @param {object} target - 対象。
+     * @param {object|null} skill - スキル定義。
+     * @param {Array} relics - 所持レリックID一覧。
+     * @returns {{damage: number, isCritical: boolean, type: string}}
      */
     static calculateDamage(actor, target, skill = null,relics = []) {
         let damage = 0;
@@ -80,6 +94,11 @@ export class BattleCalculator {
     /**
      * 毒ダメージ計算
      */
+    /**
+     * 毒ダメージ量を計算する。
+     * @param {object} target - 対象。
+     * @returns {number}
+     */
     static calculatePoisonDamage(target) {
         // ★定数使用: 最大HPの POISON_DAMAGE_PERCENT
         let damage = Math.floor(target.max_hp * GameConfig.BATTLE.POISON_DAMAGE_PERCENT);
@@ -94,6 +113,12 @@ export class BattleCalculator {
 
     /**
      * 回復量計算
+     */
+    /**
+     * 回復量を計算する。
+     * @param {object} actor - 行動者。
+     * @param {object} skill - スキル定義。
+     * @returns {number}
      */
     static calculateHeal(actor, skill) {
         const power = skill ? (skill.power || 1.0) : 1.0;

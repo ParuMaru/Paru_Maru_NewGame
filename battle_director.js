@@ -1,3 +1,8 @@
+///
+/// 役割: 戦闘中の演出（カットイン/エフェクト/字幕）を一元管理する。
+/// 入出力: UI要素とBGM/エフェクトにアクセスし、戦闘演出を描画する。
+/// 関連: battle_manager.js, ui_manager.js, effects.js
+///
 import { GodCat } from './entities.js';
 import { EffectsConfig } from './effects_constants.js';
 import { UiClasses } from './ui_classes.js';
@@ -5,7 +10,19 @@ import { UiColors } from './ui_colors.js';
 import { UiStyle } from './ui_style.js';
 import { GameConfig } from './game_config.js'; // ★Configをインポート
 
+/**
+ * 戦闘演出の表示・非表示を制御する。
+ * @class
+ */
 export class BattleDirector {
+    /**
+     * UI/音/エフェクトを受け取って初期化する。
+     * @param {UIManager} ui - UIマネージャー。
+     * @param {BattleBGM} music - BGM管理。
+     * @param {EffectManager} effects - 画面エフェクト。
+     * @param {Array} party - 味方一覧。
+     * @param {Array} enemies - 敵一覧。
+     */
     constructor(ui, music, effects, party, enemies) {
         this.ui = ui;
         this.music = music;
@@ -262,6 +279,11 @@ export class BattleDirector {
 
     // --- 攻撃系の演出 ---
 
+    /**
+     * 通常攻撃開始時の演出を表示する。
+     * @param {object} actor - 行動者。
+     * 副作用: UI/効果音を更新する。
+     */
     showAttackStart(actor) {
         const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
         this.ui.addLog(
@@ -274,6 +296,13 @@ export class BattleDirector {
         return isMagicUser;
     }
 
+    /**
+     * 物理攻撃の被弾演出を表示する。
+     * @param {object} target - 対象。
+     * @param {number} damage - ダメージ量。
+     * @param {boolean} isCritical - クリティカルか。
+     * @param {boolean} isMagicHit - 魔法被弾の補助表示。
+     */
     showPhysicalHit(target, damage, isCritical, isMagicHit) {
         const targetId = this._getTargetId(target);
 
@@ -296,6 +325,11 @@ export class BattleDirector {
 
     // --- スキル・魔法系の演出 ---
 
+    /**
+     * スキル発動開始時の演出を表示する。
+     * @param {object} actor - 行動者。
+     * @param {object} skill - スキル定義。
+     */
     showSkillStart(actor, skill) {
         const logColor = actor.job ? UiColors.LOG_SKILL : UiColors.LOG_ATTACK;
         this.ui.addLog(
@@ -307,6 +341,12 @@ export class BattleDirector {
         );
     }
 
+    /**
+     * 魔法系スキルのエフェクトを表示する。
+     * @param {object} actor - 行動者。
+     * @param {object} skill - スキル定義。
+     * @param {Array} targets - 対象一覧。
+     */
     showMagicEffect(actor, skill, targets) {
         const actorId = this._getTargetId(actor);
 
@@ -378,6 +418,11 @@ export class BattleDirector {
         }
     }
 
+    /**
+     * 魔法被弾の演出を表示する。
+     * @param {object} target - 対象。
+     * @param {number} damage - ダメージ量。
+     */
     showMagicHit(target, damage) {
         const targetId = this._getTargetId(target);
         // ★定数使用
@@ -392,6 +437,13 @@ export class BattleDirector {
 
     // --- 回復・支援系の演出 ---
 
+    /**
+     * 回復演出を表示する。
+     * @param {object} target - 対象。
+     * @param {number} amount - 回復量。
+     * @param {boolean} isMp - MP回復か。
+     * @param {boolean} playSound - 効果音を鳴らすか。
+     */
     showHeal(target, amount, isMp = false, playSound = true) {
         if (playSound) {
             if (!isMp) this.music.playHeal();
@@ -415,6 +467,10 @@ export class BattleDirector {
         );
     }
 
+    /**
+     * 全回復時の演出を表示する。
+     * @param {object} target - 対象。
+     */
     showFullHeal(target) {
         this.music.playHeal();
         const targetId = this._getTargetId(target);
@@ -427,6 +483,11 @@ export class BattleDirector {
         );
     }
 
+    /**
+     * 蘇生演出を表示する。
+     * @param {object} target - 対象。
+     * @param {boolean} isFullRevive - 全快蘇生か。
+     */
     showResurrection(target, isFullRevive = false) {
         const targetId = this._getTargetId(target);
         this.effects.resurrectionEffect(targetId);
@@ -446,6 +507,10 @@ export class BattleDirector {
         }
     }
 
+    /**
+     * かばう発動演出を表示する。
+     * @param {object} actor - 行動者。
+     */
     showCover(actor) {
         this.music.playCover();
         this.ui.addLog(
@@ -456,6 +521,11 @@ export class BattleDirector {
         this.ui.addLog(" > 仲間への攻撃を身代わりする！");
     }
 
+    /**
+     * かばう行動の演出を表示する。
+     * @param {object} protector - かばう側。
+     * @param {object} target - かばわれる側。
+     */
     showCoverAction(protector, target) {
          this.ui.addLog(
              " > {protector}が{target}をかばった！"
@@ -465,6 +535,11 @@ export class BattleDirector {
          );
     }
 
+    /**
+     * バフ演出を表示する。
+     * @param {Array} targets - 対象一覧。
+     * @param {string} skillName - 表示名。
+     */
     showBuff(targets, skillName) {
         if (skillName === "竜の咆哮") {
             this.music.playBreath(); 
@@ -481,6 +556,10 @@ export class BattleDirector {
         });
     }
 
+    /**
+     * リジェネ演出を表示する。
+     * @param {object} actor - 対象。
+     */
     showRegen(actor) {
         this.music.playHeal();
         this.ui.addLog(
@@ -493,6 +572,10 @@ export class BattleDirector {
     
     // --- 分裂イベント演出 ---
 
+    /**
+     * 分裂トリガー演出を表示する。
+     * @param {object} enemy - 対象敵。
+     */
     async showSplittingTrigger(enemy) {
         this.ui.addLog(
             "{name}の体が震えだした...！".replace('{name}', enemy.name),
@@ -510,6 +593,10 @@ export class BattleDirector {
         }
     }
 
+    /**
+     * 分裂変身演出の字幕を表示する。
+     * @param {string} oldName - 変身前の名称。
+     */
     showSplittingTransform(oldName) {
         this.ui.addLog(
             "{name}は3匹に分裂した！".replace('{name}', oldName),
@@ -518,6 +605,10 @@ export class BattleDirector {
         this.music.playSplited(); 
     }
 
+    /**
+     * 分裂後の敵出現演出を表示する。
+     * @param {number} startIndex - 追加敵の開始位置。
+     */
     showSplittingAppear(startIndex) {
         const spriteLeft = document.getElementById(
             GameConfig.UI.ID_TEMPLATES.ENEMY_SPRITE.replace('{index}', startIndex)
@@ -539,6 +630,9 @@ export class BattleDirector {
         }
     }
     
+    /**
+     * 影の合体開始演出を表示する。
+     */
     async showShadowFusionStart() {
         this.ui.addLog("影たちが一点に凝縮していく...！", UiColors.LOG_PRAYER, true);
         this.music.playMeditation(); 
@@ -575,6 +669,9 @@ export class BattleDirector {
         if (flash.parentNode) flash.parentNode.removeChild(flash);
     }
 
+    /**
+     * 影の合体終了演出を表示する。
+     */
     async showShadowFusionEnd() {
         this.ui.addLog("「影の支配者」が現れた！！！", UiColors.LOG_BUFF, true);
         this.music.playMagicMeteor(); 
@@ -600,6 +697,11 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.SHADOW_FUSION_WAIT_MS));
     }
     
+    /**
+     * ドラゴン変身イベントの演出を行う。
+     * @param {object} enemy - 変身対象。
+     * @param {Array} allEnemies - 敵一覧。
+     */
     async playDragonTransformation(enemy, allEnemies) {
         const enemyIndex = allEnemies.indexOf(enemy);
         const enemyEl = document.getElementById(
@@ -621,6 +723,10 @@ export class BattleDirector {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DRAGON_FLASH_WAIT_MS));
     }
     
+    /**
+     * 絶望→復活イベントの演出を行う。
+     * @param {Array} party - パーティ一覧。
+     */
     async playDespairAndRevival(party) {
         await new Promise(r => setTimeout(r, GameConfig.TIMING.DESPAIR_INTRO_WAIT_MS));
         const log2 = "覚醒アイスドラゴン『無ニ帰ス・・・絶対零度！！』";
@@ -749,6 +855,11 @@ export class BattleDirector {
         zabochiImg.remove();
     }
 
+    /**
+     * アイテム使用演出を表示する。
+     * @param {object} actor - 行動者。
+     * @param {object} item - アイテム定義。
+     */
     showItemUse(actor, item) {
         this.ui.addLog(
             "{name}は {item} を使った！"
@@ -767,6 +878,10 @@ export class BattleDirector {
         }
     }
 
+    /**
+     * HP/MP表示などのUIを再同期する。
+     * 副作用: UI表示を更新する。
+     */
     refreshStatus() {
         this.ui.updateEnemyHP(this.enemies);
     }

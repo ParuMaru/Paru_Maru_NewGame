@@ -1,6 +1,19 @@
+///
+/// 役割: マップ生成・遷移・イベント発火を管理する。
+/// 入出力: GameManagerの進行状態を読み書きし、DOM上のマップUIを更新する。
+/// 関連: game_manager.js, reward_manager.js, items.js
+///
 import { ItemData } from './items.js';
 
+/**
+ * マップ画面の進行とイベントを制御する。
+ * @class
+ */
 export class MapManager {
+    /**
+     * ゲーム全体マネージャーを保持し初期化する。
+     * @param {GameManager} gameManager - ゲーム全体マネージャー。
+     */
     constructor(gameManager) {
         this.game = gameManager;
         this.container = null;
@@ -20,6 +33,10 @@ export class MapManager {
         this.initEventUI(); // 汎用イベント画面の初期化
     }
 
+    /**
+     * マップ画面のUI要素を初期化する。
+     * 副作用: DOMイベントを登録する。
+     */
     initUI() {
         this.container = document.createElement('div');
         this.container.id = 'map-screen';
@@ -88,6 +105,10 @@ export class MapManager {
     }
 
     // ★汎用イベントモーダルを作成（泉・宝箱・キャンプ共通）
+    /**
+     * イベント表示用のUIを初期化する。
+     * 副作用: DOMイベントを登録する。
+     */
     initEventUI() {
         if (document.getElementById('event-overlay')) return;
 
@@ -122,6 +143,12 @@ export class MapManager {
 
 
     // --- イベント表示用ヘルパー ---
+    /**
+     * 汎用イベントUIを表示する。
+     * @param {object} params - 表示内容一式。
+     * @returns {void}
+     * 副作用: イベント画面を表示しボタンイベントを登録する。
+     */
     showEvent({ title, icon, desc, mainBtnText, onMainAction, closeBtnText = "立ち去る" }) {
         this.eventContent.innerHTML = "";
 
@@ -196,6 +223,11 @@ export class MapManager {
     //  各マス選択時の処理
     // ====================================================
 
+    /**
+     * ノード選択時の遷移処理を行う。
+     * @param {object} node - 選択ノード。
+     * 副作用: 戦闘/イベント画面へ遷移する。
+     */
     onNodeSelect(node) {
         // ★追加: 移動処理中なら何もしない（連打防止）
         if (this.isMoving) return;
@@ -248,6 +280,10 @@ export class MapManager {
     }
 
     // --- 宝箱イベント（強化版） ---
+    /**
+     * 宝箱イベントを表示する。
+     * 副作用: 所持品/メッセージUIを更新する。
+     */
     showChestEvent() {
         this.showEvent({
             title: "宝箱を発見！",
@@ -292,6 +328,10 @@ export class MapManager {
     }
 
     // --- 休憩イベント（演出強化） ---
+    /**
+     * キャンプイベントを表示する。
+     * 副作用: 回復処理とイベントUIを更新する。
+     */
     showCampEvent() {
         this.showEvent({
             title: "安らぎの焚き火",
@@ -314,6 +354,10 @@ export class MapManager {
     }
 
     // --- 泉イベント（ロジックは元のまま移植） ---
+    /**
+     * 噴水イベントを表示する。
+     * 副作用: 回復処理とイベントUIを更新する。
+     */
     showFountainEvent() {
         this.showEvent({
             title: "不思議な泉",
@@ -365,6 +409,11 @@ export class MapManager {
     }
 
     // 9階の特別イベントなどからの復帰用
+    /**
+     * 休息時の回復処理をまとめる。
+     * @param {string} message - 表示メッセージ。
+     * @private
+     */
     _processRest(message) {
         this.game.showMessage(message);
         this.game.party.forEach(p => {
@@ -379,6 +428,10 @@ export class MapManager {
 
     // --- マップ生成・描画（変更なし） ---
     
+    /**
+     * マップ構造を生成する。
+     * 副作用: map構造体を再構築する。
+     */
     generateMap() {
         this.mapData = [];
         this.currentFloor = -1;
@@ -416,6 +469,10 @@ export class MapManager {
     }
     
     // 距離判定ヘルパー
+    /**
+     * ノード間リンクが自然な角度かを判定する。
+     * @returns {boolean}
+     */
     isNatural(nodeIndex, nodeCount, targetIndex, targetCount) {
         if (nodeCount <= 1 || targetCount <= 1) return true;
         const posA = nodeIndex / (nodeCount - 1);
@@ -423,6 +480,10 @@ export class MapManager {
         return Math.abs(posA - posB) <= 0.35;
     }
 
+    /**
+     * フロア間のリンクを生成する。
+     * 副作用: 各ノードのlinksを更新する。
+     */
     connectNodes() {
         for (let f = 0; f < this.FLOOR_COUNT - 1; f++) {
             const currentFloor = this.mapData[f];
@@ -472,6 +533,10 @@ export class MapManager {
         }
     }
 
+    /**
+     * 2ノード間リンクを作成する。
+     * @private
+     */
     _link(lowerNode, upperNode) {
         if (!lowerNode.parents.includes(upperNode.index)) {
             lowerNode.parents.push(upperNode.index);
@@ -480,6 +545,10 @@ export class MapManager {
     }
     
     // ★メソッド名は render() のまま（GameManagerからの呼び出しに対応）
+    /**
+     * マップ画面を描画する。
+     * 副作用: DOMを構築しラインを再描画する。
+     */
     render() {
         if (this.mapData.length === 0) this.generateMap();
 
@@ -527,6 +596,10 @@ export class MapManager {
         }, 100);
     }
 
+    /**
+     * ノードの進行状態を取得する。
+     * @returns {'locked'|'available'|'cleared'|null}
+     */
     getNodeStatus(floor, index) {
         if (floor < this.currentFloor) {
             if (this.pathHistory[floor] === index) return 'cleared';
@@ -541,6 +614,10 @@ export class MapManager {
         return 'locked';
     }
 
+    /**
+     * ノード間の接続線を描画する。
+     * 副作用: SVGラインを更新する。
+     */
     drawLines() {
         const svg = this.svgLayer;
         svg.setAttribute('width', this.scrollArea.scrollWidth);

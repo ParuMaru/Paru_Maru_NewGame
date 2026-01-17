@@ -1,4 +1,10 @@
+///
+/// 役割: アイテムの効果/説明/対象種別を定義する。
+/// 入出力: 戦闘/マップ/ステータス画面から参照される静的データ。
+/// 関連: action_executor.js, map_manager.js, status.js
+///
 // items.js
+/** アイテム定義データ。 */
 export const ItemData = {
     
     potion: { id: "potion", name: "猫缶", type: "hp_heal", value: 100, count: 3, color: "#2ecc71",
