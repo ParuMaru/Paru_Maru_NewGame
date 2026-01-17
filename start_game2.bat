@@ -1,3 +1,6 @@
+REM 役割: 別ルートの起動手順を提供するバッチ。
+REM 入出力: ローカル起動コマンドを呼び出す。
+REM 関連: README.md, start_game.bat
 @echo off
 taskkill /F /IM chrome.exe >nul 2>&1
 

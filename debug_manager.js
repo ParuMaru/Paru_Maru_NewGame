@@ -1,6 +1,18 @@
-// debug_manager.js
+///
+/// 役割: デバッグ用UIを提供し、ゲーム状態を操作する。
+/// 入出力: GameManager/BattleManagerにアクセスし、DOM上で操作ボタンを作成する。
+/// 関連: game_manager.js, battle_manager.js, map_manager.js
+///
 
+/**
+ * デバッグ操作パネルを管理する。
+ * @class
+ */
 export class DebugManager {
+    /**
+     * ゲーム全体または戦闘マネージャーを受け取る。
+     * @param {GameManager|BattleManager} gameInstance - 参照元。
+     */
     constructor(gameInstance) {
         // GameManager または BattleManager を受け取る
         if (gameInstance.battleManager) {
@@ -15,6 +27,10 @@ export class DebugManager {
         this.initUI();
     }
 
+    /**
+     * デバッグUIを構築する。
+     * 副作用: DOMに操作ボタンを追加する。
+     */
     initUI() {
         const gameContainer = document.getElementById('canvas-area') || document.body;
         
@@ -105,6 +121,10 @@ export class DebugManager {
         gameContainer.appendChild(this.panel);
     }
     
+    /**
+     * セクション見出しを追加する。
+     * @param {string} text - 表示文。
+     */
     addTitle(text) {
         const div = document.createElement('div');
         div.innerText = text;
@@ -117,6 +137,13 @@ export class DebugManager {
         this.panel.appendChild(div);
     }
 
+    /**
+     * ボタンを生成する。
+     * @param {string} text - 表示文。
+     * @param {string} color - 背景色。
+     * @param {Function} onClick - クリック処理。
+     * @returns {HTMLElement}
+     */
     createBtn(text, color, onClick) {
         const btn = document.createElement('button');
         btn.innerText = text;
@@ -146,6 +173,10 @@ export class DebugManager {
         this.panel.appendChild(btn);
     }
 
+    /**
+     * UI更新を安全に実行する。
+     * 副作用: UI表示を更新する。
+     */
     safeUpdateUI() {
         if (this.battleManager && typeof this.battleManager.updateUI === 'function') {
             this.battleManager.updateUI();
@@ -157,13 +188,25 @@ export class DebugManager {
 
     // --- ロジック ---
 
+    /**
+     * 現在のパーティ一覧を取得する。
+     * @returns {Array}
+     */
     getParty() {
         return this.battleManager.state.party;
     }
+    /**
+     * 現在の敵一覧を取得する。
+     * @returns {Array}
+     */
     getEnemies() {
         return this.battleManager.state.enemies;
     }
 
+    /**
+     * パーティを全回復する。
+     * 副作用: HP/MPを更新する。
+     */
     fullHeal() {
         this.getParty().forEach(p => {
             p.revive(p.max_hp);
@@ -172,6 +215,10 @@ export class DebugManager {
         this.battleManager.ui.addLog("[DEBUG] 全回復", "#2ecc71", true);
     }
 
+    /**
+     * パーティにダメージを与える。
+     * 副作用: HPを更新する。
+     */
     damageParty() {
         this.getParty().forEach(p => {
             if(p.is_alive()) p.add_hp(1 - p.hp);
@@ -180,11 +227,19 @@ export class DebugManager {
         
     }
 
+    /**
+     * パーティの最大HPを上げる。
+     * 副作用: ステータスを更新する。
+     */
     MaxHPup() {
         this.getParty().forEach(p => p.max_hp += 50);
         this.battleManager.ui.addLog("[DEBUG] 最大HP50上昇", "#3498db", true);
     }
 
+    /**
+     * 敵を全滅させる。
+     * 副作用: 敵HPを更新する。
+     */
     killEnemies() {
         this.getEnemies().forEach((e, i) => {
             e.add_hp(-9999);
@@ -193,6 +248,10 @@ export class DebugManager {
         setTimeout(() => this.skipTurn(), 500);
     }
     
+    /**
+     * 敵を弱体化する。
+     * 副作用: ステータスを更新する。
+     */
     weakenEnemies() {
         const enemies = this.getEnemies();
         let affected = false;
@@ -213,16 +272,28 @@ export class DebugManager {
         }
     }
 
+    /**
+     * パーティを全滅させる。
+     * 副作用: HPを更新する。
+     */
     suicide() {
         this.getParty().forEach(p => p.add_hp(-9999));
         setTimeout(() => this.skipTurn(), 500);
     }
     
+    /**
+     * 現在の行動をスキップする。
+     * 副作用: ターン進行を更新する。
+     */
     skipTurn() {
         this.battleManager.isProcessing = false;
         this.battleManager.nextTurn();
     }
 
+    /**
+     * 任意の敵タイプで戦闘を開始する。
+     * @param {string} type - 敵タイプ。
+     */
     startBattle(type) {
         if (this.gameManager) {
             this.battleManager.ui.addLog(`[DEBUG] 雑魚戦を開始します`, "#fff");
@@ -233,6 +304,11 @@ export class DebugManager {
     }
 
     // ★追加：階層ワープ
+    /**
+     * 指定階層へ移動する。
+     * @param {number} floor - 階層番号。
+     * 副作用: マップ進行状態を更新する。
+     */
     jumpToFloor(floor) {
         if (this.gameManager && this.gameManager.mapManager) {
             this.gameManager.mapManager.currentFloor = floor;
@@ -246,6 +322,10 @@ export class DebugManager {
     }
     
     // ★追加: セーブデータの確認
+    /**
+     * セーブデータの有無を確認する。
+     * @returns {boolean}
+     */
     checkSaveData() {
         const json = localStorage.getItem('parm_rpg_save');
         if (json) {
@@ -267,6 +347,10 @@ export class DebugManager {
     }
 
     // ★追加: セーブデータの削除
+    /**
+     * セーブデータを削除する。
+     * 副作用: localStorageを更新する。
+     */
     deleteSaveData() {
         if (confirm("【警告】\n本当にセーブデータを削除しますか？\nこの操作は取り消せません。")) {
             localStorage.removeItem('parm_rpg_save');

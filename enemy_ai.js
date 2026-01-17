@@ -1,8 +1,22 @@
+///
+/// 役割: 敵AIの行動選択ロジックを定義する。
+/// 入出力: SkillDataと敵/味方の状態を参照し、BattleManagerへ行動を返す。
+/// 関連: battle_manager.js, action_executor.js, skills.js
+///
 import { SkillData } from './skills.js';
 
+/**
+ * 敵の思考ルールをまとめる。
+ * @class
+ */
 export class EnemyAI {
     /**
-     * 敵の行動を決定する
+     * 敵の行動を決定する。
+     * @param {object} enemy - 行動する敵。
+     * @param {Array} party - 味方一覧。
+     * @param {Array} allies - 敵の味方一覧。
+     * @returns {{type: string, target: any, detail?: object}} 行動指示。
+     * 注意: AIの乱数は演出よりも難易度調整を優先する。
      */
     think(enemy, party, allies = []) {
         // ターゲットがいなければ何もしない

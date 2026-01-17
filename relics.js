@@ -1,3 +1,9 @@
+///
+/// 役割: レリックの効果/入手条件を定義する。
+/// 入出力: 戦闘開始時や報酬処理から参照される静的データ。
+/// 関連: battle_manager.js, reward_manager.js, game_manager.js
+///
+/** レリック定義データ。 */
 export const RelicData = {
     // --- 戦闘開始時発動系 ---
     muscle_statue: { 

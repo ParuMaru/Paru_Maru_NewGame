@@ -1,8 +1,21 @@
+///
+/// 役割: ステータス/スキル/アイテム画面の表示と選択処理を担当する。
+/// 入出力: GameManagerからパーティ/所持品を参照し、DOM操作で表示を更新する。
+/// 関連: game_manager.js, items.js, skills.js
+///
 import { ItemData } from './items.js';
 import { SkillData } from './skills.js';
 import { GameConfig } from './game_config.js';
 
+/**
+ * ステータス画面のUIと入力を管理する。
+ * @class
+ */
 export class StatusScreen {
+    /**
+     * 参照するゲーム状態を保持する。
+     * @param {GameManager} game - ゲーム全体マネージャー。
+     */
     constructor(game) {
         this.game = game;
         this.selectedIndex = 0;
@@ -21,6 +34,10 @@ export class StatusScreen {
         };
     }
 
+    /**
+     * ステータス画面のDOMを初期化する。
+     * 副作用: DOMイベントを登録する。
+     */
     init() {
         // 描画: UI要素の生成と初期化
         const existing = document.getElementById('status-overlay');
@@ -120,11 +137,19 @@ export class StatusScreen {
     }
 
     // 描画: 表示状態
+    /**
+     * ステータス画面が開いているかを判定する。
+     * @returns {boolean}
+     */
     isOpen() {
         return !!(this._overlay && this._overlay.classList.contains('is-open'));
     }
 
     // 描画: 開閉
+    /**
+     * ステータス画面を開く。
+     * 副作用: DOMの表示状態とイベントを更新する。
+     */
     open() {
         if (!this._overlay) this.init();
         this._overlay.classList.add('is-open');
@@ -133,6 +158,10 @@ export class StatusScreen {
         this._render();
     }
 
+    /**
+     * ステータス画面を閉じる。
+     * 副作用: DOMの表示状態とイベントを更新する。
+     */
     close() {
         if (!this._overlay) return;
         this._overlay.classList.remove('is-open');
@@ -141,11 +170,20 @@ export class StatusScreen {
         this._setMessage('');
     }
 
+    /**
+     * 表示内容を最新状態へ再描画する。
+     * 副作用: UI表示を更新する。
+     */
     refresh() {
         this._render();
     }
 
     // 描画: タブ切替
+    /**
+     * 表示タブを切り替える。
+     * @param {string} tab - タブID。
+     * 副作用: UI表示を更新する。
+     */
     setTab(tab) {
         // タブ切替とUI再描画（UI更新のみ）
         const next = ['status', 'skills', 'items'].includes(tab) ? tab : 'status';
@@ -157,6 +195,11 @@ export class StatusScreen {
     }
 
     // 描画: メンバー切替
+    /**
+     * 対象メンバーを切り替える。
+     * @param {number} index - パーティインデックス。
+     * 副作用: UI表示を更新する。
+     */
     setMember(index) {
         // キャラ選択変更とUI再描画（UI更新のみ）
         this.selectedIndex = index;

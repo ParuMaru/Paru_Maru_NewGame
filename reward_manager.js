@@ -1,8 +1,21 @@
+///
+/// 役割: 勝利報酬の抽選と選択UIの表示を行う。
+/// 入出力: ItemData/RelicData/GameConfigを参照し、GameManagerへ報酬を反映する。
+/// 関連: game_manager.js, items.js, relics.js
+///
 import { ItemData } from './items.js';
 import { RelicData } from './relics.js'; 
 import { GameConfig } from './game_config.js';
 
+/**
+ * 報酬画面の表示と適用を管理する。
+ * @class
+ */
 export class RewardManager {
+    /**
+     * ゲーム全体マネージャーを保持しUIを初期化する。
+     * @param {GameManager} gameManager - ゲーム全体マネージャー。
+     */
     constructor(gameManager) {
         this.game = gameManager;
         this.container = null;
@@ -11,6 +24,10 @@ export class RewardManager {
         this.initUI();
     }
 
+    /**
+     * 報酬画面のDOMを構築する。
+     * 副作用: DOMに要素を追加する。
+     */
     initUI() {
         this.container = document.createElement('div');
         this.container.id = 'reward-screen';
@@ -35,6 +52,11 @@ export class RewardManager {
     /**
      * 報酬画面を表示するエントリポイント
      */
+    /**
+     * 敵タイプに応じて報酬画面を表示する。
+     * @param {string|null} enemyType - 敵タイプ。
+     * 副作用: 報酬カードを生成しUI表示を更新する。
+     */
     showRewards(enemyType = null) {
         this.isProcessing = false;
         this.container.style.display = 'flex'; 
@@ -56,6 +78,10 @@ export class RewardManager {
         }
     }
 
+    /**
+     * 報酬画面を非表示にする。
+     * 副作用: DOMスタイルを変更する。
+     */
     hide() {
         this.container.style.display = 'none';
     }
@@ -66,6 +92,9 @@ export class RewardManager {
 
     /**
      * フェーズ1: 基本の3択（HP / 魔力 / アイテム）
+     */
+    /**
+     * エリート戦の報酬（フェーズ1）を表示する。
      */
     showElitePhase1() {
         this.cardArea.innerHTML = "";
@@ -82,6 +111,9 @@ export class RewardManager {
 
     /**
      * フェーズ2: レリックの選択
+     */
+    /**
+     * エリート戦の報酬（フェーズ2）を表示する。
      */
     showElitePhase2() {
         this.isProcessing = false;
@@ -102,6 +134,10 @@ export class RewardManager {
 
     /**
      * フェーズ1用の固定3択データを生成
+     */
+    /**
+     * エリート固定報酬の候補を取得する。
+     * @returns {Array}
      */
     getEliteFixedRewards() {
         const list = [];
@@ -152,6 +188,10 @@ export class RewardManager {
     /**
      * フェーズ2用のレリック選択肢を生成（ランダム3つ）
      */
+    /**
+     * レリック報酬の候補を生成する。
+     * @returns {Array}
+     */
     generateRelicChoices() {
         const list = [];
         const allRelicIds = Object.keys(RelicData);
@@ -195,6 +235,10 @@ export class RewardManager {
     //  通常戦闘用
     // ====================================================
 
+    /**
+     * 通常報酬の候補を生成する。
+     * @returns {Array}
+     */
     generateRandomRewards() {
         const list = [];
         for(let i=0; i<3; i++) {
@@ -253,6 +297,12 @@ export class RewardManager {
      * @param {object} reward - 報酬データ
      * @param {function} onSelectCallback - 選択後の追加処理（nullなら終了）
      */
+    /**
+     * 報酬カードのDOMを生成する。
+     * @param {object} reward - 報酬定義。
+     * @param {Function|null} onSelectCallback - 選択時処理。
+     * @returns {HTMLElement}
+     */
     createCard(reward, onSelectCallback = null) {
         const card = document.createElement('div');
         card.className = 'reward-card';
@@ -296,6 +346,10 @@ export class RewardManager {
         this.cardArea.appendChild(card);
     }
 
+    /**
+     * 報酬処理完了時の後片付け。
+     * 副作用: UIを閉じてMapへ戻す。
+     */
     finish() {
         if (this.game && typeof this.game.onRewardSelected === 'function') {
             this.game.onRewardSelected();
@@ -305,6 +359,11 @@ export class RewardManager {
         }
     }
 
+    /**
+     * 選択された報酬をゲーム状態へ適用する。
+     * @param {object} reward - 報酬定義。
+     * 副作用: 所持品/レリック/HPなどを更新する。
+     */
     applyReward(reward) {
         if (reward.type === 'item') {
             if (!this.game.inventory) this.game.inventory = {};

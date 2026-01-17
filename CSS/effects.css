@@ -1,3 +1,8 @@
+/*
+  役割: エフェクト用のアニメーション/装飾スタイルを定義する。
+  入出力: EffectManagerが生成する要素に適用される。
+  関連: effects.js, battle_director.js
+*/
 /* effects.css - アニメーション・演出・エフェクト */
 
 /* 斬撃 */

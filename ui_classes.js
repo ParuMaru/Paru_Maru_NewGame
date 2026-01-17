@@ -1,3 +1,9 @@
+///
+/// 役割: UIで使うCSSクラス名をまとめた定義。
+/// 入出力: UI層から参照される定数データ。
+/// 関連: ui_manager.js, battle_director.js, ui_style.js
+///
+/** UIクラス名の辞書。 */
 export const UiClasses = {
     BLIZZARD_CONTAINER: 'blizzard-container',
     BLIZZARD_PREFIX: 'blizzard--',

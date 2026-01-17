@@ -1,5 +1,10 @@
+///
+/// 役割: スキルの威力/属性/対象などの定義をまとめる。
+/// 入出力: 戦闘/AI/ステータス画面から参照される静的データ。
+/// 関連: action_executor.js, enemy_ai.js, status.js
+///
 import { GameConfig } from './game_config.js';
-
+/** スキル定義データ。 */
 export const SkillData = {
     // --- 勇者（Hero） ---
     cover:     { id: "cover",     name: "かばう", menu: "skill", cost: 10, type: "buff", target: "all", color: "#3498db", desc: "味方全体をかばう" },

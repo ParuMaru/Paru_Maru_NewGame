@@ -1,6 +1,19 @@
+///
+/// 役割: 戦闘中のユニット状態と行動順の計算を保持するデータ層。
+/// 入出力: entities.jsのキャラを保持し、BattleManagerから参照される。
+/// 関連: battle_manager.js, battle_director.js, entities.js
+///
 import { Hero, Wizard, Healer, cragen, Kingcragen } from './entities.js';
 
+/**
+ * 戦闘の進行状態（行動値・ラウンド・生存判定）を管理する。
+ * @class
+ */
 export class BattleState {
+    /**
+     * 初期パーティと行動順計算を準備する。
+     * 副作用: 初期行動値を計算する。
+     */
     constructor() {
         // 1. 味方の生成
         this.party = [
@@ -24,6 +37,10 @@ export class BattleState {
     }
     
     // 戦闘開始時の準備
+    /**
+     * 戦闘開始時の行動値を初期化する。
+     * 副作用: 行動順の初期ソートを行う。
+     */
     initBattleAV() {
         const all = [...this.getAliveParty(), ...this.getAliveEnemies()];
         
@@ -38,6 +55,10 @@ export class BattleState {
     }
 
     // 行動値が小さい順に並び替え（UI表示用）
+    /**
+     * 行動順表示用の並び替えを行う。
+     * 副作用: turnOrderを更新する。
+     */
     sortQueue() {
         const all = [...this.getAliveParty(), ...this.getAliveEnemies()];
         this.turnOrder = all.sort((a, b) => a.actionValue - b.actionValue);
@@ -45,6 +66,11 @@ export class BattleState {
 
     /**
      * ★重要: 次の行動者を決定する（時間を進める）
+     */
+    /**
+     * 時間を進め次の行動者を取得する。
+     * @returns {object|null} 次の行動者。
+     * 副作用: 行動値とラウンドを更新する。
      */
     advanceTimeAndGetActor() {
         // 生存者リスト
@@ -73,6 +99,10 @@ export class BattleState {
     
     // ラウンド（サイクル）の計算
     // 1ラウンド目は150AV、2ラウンド目以降は100AVずつ
+    /**
+     * ラウンドの進行を更新する。
+     * 副作用: currentRoundを更新する。
+     */
     updateRound() {
         // 経過時間から現在のラウンドを逆算
         // 150 (1R) + 100 (2R) + 100 (3R)...
@@ -88,12 +118,20 @@ export class BattleState {
     /**
      * 生存している味方を取得
      */
+    /**
+     * 生存している味方一覧を返す。
+     * @returns {Array}
+     */
     getAliveParty() {
         return this.party.filter(p => p.is_alive());
     }
 
     /**
      * 生存している敵を取得
+     */
+    /**
+     * 生存している敵一覧を返す。
+     * @returns {Array}
      */
     getAliveEnemies() {
         return this.enemies.filter(e => e.is_alive());
@@ -102,6 +140,10 @@ export class BattleState {
     /**
      * 全滅判定
      */
+    /**
+     * 味方全滅かどうかを判定する。
+     * @returns {boolean}
+     */
     checkGameOver() {
         return this.getAliveParty().length === 0;
     }
@@ -109,12 +151,21 @@ export class BattleState {
     /**
      * 勝利判定
      */
+    /**
+     * 敵全滅かどうかを判定する。
+     * @returns {boolean}
+     */
     checkVictory() {
         return this.getAliveEnemies().length === 0;
     }
 
     /**
      * 行動順の計算（素早さ順）
+     */
+    /**
+     * UI表示用の行動順を再計算する。
+     * @returns {Array}
+     * 副作用: turnOrderを更新する。
      */
     calculateTurnOrder() {
         // 生きている全員をリストアップ
@@ -128,6 +179,10 @@ export class BattleState {
 
     /**
      * 現在のターン行動者を取得
+     */
+    /**
+     * 現在の行動者を返す。
+     * @returns {object|null}
      */
     getCurrentActor() {
         // リストが空、または最後まで行ったら再計算
@@ -158,6 +213,10 @@ export class BattleState {
 
     /**
      * 次のターンへ
+     */
+    /**
+     * 行動終了後の次ターン準備を行う。
+     * 副作用: 行動者を進める。
      */
     nextTurn() {
         this.currentActorIndex++;

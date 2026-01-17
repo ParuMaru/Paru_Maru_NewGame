@@ -1,3 +1,9 @@
+///
+/// 役割: UI描画に必要なスタイル値（寸法など）を集中管理する。
+/// 入出力: UI層から参照される定数データ。
+/// 関連: ui_manager.js, ui_colors.js
+///
+/** UIスタイルの定義。 */
 export const UiStyle = {
     FULL_HP_PERCENT: "100%",
     ZERO_HP_PERCENT: "0%",
@@ -26,6 +32,7 @@ export const UiStyle = {
     GRID_COLUMN_OFFSET: 1,
 };
 
+/** UI内の輝度設定。 */
 export const UiLuminance = {
     RED_WEIGHT: 0.2126,
     GREEN_WEIGHT: 0.7152,

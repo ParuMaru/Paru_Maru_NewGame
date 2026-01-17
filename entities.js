@@ -1,3 +1,8 @@
+///
+/// 役割: 味方/敵ユニットのステータスと固有設定を定義する。
+/// 入出力: GameConfigを参照し、BattleManager/BattleStateから生成される。
+/// 関連: battle_state.js, battle_manager.js, skills.js
+///
 import { GameConfig } from './game_config.js';
 
 /**

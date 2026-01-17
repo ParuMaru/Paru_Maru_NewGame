@@ -1,3 +1,8 @@
+///
+/// 役割: 戦闘の開始から終了までの進行を司るメイン制御。
+/// 入出力: BattleState/UIManager/ActionExecutor/EnemyAIを参照し、BGMとUIを更新する。
+/// 関連: battle_state.js, action_executor.js, battle_director.js, ui_manager.js
+///
 import { BattleState } from './battle_state.js';
 import { UIManager } from './ui_manager.js';
 import { ActionExecutor } from './action_executor.js';
@@ -12,7 +17,16 @@ import { UiColors } from './ui_colors.js';
 import { UiClasses } from './ui_classes.js';
 import { GameConfig } from './game_config.js';
 
+/**
+ * 戦闘全体の状態遷移と入力処理を管理する。
+ * @class
+ */
 export class BattleManager {
+    /**
+     * 依存マネージャーを生成し初期化する。
+     * @param {GameManager} gameManager - ゲーム全体マネージャー。
+     * 副作用: BGMの初期化を行う。
+     */
     constructor(gameManager) {
         this.gameManager = gameManager; 
         this.ui = new UIManager();
@@ -29,12 +43,26 @@ export class BattleManager {
         this.bgm.initAndLoad(); 
     }
 
+    /**
+     * HP減少時のみ効果音を鳴らす。
+     * @param {object} target - 対象。
+     * @param {number} prevHp - 直前HP。
+     * @private
+     */
     _playDamageSeIfHpReduced(target, prevHp) {
         if (prevHp > target.hp) {
             this.bgm.playDamage();
         }
     }
 
+    /**
+     * 戦闘の初期状態を構築する。
+     * @param {Array} party - 参加パーティ。
+     * @param {object} inventory - 所持品。
+     * @param {string} enemyType - 敵タイプ。
+     * @param {string|null} bgmType - BGM指定。
+     * 副作用: UI/BGM/エフェクト/敵編成を更新する。
+     */
     setupBattle(party, inventory, enemyType, bgmType = null) {
         // ★追加: リトライ用に、戦闘開始時点のデータを保存しておく
         this.backupData = {
@@ -160,6 +188,10 @@ export class BattleManager {
         this.runTurn();
     }
 
+    /**
+     * ターン進行を行い、行動者の処理に進む。
+     * 副作用: 勝敗判定・演出・行動キューを更新する。
+     */
     async runTurn() {
         await this.checkSplitting();
         
@@ -303,6 +335,10 @@ export class BattleManager {
         }
     }
     
+    /**
+     * 影ボスの合体イベントを処理する。
+     * 副作用: 敵編成とUI表示を更新する。
+     */
     async processShadowFusion() {
         this.isProcessing = true;
         this.isShadowFused = true; // 合体済みフラグON
@@ -334,6 +370,11 @@ export class BattleManager {
     }
 
     // ターン終了処理
+    /**
+     * 行動終了時のバフ/状態異常処理を行う。
+     * @param {object} actor - 行動者。
+     * 副作用: HP/MPやUIを更新する。
+     */
     async processTurnEnd(actor) {
         if (!actor.is_alive()) return;
 
@@ -395,6 +436,10 @@ export class BattleManager {
         this.updateUI();
     }
 
+    /**
+     * 分裂系の敵イベントを確認・処理する。
+     * 副作用: 敵編成とUI表示を更新する。
+     */
     async checkSplitting() {
         for (let i = 0; i < this.state.enemies.length; i++) {
             const enemy = this.state.enemies[i];
@@ -408,6 +453,11 @@ export class BattleManager {
         }
     }
 
+    /**
+     * プレイヤー入力用のコマンドUIを表示する。
+     * @param {object} actor - 行動者。
+     * 副作用: UI表示を更新する。
+     */
     showCommandMenu(actor) {
         this.ui.showCommands(
             actor,
@@ -415,6 +465,12 @@ export class BattleManager {
         );
     }
     
+    /**
+     * プレイヤー行動の実行と結果反映を行う。
+     * @param {object} actor - 行動者。
+     * @param {object} action - 選択行動。
+     * 副作用: 戦闘状態・UI・演出を更新する。
+     */
     async handlePlayerAction(actor, action) {
         if (this.isProcessing) return;
 
@@ -484,6 +540,11 @@ export class BattleManager {
         this._startExecute(actor, action);
     }
 
+    /**
+     * 敵AIの行動選択と実行を行う。
+     * @param {object} enemy - 敵ユニット。
+     * 副作用: 戦闘状態・UI・演出を更新する。
+     */
     async handleEnemyTurn(enemy) {
         this.ui.commandContainer.innerHTML = "";
         await new Promise(r => setTimeout(r, 800));
@@ -524,6 +585,11 @@ export class BattleManager {
     /**
      * ざぼちの自動行動ターン
      */
+    /**
+     * ざぼち専用行動の制御を行う。
+     * @param {object} actor - 行動者。
+     * 副作用: 戦闘状態・演出を更新する。
+     */
     async handleZabochiTurn(actor) {
         this.ui.highlightActiveMember(-1); // 誰のカードもハイライトしない
         this.ui.commandContainer.innerHTML = "";
@@ -561,6 +627,11 @@ export class BattleManager {
     }
     
     
+    /**
+     * 特定の敵専用イベントを処理する。
+     * @param {object} enemy - 敵ユニット。
+     * 副作用: UI/演出を更新する。
+     */
     async checkUniqueEnemyEvent(enemy) {
         if (enemy instanceof IceDragon && enemy.hp <= (enemy.max_hp * 0.5)) {
             
@@ -582,6 +653,11 @@ export class BattleManager {
 
     // ★重要: 行動が終わった後の処理
     // ここで行動値をリチャージ（10000/速度）して、列の最後尾に並び直させる
+    /**
+     * 次の行動に進むための終端処理。
+     * @param {object} actor - 行動者。
+     * 副作用: 行動順とUIを更新する。
+     */
     nextTurn(actor) { // 引数でactorを受け取れるように変更推奨
         this.isProcessing = false;
         
@@ -609,6 +685,10 @@ export class BattleManager {
     }
 
 
+    /**
+     * 画面上のHP/MP/バフ表示を最新状態に同期する。
+     * 副作用: UI表示を更新する。
+     */
     updateUI() {
         // --- 1. 味方の更新 ---
         this.state.party.forEach((p, i) => {
@@ -703,6 +783,12 @@ export class BattleManager {
         this.ui.updateTurnOrder(sortedQueue, this.state.currentRound);
     }
     
+    /**
+     * 行動実行の共通前処理とディレイ制御を行う。
+     * @param {object} actor - 行動者。
+     * @param {object} action - 行動内容。
+     * @private
+     */
     async _startExecute(actor, action) {
         if (this.isProcessing) return;
         this.isProcessing = true;
@@ -739,10 +825,22 @@ export class BattleManager {
         this.nextTurn();
     }
 
+    /**
+     * 特定ボス向けに直近行動を記録する。
+     * @param {object} actor - 行動者。
+     * @param {object} action - 行動内容。
+     * @private
+     */
     _recordLastAction(actor, action) {
         this.lastAction = { actor, action };
     }
 
+    /**
+     * 「絶対零度」系の行動かを判定する。
+     * @param {object} action - 行動内容。
+     * @returns {boolean}
+     * @private
+     */
     _isAbsoluteZeroAction(action) {
         if (!action || action.type !== 'skill') return false;
         const detail = action.detail;
@@ -752,16 +850,28 @@ export class BattleManager {
             || detail.name === '絶対零度';
     }
 
+    /**
+     * 全敵ダウン状態かを判定する。
+     * @returns {boolean}
+     */
     areAllEnemiesDown() {
         const aliveEnemies = this.state.getAliveEnemies();
         return aliveEnemies.length > 0 && aliveEnemies.every(enemy => enemy.down);
     }
 
+    /**
+     * 全敵ダウン時の特別状態を解除する。
+     * 副作用: UI表示を更新する。
+     */
     resetAllOutState() {
         this.wasAllDown = false;
         this.allOutPrompted = false;
     }
 
+    /**
+     * 全敵ダウン時の総攻撃チャンスを処理する。
+     * 副作用: UI/戦闘状態を更新する。
+     */
     async handleAllOutChance() {
         const allDown = this.areAllEnemiesDown();
         if (!allDown) {
@@ -794,6 +904,10 @@ export class BattleManager {
         this.updateUI();
     }
     
+    /**
+     * 戦闘終了時のクリーンアップを行う。
+     * 副作用: UI/演出状態を初期化する。
+     */
     cleanup() {
         if (this.bgm) this.bgm.stopBGM(); 
         this.isProcessing = false;
@@ -816,6 +930,10 @@ export class BattleManager {
         if (wrapper) wrapper.classList.remove('screen-shake');
     }
 
+    /**
+     * 戦闘画面のオーバーレイを後片付けする。
+     * @private
+     */
     _cleanupBattleOverlays() {
         const overlayIds = [
             'active-blizzard',
@@ -839,6 +957,10 @@ export class BattleManager {
 
     }
 
+    /**
+     * 特定演出のオーバーレイを存在させる。
+     * @private
+     */
     _ensureDespairBlizzardOverlay() {
         const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         if (!canvasArea) return null;
@@ -857,6 +979,10 @@ export class BattleManager {
         return overlay;
     }
 
+    /**
+     * 勝敗確定時の遷移とUI更新を行う。
+     * 副作用: 画面遷移とBGM/ログを更新する。
+     */
     processEndGame() {
         this.isProcessing = false;
         this._cleanupBattleOverlays();
@@ -990,6 +1116,11 @@ export class BattleManager {
      * バトルを最初からやり直す
      * @param {boolean} isFullHeal - trueならHP/MPを全回復状態で始める
      */
+    /**
+     * 戦闘のリトライを行う。
+     * @param {boolean} isFullHeal - 全回復で再開するか。
+     * 副作用: 状態とUIを復元する。
+     */
     retry(isFullHeal = false) {
         // 1. パーティのステータスを戦闘開始前に戻す
         this.state.party.forEach((p, i) => {
@@ -1040,6 +1171,10 @@ export class BattleManager {
     }
     
     // リトライ用のお掃除メソッド（BGMは止めない）
+    /**
+     * リトライ終了後の一時状態を解放する。
+     * @private
+     */
     cleanupRetry() {
         this.isProcessing = false;
         this._cleanupBattleOverlays();

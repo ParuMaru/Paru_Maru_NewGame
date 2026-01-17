@@ -1,8 +1,13 @@
+///
+/// 役割: ブラウザ起動時にゲーム全体の初期化とUIイベントを結線するエントリポイント。
+/// 入出力: GameManager/DebugManagerを生成し、DOMイベントを登録する。
+/// 関連: game_manager.js, ui_manager.js, map_manager.js
+///
 import { GameManager } from './game_manager.js';
 import { DebugManager } from './debug_manager.js';
 
 window.onload = () => {
-    // GameManagerの準備
+    // GameManagerの準備（タイトル/マップ/戦闘の切替を一括で担わせる）
     const gameManager = new GameManager(); 
     //つづきから
     const continueBtn = document.getElementById('game-continue-btn');

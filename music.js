@@ -1,3 +1,8 @@
+///
+/// 役割: BGMとSEの読み込み/再生を管理する。
+/// 入出力: AudioConstants/GameConfigを参照し、Web Audio APIを操作する。
+/// 関連: battle_manager.js, action_executor.js, audio_constants.js
+///
 import { AudioConstants } from './audio_constants.js';
 import { GameConfig } from './game_config.js';
 
@@ -5,7 +10,15 @@ import { GameConfig } from './game_config.js';
  * ゲーム内のBGMおよびSE（効果音）を制御するクラス
  * Web Audio APIを使用してリアルタイムに音を合成・再生します
  */
+/**
+ * ゲーム内のBGMおよびSE（効果音）を制御するクラス。
+ * Web Audio APIを使用してリアルタイムに音を合成・再生する。
+ * @class
+ */
 export class BattleBGM {
+    /**
+     * AudioContextやBGMデータの初期状態を作成する。
+     */
     constructor() {
         this.ctx = null;           // AudioContext
         this.isPlaying = false;    // BGM再生中フラグ
@@ -77,6 +90,10 @@ export class BattleBGM {
         this.seBuffers = {};       
     }
 
+    /**
+     * AudioContextを作成し、BGMファイルを読み込む。
+     * 副作用: 非同期でBGMデータを格納する。
+     */
     async initAndLoad() {
         this.initContext();
 
@@ -143,6 +160,12 @@ export class BattleBGM {
         console.log("全オーディオファイルのロード完了");
     }
 
+    /**
+     * MIDIファイルを読み込み解析する。
+     * @param {string} url - MIDIファイルURL。
+     * @param {string} type - BGM種別。
+     * 副作用: bgmDataを更新する。
+     */
     async loadMidi(url, type) {
         const res = await fetch(url);
         if (!res.ok) throw new Error(`File not found: ${url}`);
@@ -157,6 +180,11 @@ export class BattleBGM {
         this.bgmData[type] = this.parseMidiBuffer(arrayBuffer, targetBpm);
     }
     
+    /**
+     * 効果音を再生する。
+     * @param {string} name - SEキー。
+     * @param {number} volume - 音量。
+     */
     playSE(name, volume = GameConfig.AUDIO.VOLUME.SE_DEFAULT) {
         if (!this.ctx || !this.seBuffers[name]) return;
         const source = this.ctx.createBufferSource();
@@ -167,6 +195,10 @@ export class BattleBGM {
         source.start(0);
     }
 
+    /**
+     * AudioContextを初期化または再開する。
+     * 副作用: AudioContextの状態を変更する。
+     */
     initContext() {
         if (!this.ctx) {
             const AudioContextClass = window.AudioContext || window.webkitAudioContext;
@@ -177,6 +209,11 @@ export class BattleBGM {
     
     /**
      * BGM再生
+     */
+    /**
+     * BGM再生を開始する。
+     * @param {string} type - BGM種別。
+     * 副作用: 再生状態とスケジューラを更新する。
      */
     playBGM(type = GameConfig.AUDIO.BGM_TYPES.NORMAL) {
         this.stopBGM(); // ★ここで全てのBGM（勝利ループ含む）を停止
@@ -269,6 +306,10 @@ export class BattleBGM {
         }
     }
 
+    /**
+     * BGMの次ノートをスケジュールする。
+     * 副作用: AudioContextにノートを予約する。
+     */
     schedule() {
         if (!this.isPlaying) return;
         if (this.currentType === GameConfig.AUDIO.BGM_TYPES.ENDING) return;
@@ -294,6 +335,12 @@ export class BattleBGM {
         this.schedulerTimer = setTimeout(() => this.schedule(), GameConfig.AUDIO.TIMING.SCHEDULE_INTERVAL_MS);
     }
 
+    /**
+     * 単音を再生する。
+     * @param {number} freq - 周波数。
+     * @param {number} time - 開始時刻。
+     * @param {number} vol - 音量。
+     */
     playNote(freq, time, vol) {
         if (!this.ctx) return;
         const osc = this.ctx.createOscillator();
@@ -319,10 +366,18 @@ export class BattleBGM {
         }, (duration + GameConfig.AUDIO.TIMING.ACTIVE_SOURCE_CLEANUP_BUFFER_S) * 1000);
     }
 
+    /**
+     * すべての再生音を停止する。
+     * 副作用: AudioContextの再生中ソースを停止する。
+     */
     stop() {
         this.stopBGM();
     }
 
+    /**
+     * BGM再生のみ停止する。
+     * 副作用: BGM再生状態を停止する。
+     */
     stopBGM() {
         this.isPlaying = false;
         
@@ -346,6 +401,12 @@ export class BattleBGM {
         this.activeSources = [];
     }
 
+    /**
+     * MIDIバッファを解析してノート配列に変換する。
+     * @param {ArrayBuffer} buffer - MIDIバッファ。
+     * @param {number} targetBpm - 目標BPM。
+     * @returns {Array}
+     */
     parseMidiBuffer(buffer, targetBpm) {
         const data = new DataView(buffer);
         let offset = 0;
@@ -367,6 +428,15 @@ export class BattleBGM {
         return notes;
     }
 
+    /**
+     * MIDIトラックを解析してノート情報を追加する。
+     * @param {Uint8Array} data - MIDIデータ。
+     * @param {number} offset - 開始位置。
+     * @param {number} length - 解析長。
+     * @param {number} division - 分解能。
+     * @param {Array} notesArray - 追加先配列。
+     * @param {number} targetBpm - 目標BPM。
+     */
     parseTrack(data, offset, length, division, notesArray, targetBpm) {
         const end = offset + length;
         let timeTicks = 0;
@@ -414,18 +484,33 @@ export class BattleBGM {
     playDragon_voice(){this.playSE(GameConfig.AUDIO.SE_KEYS.DRAGON_VOICE);}
     playSpecialReady() { this.playSE(GameConfig.AUDIO.SE_KEYS.SPECIAL_READY); }
     playSpecial() { this.playSE(GameConfig.AUDIO.SE_KEYS.SPECIAL); }
+    /**
+     * 属性ヒット音を再生する。
+     * @param {string} tag - 属性タグ。
+     */
     playElementHit(tag) {
         if (tag === GameConfig.ELEMENT_TAGS.HOLY) return this.playSE(GameConfig.AUDIO.SE_KEYS.HOLY);
         if (tag === GameConfig.ELEMENT_TAGS.ICE) return this.playSE(GameConfig.AUDIO.SE_KEYS.ICE);
         if (tag === GameConfig.ELEMENT_TAGS.FIRE) return this.playSE(GameConfig.AUDIO.SE_KEYS.FIRE);
         return this.playSE(GameConfig.AUDIO.SE_KEYS.MAGIC);
     }
+    /**
+     * 被ダメージ音を再生する。
+     */
     playDamage() {
         this.playSE(GameConfig.AUDIO.SE_KEYS.DAMAGE);
     }
     playWin(){this.playSE(GameConfig.AUDIO.SE_KEYS.WIN);}
     
 
+    /**
+     * 和音/単音をまとめて再生する。
+     * @param {Array} freqs - 周波数配列。
+     * @param {number} time - 開始時刻。
+     * @param {number} dur - 再生時間。
+     * @param {number} vol - 音量。
+     * @param {string} type - 波形種別。
+     */
     playInstr(freqs, time, dur, vol, type = AudioConstants.WAVEFORMS.INSTRUMENT_DEFAULT) {
         if (!this.ctx) return;
         

@@ -1,3 +1,8 @@
+///
+/// 役割: 戦闘UIの描画/入力を管理し、ログやメニューを制御する。
+/// 入出力: バトル状態から表示情報を受け取り、DOMへ反映する。
+/// 関連: battle_manager.js, battle_state.js, ui_classes.js
+///
 import { SkillData } from './skills.js';
 import { ItemData } from './items.js';
 import { RelicData } from './relics.js';
@@ -6,7 +11,14 @@ import { UiColors } from './ui_colors.js';
 import { UiLuminance, UiStyle } from './ui_style.js';
 import { GameConfig } from './game_config.js';
 
+/**
+ * 戦闘中のUI表示と入力を管理する。
+ * @class
+ */
 export class UIManager {
+    /**
+     * UI初期値を設定する。
+     */
     constructor() {
         this.logElement = document.getElementById(GameConfig.UI.IDS.LOG);
         this.commandContainer = document.getElementById(GameConfig.UI.IDS.COMMAND_CONTAINER);
@@ -20,6 +32,10 @@ export class UIManager {
     }
     
     // ★追加: 画面左に行動順表示エリアを作る
+    /**
+     * 行動順UIの初期DOMを生成する。
+     * 副作用: DOM要素を追加する。
+     */
     initTurnOrderUI() {
         // すでにあったら作らない
         if (document.getElementById(GameConfig.UI.IDS.TURN_ORDER_PANEL)) return;
@@ -45,6 +61,12 @@ export class UIManager {
     }
 
     // ★追加: 行動順とラウンド情報の更新メソッド
+    /**
+     * 行動順UIを更新する。
+     * @param {Array} turnQueue - 行動順配列。
+     * @param {number} currentRound - 現在ラウンド。
+     * 副作用: DOM表示を更新する。
+     */
     updateTurnOrder(turnQueue, currentRound) {
         const listContainer = document.getElementById(GameConfig.UI.IDS.TURN_LIST_CONTAINER);
         const roundText = document.getElementById(GameConfig.UI.IDS.ROUND_INFO_TEXT);
@@ -106,6 +128,11 @@ export class UIManager {
         });
     }
 
+    /**
+     * 弱点タグを表示文言に変換する。
+     * @param {string} tag - 弱点タグ。
+     * @returns {string}
+     */
     getWeaknessLabel(tag) {
         const labelMap = {
             [GameConfig.WEAKNESS_TAGS.FIRE]: "炎",
@@ -118,10 +145,20 @@ export class UIManager {
             : "弱点:なし";
     }
 
+    /**
+     * 所持品情報をUI側へ同期する。
+     * @param {object} inventory - 所持品情報。
+     */
     setInventory(inventory) {
         this.inventory = inventory;
     }
     // ログ出力
+    /**
+     * 戦闘ログへメッセージを追加する。
+     * @param {string} message - 表示文。
+     * @param {string} color - 表示色。
+     * @param {boolean} isBold - 強調表示するか。
+     */
     addLog(message, color = UiColors.LOG_DEFAULT,isBold = false){
         const div = document.createElement('div');
         div.style.color = color;
@@ -136,6 +173,13 @@ export class UIManager {
         this.logElement.scrollTop = this.logElement.scrollHeight;
     }
 
+    /**
+     * プレイヤー行動のコマンドを表示する。
+     * @param {object} actor - 行動者。
+     * @param {Function} onSelect - 選択時コールバック。
+     * @param {Array|null} options - 表示オプション。
+     * 副作用: コマンドUIを生成する。
+     */
     showCommands(actor, onSelect, options = null) {
         this.currentActor = actor;
         if (options) {
@@ -169,6 +213,10 @@ export class UIManager {
         this._createButton("どうぐ", UiColors.BUTTON_ITEM, () => this.showItemMenu(onSelect));
     }
 
+    /**
+     * 総攻撃UIのDOMを初期化する。
+     * 副作用: DOM要素を追加する。
+     */
     initAllOutUI() {
         if (document.getElementById(GameConfig.UI.IDS.ALLOUT_OVERLAY)) return;
 
@@ -207,6 +255,10 @@ export class UIManager {
         wrapper.appendChild(prompt);
     }
 
+    /**
+     * 総攻撃チャンスのプロンプトを表示する。
+     * 副作用: UI表示を更新する。
+     */
     showAllOutPrompt() {
         return new Promise(resolve => {
             const prompt = document.getElementById(GameConfig.UI.IDS.ALLOUT_PROMPT);
@@ -232,6 +284,10 @@ export class UIManager {
         });
     }
 
+    /**
+     * 総攻撃アニメーションを再生する。
+     * 副作用: DOMクラスを変更する。
+     */
     playAllOutAnimation() {
         return new Promise(resolve => {
             const overlay = document.getElementById(GameConfig.UI.IDS.ALLOUT_OVERLAY);
@@ -256,6 +312,11 @@ export class UIManager {
         });
     }
 
+    /**
+     * サブメニュー（スキル/アイテム）を表示する。
+     * @param {string} menuType - メニュー種別。
+     * @param {Function} onSelect - 選択時コールバック。
+     */
     showSubMenu(menuType, onSelect) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = menuType === GameConfig.SKILL_MENUS.MAGIC
@@ -289,6 +350,10 @@ export class UIManager {
         this._createButton("戻る", UiColors.BUTTON_BACK, () => this.showCommands(this.currentActor, onSelect, this.commandOptions));
     }
 
+    /**
+     * アイテム選択メニューを表示する。
+     * @param {Function} onSelect - 選択時コールバック。
+     */
     showItemMenu(onSelect) {
         this.commandContainer.innerHTML = "";
         this.turnLabel.innerText = "アイテムを選択";
@@ -313,6 +378,13 @@ export class UIManager {
     /**
      * ターゲット選択メニュー
      * 敵も味方もクリックで選べるように改良
+     */
+    /**
+     * 対象選択メニューを表示する。
+     * @param {Array} targets - 対象一覧。
+     * @param {Function} onSelect - 選択時コールバック。
+     * @param {Function} onBack - 戻る処理。
+     * @param {object|null} action - 元の行動情報。
      */
     showTargetMenu(targets, onSelect, onBack, action = null) {
         this.commandContainer.innerHTML = "";
@@ -416,6 +488,11 @@ export class UIManager {
             : UiColors.BUTTON_TEXT_LIGHT;
     }
 
+    /**
+     * 敵グラフィックの再描画を行う。
+     * @param {Array} enemies - 敵一覧。
+     * 副作用: DOMを更新する。
+     */
     refreshEnemyGraphics(enemies) {
         this.enemyContainer.innerHTML = ''; 
 
@@ -521,6 +598,11 @@ export class UIManager {
         });
     }
 
+    /**
+     * 敵HPゲージ表示を更新する。
+     * @param {Array} enemies - 敵一覧。
+     * 副作用: DOMを更新する。
+     */
     updateEnemyHP(enemies) {
         enemies.forEach((enemy, index) => {
             const hpBar = document.querySelector(
@@ -540,6 +622,11 @@ export class UIManager {
         });
     }
     
+    /**
+     * 現在の行動者を強調表示する。
+     * @param {number|null} actorIndex - 行動者インデックス。
+     * 副作用: DOMクラスを更新する。
+     */
     highlightActiveMember(actorIndex) {
         for (let i = 0; i < GameConfig.UI.LIMITS.PARTY_SIZE; i++) { 
             const card = document.getElementById(GameConfig.UI.ID_TEMPLATES.CARD.replace('{index}', i));
@@ -556,6 +643,10 @@ export class UIManager {
     }
     
     // レリック置き場を作る
+    /**
+     * レリック表示欄を初期化する。
+     * 副作用: DOM要素を追加する。
+     */
     initRelicUI() {
         const canvasArea = document.getElementById(GameConfig.UI.IDS.CANVAS_AREA);
         
@@ -570,6 +661,11 @@ export class UIManager {
     }
 
     // レリックリストを受け取って描画更新
+    /**
+     * レリック表示を更新する。
+     * @param {Array} relicIdList - 所持レリックID一覧。
+     * 副作用: DOMを更新する。
+     */
     updateRelicBar(relicIdList) {
         if (!this.relicContainer) return;
         

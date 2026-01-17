@@ -1,3 +1,8 @@
+///
+/// 役割: 戦闘・マップ・報酬などゲーム全体の画面/状態遷移を統括するハブ。
+/// 入出力: BattleManager/MapManager/RewardManagerを生成し、DOMとローカル保存を操作する。
+/// 関連: battle_manager.js, map_manager.js, reward_manager.js, ui_manager.js
+///
 import { BattleManager } from './battle_manager.js';
 import { MapManager } from './map_manager.js';
 import { RewardManager } from './reward_manager.js';
@@ -8,7 +13,15 @@ import { RelicData } from './relics.js';
 import { SkillData } from './skills.js';
 import { StatusScreen } from './status.js';
 
+/**
+ * ゲーム全体の流れと画面切替を管理する。
+ * @class
+ */
 export class GameManager {
+    /**
+     * 初期パーティ/所持品/各マネージャーを構築する。
+     * 副作用: DOMにメッセージUIを追加し、StatusScreenを初期化する。
+     */
     constructor() {
         // パーティ初期化
         this.party = [
@@ -45,20 +58,40 @@ export class GameManager {
         this.currentEnemyType = null; 
     }
 
+    /**
+     * ステータス画面を開く。
+     * 副作用: UI表示を変更する。
+     */
     openStatusScreen() {
         this.statusScreen?.open();
     }
 
+    /**
+     * ステータス画面を閉じる。
+     * 副作用: UI表示を変更する。
+     */
     closeStatusScreen() {
         this.statusScreen?.close();
     }
 
+    /**
+     * アイテムの対象種別を推定する。
+     * @param {object} item - アイテム定義。
+     * @returns {'all'|'self'|'single'} 対象種別。
+     * @private
+     */
     _getItemTargetType(item) {
         if (item?.target === 'all' || item?.scope === 'all' || item?.targetType === 'all') return 'all';
         if (item?.target === 'self') return 'self';
         return 'single';
     }
 
+    /**
+     * マップ上で選択可能な対象一覧を返す。
+     * @param {object} item - アイテム定義。
+     * @returns {Array} 対象キャラ配列。
+     * @private
+     */
     _getItemMapTargets(item) {
         const party = Array.isArray(this.party) ? this.party : [];
         const alive = party.filter(m => (typeof m?.is_alive === 'function') ? m.is_alive() : !m?.is_dead);
@@ -73,6 +106,11 @@ export class GameManager {
         return alive;
     }
 
+    /**
+     * マップ上でアイテム使用可否と対象を算出する。
+     * @param {string} itemId - アイテムID。
+     * @returns {{item: object|null, targets: Array, targetType: string}} 判定結果。
+     */
     getItemMapInfo(itemId) {
         const invData = this.inventory?.[itemId];
         if (!invData) return { item: null, targets: [], targetType: 'single' };
@@ -83,12 +121,25 @@ export class GameManager {
         return { item, targets, targetType };
     }
 
+    /**
+     * スキルの対象種別を推定する。
+     * @param {object} skill - スキル定義。
+     * @returns {'all'|'self'|'single'} 対象種別。
+     * @private
+     */
     _getSkillTargetType(skill) {
         if (skill?.target === 'all') return 'all';
         if (skill?.target === 'self') return 'self';
         return 'single';
     }
 
+    /**
+     * マップ上でのスキル対象候補を計算する。
+     * @param {object} actor - 行動者。
+     * @param {object} skill - スキル定義。
+     * @returns {Array} 対象候補。
+     * @private
+     */
     _getSkillMapTargets(actor, skill) {
         const party = Array.isArray(this.party) ? this.party : [];
         const alive = party.filter(m => (typeof m?.is_alive === 'function') ? m.is_alive() : !m?.is_dead);
@@ -109,6 +160,12 @@ export class GameManager {
         }
     }
 
+    /**
+     * マップ上でのスキル使用可否と対象を算出する。
+     * @param {number} actorIndex - 行動者インデックス。
+     * @param {string} skillId - スキルID。
+     * @returns {{actor: object|null, skill: object|null, targets: Array, targetType: string, usable: boolean, reason: string, mpCost: number}}
+     */
     getSkillMapInfo(actorIndex, skillId) {
         const actor = this.party?.[actorIndex];
         const skill = typeof skillId === 'string' ? SkillData?.[skillId] : skillId;
@@ -125,6 +182,13 @@ export class GameManager {
         return { actor, skill, targets, targetType, usable, reason };
     }
 
+    /**
+     * マップ画面でアイテムを使用する。
+     * @param {string} itemId - アイテムID。
+     * @param {number} targetIndex - 対象インデックス。
+     * @returns {{success: boolean, message: string}} 実行結果。
+     * 副作用: 所持品/対象ステータス/UI表示を更新する。
+     */
     useItemOnMap(itemId, targetIndex) {
         const invData = this.inventory?.[itemId];
         if (!invData || invData.count <= 0) {
@@ -168,6 +232,14 @@ export class GameManager {
         return { success: true, message: `${itemName}を使用：${targetText}` };
     }
 
+    /**
+     * マップ画面で回復系スキルを使用する。
+     * @param {number} actorIndex - 行動者インデックス。
+     * @param {string} skillId - スキルID。
+     * @param {number} targetIndex - 対象インデックス。
+     * @returns {{success: boolean, message: string}} 実行結果。
+     * 副作用: MP/HPとUI表示を更新する。
+     */
     useSkillOnMap(actorIndex, skillId, targetIndex) {
         const info = this.getSkillMapInfo(actorIndex, skillId);
         if (!info.actor || !info.skill) return { success: false, message: '使用できません' };
@@ -195,10 +267,18 @@ export class GameManager {
         return { success: true, message: `${skillName}を使用：${targetText}` };
     }
 
+    /**
+     * ゲーム開始時の初期画面を表示する。
+     * 副作用: 画面をマップに切り替える。
+     */
     start() {
         this.showMap();
     }
-    
+
+    /**
+     * 画面下部のメッセージUIを遅延生成する。
+     * 副作用: DOMへ要素を追加する。
+     */
     initMessageUI() {
         if (document.getElementById('game-message-box')) return;
         const msgBox = document.createElement('div');
@@ -206,6 +286,11 @@ export class GameManager {
         document.body.appendChild(msgBox);
     }
 
+    /**
+     * 一時メッセージを表示する。
+     * @param {string} text - 表示文言。
+     * 副作用: DOMクラスを操作し自動で非表示にする。
+     */
     showMessage(text) {
         const msgBox = document.getElementById('game-message-box');
         if (msgBox) {
@@ -221,6 +306,12 @@ export class GameManager {
      * バトル開始処理
      * @param {string} enemyType - 敵の種類 ('cragen', 'dragon' etc)
      * @param {string} bgmType - BGMの種類 ('normal', 'elite', 'boss')
+     */
+    /**
+     * 戦闘画面に遷移しバトルを初期化する。
+     * @param {string} enemyType - 敵タイプ。
+     * @param {string|null} bgmType - BGM指定。
+     * 副作用: UI表示・背景・BGMを変更する。
      */
     startBattle(enemyType, bgmType = null) {
         this.hideAllScreens();
@@ -248,6 +339,10 @@ export class GameManager {
 
     /**
      * バトル勝利時の処理（BattleManagerから呼ばれる）
+     */
+    /**
+     * 勝利時の画面遷移と報酬表示を処理する。
+     * 副作用: 画面切替・報酬UI・BGMを操作する。
      */
     onBattleWin() {
         console.log("バトル勝利！ 敵タイプ:", this.currentEnemyType);
@@ -280,6 +375,10 @@ export class GameManager {
     
     /**
      * ゲームクリア画面の表示
+     */
+    /**
+     * エンディング画面を構築・表示する。
+     * 副作用: DOMを生成しBGMを切り替える。
      */
     showGameClear() {
         this.hideAllScreens(); 
@@ -367,6 +466,11 @@ export class GameManager {
     /**
      * ★追加：画像の拡大表示モーダルのイベント設定
      */
+    /**
+     * エンディング内の画像拡大モーダルを設定する。
+     * @param {HTMLElement} screenElement - エンディング画面要素。
+     * 副作用: クリックイベントを登録する。
+     */
     setupImageModal(screenElement) {
         const modal = screenElement.querySelector('#cat-modal');
         const modalImg = screenElement.querySelector('#expanded-cat-img');
@@ -398,6 +502,10 @@ export class GameManager {
     /**
      * マップ画面を表示
      */
+    /**
+     * マップ画面を表示する。
+     * 副作用: 画面切替とBGM再生を行う。
+     */
     showMap() {
         this.hideAllScreens();
         
@@ -419,16 +527,28 @@ export class GameManager {
     /**
      * 報酬選択完了時の処理（RewardManagerから呼ばれる）
      */
+    /**
+     * 報酬選択後のUIクリーンアップを行う。
+     * 副作用: 報酬UIを非表示にする。
+     */
     onRewardSelected() {
         if (this.rewardManager) this.rewardManager.hide();
         // 報酬画面を閉じれば、後ろにあるマップが見える状態になる
     }
 
+    /**
+     * 全滅時のリセット処理を行う。
+     * 副作用: ページをリロードする。
+     */
     onGameOver() {
         console.log("全滅...");
         setTimeout(() => location.reload(), 3000);
     }
 
+    /**
+     * 主要な画面要素をすべて非表示にする。
+     * 副作用: DOMスタイルを操作する。
+     */
     hideAllScreens() {
         const screens = ['game-wrapper', 'map-screen', 'reward-screen', 'ending-screen', 'story-overlay']; // ★story-overlayを追加
         screens.forEach(id => {
@@ -439,6 +559,10 @@ export class GameManager {
     
     /**
      * ★追加: ゲームデータのセーブ
+     */
+    /**
+     * 現在の進行状況をローカルストレージへ保存する。
+     * 副作用: localStorageとUIメッセージを更新する。
      */
     saveGame() {
         const saveData = {
@@ -482,6 +606,11 @@ export class GameManager {
 
     /**
      * ★追加: ゲームデータのロード
+     */
+    /**
+     * ローカルストレージから進行状況を復元する。
+     * @returns {boolean} 読み込み成功時true。
+     * 副作用: パーティ/所持品/UIを更新する。
      */
     loadGame() {
         const json = localStorage.getItem('parm_rpg_save');
@@ -537,6 +666,10 @@ export class GameManager {
     /**
      * ★追加: セーブデータがあるか確認
      */
+    /**
+     * セーブデータの有無を判定する。
+     * @returns {boolean} セーブデータが存在する場合true。
+     */
     hasSaveData() {
         return localStorage.getItem('parm_rpg_save') !== null;
     }
@@ -544,6 +677,11 @@ export class GameManager {
     /**
      * ★追加: 焚き火会話イベントを開始する
      * @param {Function} onFinished - イベント終了後に実行するコールバック（回復処理など）
+     */
+    /**
+     * キャンプファイアイベントを開始する。
+     * @param {Function} onFinished - 終了時コールバック。
+     * 副作用: 画面遷移とイベント用UIを操作する。
      */
     startCampfireEvent(onFinished) {
         // UI要素の取得
@@ -614,6 +752,11 @@ export class GameManager {
     }
     
     // ★追加: レリック獲得メソッド
+    /**
+     * レリックを所持リストへ追加する。
+     * @param {string} relicId - レリックID。
+     * 副作用: リスト更新とUI表示を行う。
+     */
     addRelic(relicId) {
         if (!this.relics.includes(relicId) && RelicData[relicId]) {
             this.relics.push(relicId);
@@ -631,6 +774,11 @@ export class GameManager {
     }
     
     // ★追加: レリックを持っているかチェック
+    /**
+     * レリック所持判定。
+     * @param {string} relicId - レリックID。
+     * @returns {boolean} 所持している場合true。
+     */
     hasRelic(relicId) {
         return this.relics.includes(relicId);
     }

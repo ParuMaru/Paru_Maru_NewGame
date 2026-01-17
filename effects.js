@@ -1,10 +1,17 @@
+///
+/// 役割: 戦闘中の視覚エフェクト（斬撃/魔法/揺れ/フラッシュ）を生成する。
+/// 入出力: DOM要素を操作して演出を表示する。
+/// 関連: battle_director.js, ui_manager.js, effects_constants.js
+///
 /**
- * バトル中の視覚演出（エフェクト）を管理するクラス
+ * バトル中の視覚演出（エフェクト）を管理するクラス。
+ * @class
  */
 export class EffectManager {
 
     /**
-     * 斬撃エフェクト（勇者・敵用）
+     * 斬撃エフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
      */
     slashEffect(targetId) {
         const target = document.getElementById(targetId);
@@ -31,7 +38,8 @@ export class EffectManager {
     }
     
     /**
-     * 魔法攻撃エフェクト：青白い円形の光を広げる
+     * 魔法攻撃エフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
      */
     magicExplosion(targetId) {
         let target = document.getElementById(targetId);
@@ -51,6 +59,10 @@ export class EffectManager {
         this.flash("rgba(69, 34, 197, 0.3)");
     }
 
+    /**
+     * 対象要素を揺らす。
+     * @param {string} id - 対象要素ID。
+     */
     shake(id) {
         const el = document.getElementById(id);
         if (el) {
@@ -60,6 +72,10 @@ export class EffectManager {
         }
     }
 
+    /**
+     * 画面フラッシュを行う。
+     * @param {string} color - フラッシュ色。
+     */
     flash(color = "white") {
         const f = document.createElement('div');
         f.className = 'screen-flash';
@@ -68,6 +84,12 @@ export class EffectManager {
         setTimeout(() => f.remove(), 100);
     }
 
+    /**
+     * ダメージポップアップを表示する。
+     * @param {number} value - ダメージ量。
+     * @param {string} targetId - 対象要素ID。
+     * @param {string} color - 表示色。
+     */
     damagePopup(value, targetId, color = "#ff4757") {
         const target = document.getElementById(targetId);
         if (!target) return;
@@ -79,6 +101,10 @@ export class EffectManager {
         setTimeout(() => p.remove(), 800);
     }
 
+    /**
+     * 回復エフェクトを表示する。
+     * @param {string} targetCardId - 対象カードID。
+     */
     healEffect(targetCardId) {
         const target = document.getElementById(targetCardId);
         if (!target) return;
@@ -92,6 +118,10 @@ export class EffectManager {
         setTimeout(() => h.remove(), 600);
     }
     
+    /**
+     * 蘇生エフェクトを表示する。
+     * @param {string} targetCardId - 対象カードID。
+     */
     resurrectionEffect(targetCardId) {
         const target = document.getElementById(targetCardId);
         if (!target) return;
@@ -105,6 +135,10 @@ export class EffectManager {
         }, 1000);
     }
 
+    /**
+     * 敵の死亡演出を表示する。
+     * @param {string} targetId - 対象要素ID。
+     */
     enemyDeath(targetId) {
         const target = document.getElementById(targetId);
         if (!target) return;
@@ -124,6 +158,10 @@ export class EffectManager {
         }, 800); 
     }
 
+    /**
+     * メテオエフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
+     */
     meteorEffect(targetId) {
         const target = document.getElementById(targetId);
         if (!target) return;
@@ -163,6 +201,11 @@ export class EffectManager {
     /**
      * ファイア（単体魔法）：火球が飛んでいき、敵が燃え上がる
      * ★修正: 発射元のID (sourceId) を指定可能に
+     */
+    /**
+     * 炎エフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
+     * @param {string|null} sourceId - 発火元要素ID。
      */
     fireEffect(targetId, sourceId = null) {
         const target = document.getElementById(targetId);
@@ -225,6 +268,10 @@ export class EffectManager {
      * ファイラ（全体魔法）：指定されたIDの対象が燃え上がる（火の玉なし・柱のみ）
      * ★修正: 敵・味方問わず、IDリストを受け取って処理するように変更
      */
+    /**
+     * 全体炎エフェクトを表示する。
+     * @param {Array} targetIds - 対象要素ID一覧。
+     */
     allFireEffect(targetIds) {
         targetIds.forEach((id, i) => {
             const target = document.getElementById(id);
@@ -254,6 +301,10 @@ export class EffectManager {
     /**
      * 全体氷魔法（こごえる吹雪）
      */
+    /**
+     * 全体氷エフェクトを表示する。
+     * @param {Array} party - 対象一覧。
+     */
     allIceEffect(party) {
         party.forEach((member, i) => {
             if (!member.is_alive()) return;
@@ -276,6 +327,10 @@ export class EffectManager {
         setTimeout(() => document.body.classList.remove('screen-shake'), 400);
     }
 
+    /**
+     * 氷エフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
+     */
     iceEffect(targetId) {
         const target = document.getElementById(targetId);
         if (!target) return;
@@ -293,6 +348,10 @@ export class EffectManager {
         }, 800);
     }
     
+    /**
+     * ひっかきエフェクトを表示する。
+     * @param {string} targetId - 対象要素ID。
+     */
     clawEffect(targetId) {
         this.slashEffect(targetId);
         setTimeout(() => {
@@ -310,6 +369,10 @@ export class EffectManager {
         }, 100);
     }
     
+    /**
+     * 咆哮エフェクトを表示する。
+     * @param {string} actorId - 対象要素ID。
+     */
     roarEffect(actorId) {
         const actor = document.getElementById(actorId);
         if (actor) {

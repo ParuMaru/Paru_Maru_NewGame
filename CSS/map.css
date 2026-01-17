@@ -1,3 +1,8 @@
+/*
+  役割: マップ画面のレイアウト/ノード表示を定義する。
+  入出力: MapManagerが生成するDOMに適用される。
+  関連: map_manager.js, CSS/styles.css
+*/
 /* map.css - マップ・イベント・報酬 */
 
 /* マップ画面 */

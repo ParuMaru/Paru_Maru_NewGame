@@ -1,10 +1,28 @@
+///
+/// 役割: 行動内容に応じたダメージ/回復/演出の実行を担当する。
+/// 入出力: BattleCalculator/EffectManager/UI/BGMを利用して戦闘状態を更新する。
+/// 関連: battle_manager.js, battle_calculator.js, battle_director.js
+///
 import { BattleCalculator } from './battle_calculator.js';
 import { BattleDirector } from './battle_director.js'; 
 import { cragen } from './entities.js';
 import { UiColors } from './ui_colors.js';
 import { GameConfig } from './game_config.js';
 
+/**
+ * 1アクションの効果適用と演出実行をまとめる。
+ * @class
+ */
 export class ActionExecutor {
+    /**
+     * 実行に必要なマネージャー参照を保持する。
+     * @param {UIManager} ui - UIマネージャー。
+     * @param {BattleBGM} music - BGM管理。
+     * @param {EffectManager} effects - 画面エフェクト。
+     * @param {Array} enemies - 敵一覧。
+     * @param {Array} party - 味方一覧。
+     * @param {GameManager} gameManager - ゲーム全体マネージャー。
+     */
     constructor(ui, music, effects, enemies, party,gameManager) {
         this.director = new BattleDirector(ui, music, effects, party, enemies);
         this.enemies = enemies;
@@ -27,6 +45,13 @@ export class ActionExecutor {
         this.director.music.playElementHit(attackTag);
     }
 
+    /**
+     * 行動タイプに応じて処理を振り分ける。
+     * @param {object} actor - 行動者。
+     * @param {object} target - 対象。
+     * @param {object} action - 行動定義。
+     * 副作用: 戦闘状態とUI/演出を更新する。
+     */
     async execute(actor, target, action) {
         if (action.type === 'attack') {
             await this._executeAttack(actor, target);
@@ -264,6 +289,10 @@ export class ActionExecutor {
         await this.executeAllOutAttack();
     }
 
+    /**
+     * 総攻撃アクションを実行する。
+     * 副作用: 敵全体にダメージを与え、UI/演出を更新する。
+     */
     async executeAllOutAttack() {
         const targets = this.enemies.filter(enemy => enemy.is_alive());
         if (targets.length === 0) return;
@@ -370,6 +399,14 @@ export class ActionExecutor {
         this.applyItemEffect(item, target, { showEffects: true });
     }
 
+    /**
+     * アイテム効果を適用する（戦闘外でも使用）。
+     * @param {object} item - アイテム定義。
+     * @param {object} target - 対象。
+     * @param {object} options - 表示オプション。
+     * @returns {boolean} 適用できた場合true。
+     * 副作用: HP/MPやUIを更新する。
+     */
     applyItemEffect(item, target, { showEffects = true } = {}) {
         if (item.id === 'phoenix') {
             target.revive(Math.floor(target.max_hp * item.value));
@@ -397,6 +434,15 @@ export class ActionExecutor {
         return false;
     }
 
+    /**
+     * 回復系スキルの効果を適用する。
+     * @param {object} actor - 行動者。
+     * @param {Array} targets - 対象一覧。
+     * @param {object} skill - スキル定義。
+     * @param {object} options - 表示オプション。
+     * @returns {boolean} 適用できた場合true。
+     * 副作用: HP/MPやUIを更新する。
+     */
     applyRecoverySkill(actor, targets, skill, { showEffects = true } = {}) {
         const targetList = Array.isArray(targets) ? targets : [targets];
 
