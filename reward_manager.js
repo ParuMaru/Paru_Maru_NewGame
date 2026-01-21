@@ -178,7 +178,7 @@ export class RewardManager {
             ],
             icon: '🎒',
             name: '冒険者セット',
-            desc: 'ポーションx2、エーテルx1、フェニックスの尾x1',
+            desc: `${ItemData.potion.name}x2、${ItemData.ether.name}x1、${ItemData.phoenix.name}x1`,
             color: '#2ecc71'
         });
 
